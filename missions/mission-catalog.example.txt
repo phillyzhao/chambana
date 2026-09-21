@@ -1,0 +1,17 @@
+# Copy this format for your real missions. This file is illustrative only.
+# The importer validates first and creates UNPUBLISHED drafts only with --write.
+# Categories: Campus discoveries | Squirrel spotting | Around town
+# Timing is configured globally in /admin and snapshotted for each assignment.
+
+Title: Meet your campus mascot
+Category: Squirrel spotting
+Nuts: 30
+Instructions: Spot a squirrel outdoors and take a photo from a respectful distance.
+Do not approach, feed, chase, or touch it.
+Proof: A squirrel clearly visible outdoors. A photo cannot establish when or where it was taken.
+---
+Title: Find a little local color
+Category: Around town
+Nuts: 40
+Instructions: Photograph an outdoor mural from a public walkway. Respect the space and anyone nearby.
+Proof: An outdoor mural clearly visible with its surrounding setting.
