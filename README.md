@@ -6,7 +6,8 @@ A mobile-first Next.js + TypeScript website with a Supabase/Postgres backend and
 
 - A clearly labeled design preview works without credentials. Sample groups, missions, and scores are illustrative; preview mode cannot create accounts or award real points.
 - The real application has campus authentication, public profiles, group discovery, invitation codes/links, organization approval, shared missions, photo submission, scoring, and platform administration.
-- Database migrations and automated tests run locally. No cloud project has been provisioned, no production migrations applied, and no actual student photos sent to Gemini during development.
+- The real Supabase project is connected. The migrations have been applied, Illinois email-link sign-in has been verified, and the first platform admin has created accounts and approved organizers.
+- Gemini 2.5 Flash is configured locally through `.env.local`. It still needs controlled end-to-end photo-verification testing before it is relied on for automatic scoring.
 
 ## Run locally
 
@@ -19,15 +20,32 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. For checks: `npm run check`. Tests use PGlite (real Postgres compiled to WASM) with lightweight Auth/Storage schema fixtures; they do not require Docker or cloud credentials. They test SQL constraints, permissions, RLS, mission transitions, duplicate awards, verifier leases, Gemini request/response handling with mocks, and the catalog parser. They do not replace live Google OAuth, Supabase Storage, hosted concurrency/load testing, or Gemini evaluation.
+Open http://localhost:3000. For checks: `npm run check`. Tests use PGlite (real Postgres compiled to WASM) with lightweight Auth/Storage schema fixtures; they do not require Docker or cloud credentials. They test SQL constraints, permissions, RLS, mission transitions, duplicate awards, verifier leases, Gemini request/response handling with mocks, and the catalog parser. They do not replace live email-link/Microsoft OAuth, Supabase Storage, hosted concurrency/load testing, or Gemini evaluation.
 
-## Connect the real beta
+## Current live status
 
-1. **Create a Supabase project owned by your team.** In a new project, apply SQL files in `supabase/migrations/` in filename order using the SQL Editor. Alternatively install the Supabase CLI, run `supabase link --project-ref YOUR_PROJECT_REF`, then `supabase db push`. Do not apply these migrations to an unrelated existing project: they explicitly manage public-schema permissions.
-2. **Configure environment variables.** Create `.env.local` using `.env.example` as the template. Add the project URL, publishable key, and server-only service-role key. Never paste private keys into chat or commit them. Set `APP_URL` to the exact website origin (localhost during development).
-3. **Configure campus sign-in.** Enable Google in Supabase Authentication → Providers with a Google OAuth client owned by your team. Add Supabase's callback URL from that provider screen to the Google client's authorized redirect URIs. In Supabase URL Configuration, add `http://localhost:3000/auth/callback` and your deployed `https://YOUR_HOST/auth/callback`; set the Site URL accordingly. Both the application and database enforce the exact `@illinois.edu` domain; Google's `hd` parameter is just an account-selection hint. Disable unused providers.
-4. **Keep email-link sign-in enabled as a fallback.** Some Illinois accounts may not have Google sign-in available. Enable email confirmations, configure SMTP for delivery beyond development limits, and use the PKCE email-link flow. Confirm the email template links through Supabase's confirmation URL before returning to `/auth/callback`. Test this flow in the same browser that requested the link.
-5. **Bootstrap a platform admin.** Replace the example with your actual Illinois email, then run this in Supabase's SQL Editor:
+The Supabase connection, local environment variables, email-link sign-in, first platform admin, and organizer approval workflow have been verified. The remaining path to a live beta is:
+
+1. Test Gemini against controlled photos.
+2. Import and publish missions.
+3. Deploy to Hostinger and attach the production domain.
+4. Configure production redirects and queue recovery.
+5. Run the full live acceptance test before opening signups.
+
+## Finish connecting the real beta
+
+1. **Keep the Supabase schema under migrations.** The hosted database already has both files in `supabase/migrations/` applied. For future schema changes, create a new migration and use the project-local CLI:
+
+   ```sh
+   npx supabase db push --dry-run
+   npx supabase db push
+   ```
+
+   Do not apply these migrations to an unrelated existing project: they explicitly manage public-schema permissions.
+2. **Keep environment variables private.** `.env.local` contains the project URL, publishable key, server-only service-role key, Gemini API key, and local `APP_URL`. Never paste private keys into chat or commit this file. Configure the same variables as encrypted values at the production host.
+3. **Use email-link sign-in for the currently verified path.** Email-link authentication is working with verified `@illinois.edu` accounts. Add `http://localhost:3000/auth/callback` and the eventual production `https://YOUR_DOMAIN/auth/callback` in Supabase Authentication → URL Configuration; set the Site URL to the relevant environment's canonical origin.
+4. **Treat Microsoft/Outlook OAuth as a follow-up implementation.** Illinois accounts are Microsoft/Outlook-hosted, but the current login UI and server action still call Google OAuth. Before enabling a social provider, update the application to use Supabase's `azure` provider, request the `email` scope, and configure the Azure application with Supabase's exact callback URL. Do not enable Google solely because of older documentation in this repository.
+5. **Bootstrap a platform admin.** This is already complete for the initial admin. To add another admin, run this in Supabase's SQL Editor with their lowercase Illinois email:
 
    ```sql
    insert into public.platform_admins(email)
@@ -37,17 +55,17 @@ Open http://localhost:3000. For checks: `npm run check`. Tests use PGlite (real 
 
    The email must be lowercase. Sign in with that account and open `/admin`. Select registered campus emails to approve organizers, or preapprove an email before its signup. Platform admin access is managed in the database; organizer approval never grants platform admin access.
 
-6. **Connect Gemini.** Put your Google AI Studio API key in `GEMINI_API_KEY` and an available image-capable model in `GEMINI_MODEL` (initial adapter default: `gemini-2.5-flash`). Confirm model access in your Google project. Missing keys, uncertain evidence, safety concerns, malformed responses, and API failure route to admin review; they never auto-award points. No actual API call has been tested without your credentials.
+6. **Test Gemini.** Gemini 2.5 Flash is configured locally through `GEMINI_API_KEY` and `GEMINI_MODEL=gemini-2.5-flash`. Test matching, non-matching, ambiguous, unsafe, malformed, and failed responses with controlled photos. Uncertain evidence, safety concerns, malformed responses, and API failures route to admin review; they never auto-award points.
 7. **Load your mission catalog.** Use `missions/mission-catalog.example.txt` as the format. Run `npm run missions:import -- your-missions.txt` to validate without writing, then add `--write` when ready. Imports create drafts only. Review/publish them in `/admin`. No production missions are prepublished.
-8. **Deploy the Node application.** Use a host that supports Node 24, Next.js server actions, native `sharp`, request bodies of at least 10 MB, and requests lasting at least 60 seconds. Run `npm ci`, `npm run build`, then `npm start`. Set the same environment variables securely on the host, change `APP_URL`, and update OAuth callback allowlists. Providers with request-body limits below 10 MB need a direct-upload workflow before photo uploads will work there; the Next.js body-size option cannot override a host limit.
-9. **Schedule queue recovery.** Generate a random `CRON_SECRET`. Configure your host's scheduler to call `GET /api/cron/verify` every minute with `Authorization: Bearer YOUR_CRON_SECRET`. This handles submissions interrupted after upload and recovers expired worker leases. Each invocation processes at most two photos concurrently. Normal submissions start verification immediately in their server action. Supabase scheduled triggers are not configured automatically.
+8. **Deploy to Hostinger.** Use a Hostinger Business/Cloud Node.js plan or a VPS—not static-only or WordPress-only hosting. Confirm it supports Node 24, Next.js server actions, native `sharp`, at least 10 MB request bodies, 60-second requests, encrypted environment variables, HTTPS, and a scheduler. Connect the repository, select Node 24, build with `npm ci && npm run build`, and start with `npm start`. Vercel is not suitable for this upload implementation without a direct-to-storage redesign because Vercel Functions limit request bodies to 4.5 MB while this app accepts photos up to 8 MB.
+9. **Attach the domain and schedule queue recovery.** Add the domain in Hostinger, use its provided DNS records, and wait for HTTPS. Set `APP_URL=https://YOUR_DOMAIN`, then set Supabase's Site URL and add `https://YOUR_DOMAIN/auth/callback`. Configure Hostinger's scheduler, or another trusted scheduler, to call `GET https://YOUR_DOMAIN/api/cron/verify` every minute with `Authorization: Bearer YOUR_CRON_SECRET`. This handles submissions interrupted after upload and recovers expired worker leases. Each invocation processes at most two photos concurrently.
 10. **Run the live acceptance test below.** Then decide the support contact, photo retention period, deletion process, and final privacy terms currently marked unfinished on `/guidelines` before opening real signups.
 
 ## Product rules implemented
 
 | Area                   | Beta behavior                                                                        |
 | ---------------------- | ------------------------------------------------------------------------------------ |
-| Access                 | Verified `@illinois.edu` email; Google or email-link sign-in                         |
+| Access                 | Verified `@illinois.edu` email; email-link verified; Microsoft OAuth is planned      |
 | Profiles               | Display name, bio, all-time score public to everyone; email private                  |
 | Organizers             | Explicit platform-admin email approval, including before signup                      |
 | Groups                 | Open join, expiring invite link/code, or organization request + organizer approval   |
@@ -89,12 +107,13 @@ iOS app, video processing, cosmetics, payments, public media feed, friend graph,
 5. Trigger a Gemini failure and uncertain verdict, and resolve through the admin panel. Confirm a stale worker cannot override a manual verdict.
 6. Exercise decline, expiry, approval cooldown, invite expiry, organization verification, and member approval. Changing a phone's time must not grant a replacement or allow an expired submission.
 7. Confirm profiles/leaderboards are visible while signed out, but private proof/email tables and server-only functions are inaccessible.
-8. Test iPhone Safari camera/library formats, email-link/Google redirects, image size limits, and the production host's request timeout/body limits.
+8. Test iPhone Safari camera/library formats, email-link redirects, image size limits, and the production host's request timeout/body limits.
 
 ## References
 
 - [Supabase server-side auth](https://supabase.com/docs/guides/auth/server-side/creating-a-client?queryGroups=framework&framework=nextjs)
-- [Supabase Google sign-in](https://supabase.com/docs/guides/auth/social-login/auth-google)
+- [Supabase Azure/Microsoft sign-in](https://supabase.com/docs/guides/auth/social-login/auth-azure)
+- [Supabase redirect URLs](https://supabase.com/docs/guides/auth/redirect-urls)
 - [Supabase row-level security](https://supabase.com/docs/guides/database/postgres/row-level-security)
 - [Gemini image understanding](https://ai.google.dev/gemini-api/docs/image-understanding)
 - [Gemini structured outputs](https://ai.google.dev/gemini-api/docs/structured-output)
