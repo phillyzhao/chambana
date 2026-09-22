@@ -3,8 +3,14 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
-  // These endpoints authenticate independently and never refresh user cookies.
-  if (request.nextUrl.pathname.startsWith("/api/")) return response;
+  // The cron/health routes authenticate independently. Most importantly, the
+  // OAuth callback must be the sole writer of Supabase's PKCE/session cookies.
+  // Running a refresh here as well can mix cookie chunks behind a CDN.
+  if (
+    request.nextUrl.pathname.startsWith("/api/") ||
+    request.nextUrl.pathname.startsWith("/auth/")
+  )
+    return response;
   if (
     !process.env.NEXT_PUBLIC_SUPABASE_URL ||
     !process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY
