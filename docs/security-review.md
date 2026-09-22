@@ -10,7 +10,7 @@ Code/permissions review with automated checks, not an independent penetration te
 | Concurrent count-limit bypass | Per-account transaction locks before group locks for submission/join/create/report/invite RPCs | SQL tests; hosted role flow; load testing remains |
 | CPU spent decoding unauthorized uploads | Reserve authorized submission first; actual format, animation and pixel checks | Image tests/code review |
 | Unnecessary anonymous definer helpers | Separate anon/authenticated catalog policies; revoke anonymous helper execution | Migration 004, hosted public catalog test, advisor rerun |
-| Wrong OAuth provider/host-derived redirects | Azure email scope, feature flag, canonical APP_URL, safe next path | Auth/path tests, owner-confirmed Microsoft login |
+| Wrong OAuth provider/host-derived redirects | Azure email scope, feature flag, canonical APP_URL, safe next path | Auth/path tests, local callback confirmed; production callback 500 remains open |
 | Missing application rate limits | Service-only fixed-window counters with HMAC subjects | SQL tests; no raw emails in counters |
 | Incomplete/blocked AI output could be parsed | Reject non-STOP/blocked responses | Mocked regression tests |
 | Scheduler unaware of worker failures | Cron returns 503; bounded batch and safe events | Auth/success/error cron tests |
@@ -26,7 +26,8 @@ Supabase advisors after migration 004 reported no ERROR findings. Remaining WARN
 ## Remaining risks / launch gates
 
 - Another-user campus consent, personal-account rejection and production callbacks still require testing. Do not loosen tenant scope to bypass restrictions.
-- Google 2.5 was unavailable for the configured project. Flash 3.6 passed four synthetic contract cases across runs, but also returned 503/429 before targeted retries. Representative-photo evaluation, quota and cost controls remain necessary.
+- Google 2.5 was unavailable for the configured project. Flash 3.6 passed only synthetic API-contract cases across runs, but also returned 503/429 before targeted retries. No real photo recognition, supervision/oversight, safety moderation, or representative-photo evaluation has been performed; quota and cost controls remain necessary.
+- Production Microsoft login still returns HTTP 500 after the real authorization code reaches `/auth/callback`. Hostinger logs show repeated Supabase SSR invalid chunked-cookie JSON warnings. Commit `9bde9cb` attempts to make the callback the sole Supabase cookie writer, but production verification is still required.
 - App counters do not protect the hosting edge, email provider or every direct Supabase endpoint. Configure Auth limits/SMTP and edge controls.
 - No full concurrency/load test, external penetration test or production mobile upload test performed.
 - Retention, account deletion, orphan cleanup, support policy, broad suspension/takedown, backups/restore and incident ownership need operational completion. A proof_deleted_at column is not a deletion service.

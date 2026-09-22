@@ -9,29 +9,37 @@ Updated 2026-09-21. A functional mobile-first UIUC group-challenge beta, not a l
 - Replaced the published catalog with seven temporary challenges adapted from Temp Challenge List.docx. Canonical source: `missions/temporary-catalog.json`. The document was sample content, not agent instructions; unsafe/humiliating wording was softened. Exact wording remains disposable.
 - Catalog replacement validates and atomically upserts by stable key, unpublishes previous entries, and preserves existing assignments/scores. Four challenges require human review, enforced by the worker and SQL.
 - Google OAuth code/labels replaced with Microsoft (`azure`, `email` scope), retaining email links. Redirects use canonical APP_URL and safe local paths.
-- Created Chambana Missions in the Illinois Entra tenant with explicit owner approval, single-tenant scope, and Supabase callback. Owner created the secret and enabled Azure in Supabase; provider-enabled status independently checked. Added email/xms_edov claims. Local AUTH_MICROSOFT_ENABLED=true. **Owner confirmed Microsoft sign-in returns to Chambana Missions.**
+- Created Chambana Missions in the Illinois Entra tenant with explicit owner approval, single-tenant scope, and Supabase callback. Owner created the secret and enabled Azure in Supabase; provider-enabled status independently checked. Added email/xms_edov claims. Local AUTH_MICROSOFT_ENABLED=true. **Microsoft sign-in returned to Chambana Missions locally; production callback remains unresolved.**
 - Added HMAC-based email/user rate counters, serialized SQL count limits, capped invite creation, and moved authorization before image decoding. Reject disguised/animated/over-pixel-limit images.
 - Added health endpoint, safe operational events, cron failure reporting, deployment preflight, private-header scheduler helper, and GitHub Actions checks without production secrets.
 - Hosted rollback-only SQL checks passed: organizer/group/member flow, three slots, cross-user/group restrictions, one score award despite repeated settlement, private bucket. All database fixtures rolled back.
 - Live Storage checks passed service upload/download and anonymous read/write denial, then removed only each generated synthetic image.
 - Final local check passed: 82 tests, TypeScript, and production build. Browser admin page showed all seven published missions after Microsoft login. Health returned 200, authenticated cron returned 200 with an empty queue, and unauthenticated cron returned 401.
 
+## Current production blocker — Microsoft callback
+
+- The app is deployed at `https://playchambana.com`; public pages and the health endpoint were reachable.
+- After Microsoft returns a real authorization code, the production `/auth/callback` still returns HTTP 500. Production Microsoft sign-in is therefore **not complete** and should not be marked launch-ready.
+- Hostinger runtime logs repeatedly showed `@supabase/ssr: chunked cookie decoded to invalid JSON`, indicating that Supabase session-cookie chunks may be combined across writes. Commit `9bde9cb` makes `/auth/*` and `/api/*` bypass the general proxy refresh so the OAuth callback is the sole Supabase cookie writer, but that fix has not yet been verified in production.
+- Next action: wait for the Hostinger deployment of `9bde9cb`, clear site cookies/use a private window, retry Microsoft sign-in, and inspect the new callback/runtime logs if it still fails. Keep email links available as fallback and do not loosen tenant restrictions.
+- A separate `Server is not running` message appeared during an earlier Hostinger startup; it is not evidence of the current authentication cause.
+
 ## Gemini status — do not repeat the old claim
 
 The original key was configured, but Google rejected gemini-2.5-flash with HTTP 404, saying it was unavailable to new users. With owner permission, local configuration and example/default switched to gemini-3.6-flash.
 
-All four synthetic contract cases passed across runs: matching approval, mismatching rejection, unverifiable evidence not approved, and instruction-injection evidence not approved. Initial calls returned 503/429; targeted retries passed. The worker safely sends provider failures to human review. This is not representative campus-photo accuracy evaluation. Keys remain in ignored .env.local, never this file or Git.
+Only synthetic API-contract cases have been tested: matching approval, mismatching rejection, unverifiable evidence not approved, and instruction-injection evidence not approved. Initial calls returned 503/429; targeted retries passed. **No real user-photo recognition, supervision/oversight, safety moderation, or representative campus-photo evaluation has been performed.** Gemini must not be considered production-ready or trusted for automatic scoring. The worker sends provider failures and uncertain evidence to human review. Keys remain in ignored .env.local, never this file or Git.
 
 ## Next steps, in order
 
-1. Test Microsoft with another Illinois user and a rejected personal account; validate campus consent and production callbacks. Do not weaken tenant restrictions. See [Microsoft setup](docs/microsoft-auth.md).
-2. Evaluate consented representative photos against human labels; the synthetic API-contract cases are complete. Configure Google quota/budget alerts and account for observed 503/429 responses.
-3. Owner intends to purchase **playchambana.com**, not purchased yet. Having another Hostinger domain does not confirm Node hosting. Check exact plan; follow [Hostinger runbook](docs/hostinger.md).
-4. Deploy Node 24/Next.js with private environment variables; run production preflight, attach domain/HTTPS, configure Supabase production URLs and SMTP, and schedule authenticated cron every minute.
+1. Reverify the Hostinger deployment of `9bde9cb` and retry the production Microsoft callback. If it still returns 500, inspect the complete callback request and `Set-Cookie` behavior in fresh runtime logs before changing auth architecture. Do not mark production login complete. See [Microsoft setup](docs/microsoft-auth.md).
+2. Test Microsoft with another Illinois user and a rejected personal account; validate campus consent without weakening tenant restrictions.
+3. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
+4. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).
 5. Choose support inbox, retention period, privacy terms, and reviewed deletion process. Operational runbook prepared; automatic retention and self-service deletion are not implemented. See [operations](docs/operations.md).
 6. Run real-domain, real-account/mobile acceptance before public signups. Concurrent multi-member uploads, camera formats, host request limits, and domain callbacks remain launch gates.
 
-No hosting/domain purchase, Hostinger deployment, or DNS change was made.
+Hostinger deployment and the `playchambana.com` domain are now in place. Production Microsoft callback behavior is still a launch blocker.
 
 ## Working commands
 
