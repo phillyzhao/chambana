@@ -1,5 +1,6 @@
 import { cache } from "react";
 import { database, isConfigured } from "./supabase";
+import temporaryCatalog from "../../missions/temporary-catalog.json";
 
 export type Group = {
   id: string;
@@ -22,6 +23,7 @@ export type Assignment = {
   expires_at: string;
   available_at: string;
   assigned_at: string;
+  manual_review?: boolean;
 };
 export type Profile = {
   id: string;
@@ -124,30 +126,9 @@ export const demoGroups: Group[] = [
   },
 ];
 export function demoAssignments(): Assignment[] {
-  return [
-    {
-      title: "Meet your campus mascot",
-      instructions:
-        "Spot a squirrel on campus and take a photo from a respectful distance. Let it carry on with its day — no feeding or approaching.",
-      proof_criteria: "A squirrel clearly visible in an outdoor setting.",
-      nuts: 30,
-    },
-    {
-      title: "A new view of the Quad",
-      instructions:
-        "Find a spot on the Main Quad you do not usually stop at. Take a photo of the view, with a recognizable campus building in the frame.",
-      proof_criteria: "An outdoor campus view with a recognizable building.",
-      nuts: 20,
-    },
-    {
-      title: "Find a little local color",
-      instructions:
-        "Explore a public walkway and photograph an outdoor mural. Stay on public paths and respect the artist and the space.",
-      proof_criteria: "An outdoor mural clearly visible in its surroundings.",
-      nuts: 40,
-    },
-  ].map((m, i) => ({
+  return temporaryCatalog.slice(0, 3).map((m, i) => ({
     ...m,
+    proof_criteria: m.proof,
     id: `demo-${i}`,
     group_id: "demo-quad",
     slot: i + 1,

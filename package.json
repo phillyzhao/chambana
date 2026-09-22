@@ -10,6 +10,10 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "missions:import": "node --env-file-if-exists=.env.local scripts/import-missions.mjs",
+    "missions:replace": "node --env-file-if-exists=.env.local scripts/replace-catalog.mjs",
+    "preflight": "node --env-file-if-exists=.env.local scripts/preflight.mjs",
+    "cron:verify": "node --env-file-if-exists=.env.local scripts/cron-verify.mjs",
+    "test:live": "node --env-file-if-exists=.env.local node_modules/vitest/vitest.mjs run --config vitest.live.config.ts",
     "check": "npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
@@ -33,6 +37,6 @@
     "vitest": "^5.0.1"
   },
   "engines": {
-    "node": ">=22.12.0"
+    "node": ">=24.0.0"
   }
 }

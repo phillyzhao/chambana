@@ -1,4 +1,5 @@
 import { serviceDatabase } from "./supabase";
+import { operationalEvent } from "./observability";
 import {
   effectiveDecision,
   PROHIBITED,
@@ -18,7 +19,7 @@ export async function checkPhoto(
       reason:
         "Automatic photo review is not configured. A Chambana admin will review this photo.",
     };
-  const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
+  const model = process.env.GEMINI_MODEL || "gemini-3.6-flash";
   if (!/^[a-zA-Z0-9._-]+$/.test(model))
     throw new Error("Invalid model configuration.");
   const response = await fetch(
@@ -77,10 +78,18 @@ export async function checkPhoto(
       }),
     },
   );
-  if (!response.ok)
+  if (!response.ok) {
+    operationalEvent(`photo_provider_http_${response.status}`);
     throw new Error("Photo review provider is temporarily unavailable.");
+  }
   const body = await response.json();
-  const text = body.candidates?.[0]?.content?.parts
+  const candidate = body.candidates?.[0];
+  if (
+    body.promptFeedback?.blockReason ||
+    (candidate?.finishReason && candidate.finishReason !== "STOP")
+  )
+    throw new Error("Photo review returned no complete verdict.");
+  const text = candidate?.content?.parts
     ?.filter((p: { text?: string; thought?: boolean }) => p.text && !p.thought)
     .map((p: { text: string }) => p.text)
     .join("");
@@ -100,17 +109,26 @@ export async function verifySubmission(id: string) {
       db.storage.from("mission-proof").download(submission.storage_path),
       db
         .from("assignments")
-        .select("title,proof_criteria")
+        .select("title,proof_criteria,manual_review")
         .eq("id", submission.assignment_id)
         .single(),
     ]);
     if (photo.error || !photo.data || mission.error || !mission.data)
       throw new Error("Missing photo or mission.");
-    verdict = await checkPhoto(
-      Buffer.from(await photo.data.arrayBuffer()),
-      mission.data,
-    );
+    verdict = mission.data.manual_review
+      ? {
+          decision: "needs_review",
+          confidence: 0,
+          unsafe: false,
+          reason:
+            "This mission requires an admin review; a photo cannot establish all of its criteria.",
+        }
+      : await checkPhoto(
+          Buffer.from(await photo.data.arrayBuffer()),
+          mission.data,
+        );
   } catch {
+    operationalEvent("photo_review_needs_human", id);
     verdict = {
       decision: "needs_review",
       confidence: 0,

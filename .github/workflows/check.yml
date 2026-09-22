@@ -1,10 +1,13 @@
-name: Check beta
+name: Application checks
 on:
   push:
   pull_request:
+permissions:
+  contents: read
 jobs:
   check:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -13,3 +16,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run check
+      # Deliberately no production secrets, live API calls, or database writes.

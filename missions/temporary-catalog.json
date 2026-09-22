@@ -1,0 +1,65 @@
+[
+  {
+    "key": "temp-squirrel-time",
+    "title": "A squirrel at 12:30",
+    "category": "Squirrel spotting",
+    "nuts": 20,
+    "instructions": "Try spotting a squirrel at 12:30 pm. Photograph it from a distance without feeding or approaching it. This timed challenge needs an admin review; the photo itself does not prove the time.",
+    "proof": "A squirrel visible outdoors. Do not infer a capture time from the photo or its text. An admin must decide whether there is enough evidence for this timed challenge.",
+    "manual_review": true
+  },
+  {
+    "key": "temp-squirrel-tree",
+    "title": "Find a squirrel in a tree",
+    "category": "Squirrel spotting",
+    "nuts": 20,
+    "instructions": "Look for a squirrel sitting in a tree and take a photo from a public path. Do not approach, feed, chase, touch, or lure wildlife.",
+    "proof": "A squirrel clearly visible sitting on a tree trunk or branch outdoors.",
+    "manual_review": false
+  },
+  {
+    "key": "temp-squirrel-pair",
+    "title": "Two squirrels, one frame",
+    "category": "Squirrel spotting",
+    "nuts": 30,
+    "instructions": "Photograph two squirrels together in one frame from a respectful distance. Let them come together naturally; no feeding, chasing, touching, or arranging the animals.",
+    "proof": "At least two distinct squirrels clearly visible together in one unedited outdoor photo, not a collage.",
+    "manual_review": false
+  },
+  {
+    "key": "temp-food-order",
+    "title": "Try a campus snack",
+    "category": "Around town",
+    "nuts": 20,
+    "instructions": "Choose a snack and photograph it. A snack you already have is fine; no purchase is required. Be courteous to staff and keep strangers and payment details out of the photo.",
+    "proof": "A recognizable snack or prepared food item clearly visible in a single photo. Do not infer where or how it was obtained.",
+    "manual_review": false
+  },
+  {
+    "key": "temp-five-hellos",
+    "title": "Five friendly hellos",
+    "category": "Campus discoveries",
+    "nuts": 30,
+    "instructions": "Say hello to five willing people. Handshakes are optional; respect anyone who declines. Submit a photo only with participants' permission. An admin reviews this challenge because a single photo cannot prove five separate greetings.",
+    "proof": "A consensual group or greeting photo. Do not infer five interactions, stranger status, consent, or identities from appearances. An admin must review the claimed activity.",
+    "manual_review": true
+  },
+  {
+    "key": "temp-bathrobe",
+    "title": "Campus bathrobe style",
+    "category": "Campus discoveries",
+    "nuts": 20,
+    "instructions": "Take a playful photo wearing a bathrobe over normal clothing in a permitted campus space. Joining class in it is optional and subject to the instructor's rules. Avoid disrupting classes or photographing bystanders.",
+    "proof": "A person visibly wearing a bathrobe over normal clothing. A photo cannot prove class attendance or permission; an admin reviews the evidence.",
+    "manual_review": true
+  },
+  {
+    "key": "temp-quad-movement",
+    "title": "A movement break on the Quad",
+    "category": "Campus discoveries",
+    "nuts": 20,
+    "instructions": "Take a gentle stretch or movement break on an open grassy area. Skip somersaults or any movement that feels unsafe. Submit a photo with participants' permission; no athletic ability is required.",
+    "proof": "A person visibly stretching or taking a movement break on grass. Do not infer a sequence, number of repetitions, or exact campus location. An admin reviews this activity.",
+    "manual_review": true
+  }
+]

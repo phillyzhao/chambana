@@ -1,7 +1,6 @@
 "use server";
 
 import { randomUUID, createHash } from "node:crypto";
-import sharp from "sharp";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -14,6 +13,10 @@ import {
 } from "@/lib/rules";
 import { verifySubmission } from "@/lib/verification";
 import { safePath, withNotice } from "@/lib/paths";
+import { appOrigin, microsoftEnabled, microsoftOptions } from "@/lib/auth";
+import { allowRequest } from "@/lib/rate-limit";
+import { normalizePhoto } from "@/lib/photos";
+import { operationalEvent } from "@/lib/observability";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
 const uuid = (form: FormData, key: string) =>
@@ -28,24 +31,31 @@ function message(error: unknown) {
 export async function signIn(form: FormData) {
   if (!isConfigured()) redirect("/login?error=The+beta+is+not+connected+yet.");
   const db = await database();
-  const origin = process.env.APP_URL || "http://localhost:3000";
+  const origin = appOrigin();
   const next = safePath(value(form, "next") || "/missions");
-  if (value(form, "method") === "google") {
-    const { data, error } = await db.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
-        queryParams: { hd: "illinois.edu", prompt: "select_account" },
-      },
-    });
+  if (value(form, "method") === "microsoft") {
+    if (!microsoftEnabled())
+      redirect(
+        "/login?error=Microsoft+sign-in+is+not+available.+Use+an+email+link.",
+      );
+    const { data, error } = await db.auth.signInWithOAuth(
+      microsoftOptions(next),
+    );
     if (error || !data.url)
       redirect(
-        "/login?error=Google+sign-in+is+not+available.+Try+your+campus+email.",
+        "/login?error=Microsoft+sign-in+is+not+available.+Try+your+campus+email.",
       );
     redirect(data.url);
   }
   const email = campusEmail.safeParse(value(form, "email"));
   if (!email.success) redirect("/login?error=Use+your+%40illinois.edu+email.");
+  if (
+    !(await allowRequest("email", email.data, 3, 300)) ||
+    !(await allowRequest("email-global", "all", 30, 60))
+  )
+    redirect(
+      "/login?error=Please+wait+a+few+minutes+before+requesting+another+link.",
+    );
   const { error } = await db.auth.signInWithOtp({
     email: email.data,
     options: {
@@ -79,6 +89,8 @@ export async function mutate(form: FormData) {
       !campusEmail.safeParse(user.email).success
     )
       throw new Error("Sign in with a verified @illinois.edu email first.");
+    if (!(await allowRequest("mutation", user.id, 60, 60)))
+      throw new Error("Too many requests. Please wait a minute and try again.");
     const rpc = async (name: string, params: Record<string, unknown> = {}) => {
       const { data, error } = await db.rpc(name, params);
       if (error) throw new Error(error.message);
@@ -176,19 +188,6 @@ export async function mutate(form: FormData) {
           throw new Error(
             "Use a JPG, PNG, or WebP photo. Convert HEIC photos to JPG first.",
           );
-        const source = Buffer.from(await file.arrayBuffer());
-        let image: Buffer;
-        try {
-          image = await sharp(source, { limitInputPixels: 25000000 })
-            .rotate()
-            .resize(1600, 1600, { fit: "inside", withoutEnlargement: true })
-            .jpeg({ quality: 85 })
-            .toBuffer();
-        } catch {
-          throw new Error(
-            "That image could not be read. Choose a valid JPG, PNG, or WebP photo.",
-          );
-        }
         const id = randomUUID();
         const assignment = uuid(form, "assignment_id");
         const service = serviceDatabase();
@@ -197,6 +196,10 @@ export async function mutate(form: FormData) {
           p_submission: id,
         });
         try {
+          // Reserve/authorize first, before spending CPU decoding arbitrary bytes.
+          const image = await normalizePhoto(
+            Buffer.from(await file.arrayBuffer()),
+          );
           const upload = await service.storage
             .from("mission-proof")
             .upload(path, image, { contentType: "image/jpeg", upsert: false });
@@ -207,6 +210,7 @@ export async function mutate(form: FormData) {
           });
           if (finish.error) throw finish.error;
         } catch {
+          operationalEvent("photo_upload_failed", id);
           await service.rpc("fail_upload", { p_submission: id });
           await service.storage.from("mission-proof").remove([path]);
           throw new Error(
@@ -216,6 +220,7 @@ export async function mutate(form: FormData) {
         try {
           await verifySubmission(id);
         } catch {
+          operationalEvent("verification_deferred", id);
           /* Durable queue remains pending/leased for the cron worker. */
         }
         notice = "Photo submitted. See your review status below.";
@@ -251,6 +256,7 @@ export async function mutate(form: FormData) {
           p_proof: value(form, "proof_criteria"),
           p_nuts: Number(value(form, "nuts")),
           p_published: value(form, "published") === "on",
+          p_manual_review: value(form, "manual_review") === "on",
         });
         break;
       case "review":

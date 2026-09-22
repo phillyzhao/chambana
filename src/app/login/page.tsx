@@ -2,6 +2,7 @@ import { signIn } from "@/app/actions";
 import { Notice, PageIntro } from "@/components/ui";
 import { isConfigured } from "@/lib/supabase";
 import Link from "next/link";
+import { microsoftEnabled } from "@/lib/auth";
 export default async function Login({
   searchParams,
 }: {
@@ -23,14 +24,22 @@ export default async function Login({
         </p>
       )}
       <section className="panel">
-        <form action={signIn}>
-          <input name="method" type="hidden" value="google" />
-          <input name="next" type="hidden" value={params.next || "/missions"} />
-          <button className="button full" disabled={!configured}>
-            Continue with Google
-          </button>
-        </form>
-        <div className="divider">or use your campus inbox</div>
+        {microsoftEnabled() && (
+          <>
+            <form action={signIn}>
+              <input name="method" type="hidden" value="microsoft" />
+              <input
+                name="next"
+                type="hidden"
+                value={params.next || "/missions"}
+              />
+              <button className="button full" disabled={!configured}>
+                Continue with Microsoft
+              </button>
+            </form>
+            <div className="divider">or use your campus inbox</div>
+          </>
+        )}
         <form action={signIn}>
           <input name="next" type="hidden" value={params.next || "/missions"} />
           <label>
@@ -48,8 +57,8 @@ export default async function Login({
           </button>
         </form>
         <p className="footnote">
-          Use the email link if your Illinois account does not support Google
-          sign-in. A personal Gmail account cannot join.
+          Use your Illinois inbox. Personal Outlook and Gmail accounts cannot
+          join.
         </p>
       </section>
       <p className="footnote">

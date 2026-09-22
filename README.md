@@ -7,11 +7,13 @@ A mobile-first Next.js + TypeScript website with a Supabase/Postgres backend and
 - A clearly labeled design preview works without credentials. Sample groups, missions, and scores are illustrative; preview mode cannot create accounts or award real points.
 - The real application has campus authentication, public profiles, group discovery, invitation codes/links, organization approval, shared missions, photo submission, scoring, and platform administration.
 - The real Supabase project is connected. The migrations have been applied, Illinois email-link sign-in has been verified, and the first platform admin has created accounts and approved organizers.
-- Gemini 2.5 Flash is configured locally through `.env.local`. It still needs controlled end-to-end photo-verification testing before it is relied on for automatic scoring.
+- Seven temporary challenges are published; four require human review enforced in SQL. Catalog replacement preserves existing assignments and scores.
+- Microsoft sign-in is implemented, the Illinois Entra registration and Supabase provider are configured, and the owner confirmed the local login returns to Chambana Missions.
+- Google rejected the configured Gemini 2.5 Flash model. With owner approval, local configuration now uses Flash 3.6. All four synthetic contract cases passed across runs after 503/429 failures and targeted retries; representative real-photo evaluation remains outstanding.
 
 ## Run locally
 
-Use Node 24 LTS (`.nvmrc`). The installed Supabase client requires Node 22 or newer.
+Use Node 24 (`.nvmrc`), installed directly or through nvm. Homebrew is not required; Supabase runs with `npx`.
 
 ```sh
 nvm install
@@ -26,15 +28,15 @@ Open http://localhost:3000. For checks: `npm run check`. Tests use PGlite (real 
 
 The Supabase connection, local environment variables, email-link sign-in, first platform admin, and organizer approval workflow have been verified. The remaining path to a live beta is:
 
-1. Test Gemini against controlled photos.
-2. Import and publish missions.
+1. Finish Gemini live/representative-photo evaluation and multi-account Microsoft acceptance.
+2. Review the seven published temporary missions; catalog replacement is complete.
 3. Deploy to Hostinger and attach the production domain.
 4. Configure production redirects and queue recovery.
 5. Run the full live acceptance test before opening signups.
 
 ## Finish connecting the real beta
 
-1. **Keep the Supabase schema under migrations.** The hosted database already has both files in `supabase/migrations/` applied. For future schema changes, create a new migration and use the project-local CLI:
+1. **Keep the Supabase schema under migrations.** The hosted database has migrations `001`–`004` applied. For future schema changes, create a new migration and use the project-local CLI:
 
    ```sh
    npx supabase db push --dry-run
@@ -44,7 +46,7 @@ The Supabase connection, local environment variables, email-link sign-in, first 
    Do not apply these migrations to an unrelated existing project: they explicitly manage public-schema permissions.
 2. **Keep environment variables private.** `.env.local` contains the project URL, publishable key, server-only service-role key, Gemini API key, and local `APP_URL`. Never paste private keys into chat or commit this file. Configure the same variables as encrypted values at the production host.
 3. **Use email-link sign-in for the currently verified path.** Email-link authentication is working with verified `@illinois.edu` accounts. Add `http://localhost:3000/auth/callback` and the eventual production `https://YOUR_DOMAIN/auth/callback` in Supabase Authentication → URL Configuration; set the Site URL to the relevant environment's canonical origin.
-4. **Treat Microsoft/Outlook OAuth as a follow-up implementation.** Illinois accounts are Microsoft/Outlook-hosted, but the current login UI and server action still call Google OAuth. Before enabling a social provider, update the application to use Supabase's `azure` provider, request the `email` scope, and configure the Azure application with Supabase's exact callback URL. Do not enable Google solely because of older documentation in this repository.
+4. **Microsoft is configured locally.** The application uses `azure` with the `email` scope. The single-tenant Illinois registration exists, Supabase Azure is enabled, and the owner verified the callback. Local `AUTH_MICROSOFT_ENABLED=true`; the example defaults off for unconfigured environments. Follow [Microsoft setup](docs/microsoft-auth.md) for another environment and keep email links available.
 5. **Bootstrap a platform admin.** This is already complete for the initial admin. To add another admin, run this in Supabase's SQL Editor with their lowercase Illinois email:
 
    ```sql
@@ -55,17 +57,17 @@ The Supabase connection, local environment variables, email-link sign-in, first 
 
    The email must be lowercase. Sign in with that account and open `/admin`. Select registered campus emails to approve organizers, or preapprove an email before its signup. Platform admin access is managed in the database; organizer approval never grants platform admin access.
 
-6. **Test Gemini.** Gemini 2.5 Flash is configured locally through `GEMINI_API_KEY` and `GEMINI_MODEL=gemini-2.5-flash`. Test matching, non-matching, ambiguous, unsafe, malformed, and failed responses with controlled photos. Uncertain evidence, safety concerns, malformed responses, and API failures route to admin review; they never auto-award points.
-7. **Load your mission catalog.** Use `missions/mission-catalog.example.txt` as the format. Run `npm run missions:import -- your-missions.txt` to validate without writing, then add `--write` when ready. Imports create drafts only. Review/publish them in `/admin`. No production missions are prepublished.
+6. **Test Gemini.** `GEMINI_MODEL=gemini-3.6-flash` replaces the unavailable 2.5 model. `npm run test:live` explicitly contacts real providers and consumes quota; regular `npm test` does not. Synthetic checks are not representative accuracy evaluation. Uncertain evidence, safety concerns, malformed/incomplete responses, and API failures go to admin review; they never auto-award points.
+7. **Maintain the temporary catalog.** `missions/temporary-catalog.json` contains seven published missions. `npm run missions:replace` validates without writing; add `--write` to atomically publish this list and unpublish prior entries. Existing assignments/points remain unchanged. Four entries require human review. The text importer still creates unpublished drafts for additional content, not replacement.
 8. **Deploy to Hostinger.** Use a Hostinger Business/Cloud Node.js plan or a VPS—not static-only or WordPress-only hosting. Confirm it supports Node 24, Next.js server actions, native `sharp`, at least 10 MB request bodies, 60-second requests, encrypted environment variables, HTTPS, and a scheduler. Connect the repository, select Node 24, build with `npm ci && npm run build`, and start with `npm start`. Vercel is not suitable for this upload implementation without a direct-to-storage redesign because Vercel Functions limit request bodies to 4.5 MB while this app accepts photos up to 8 MB.
 9. **Attach the domain and schedule queue recovery.** Add the domain in Hostinger, use its provided DNS records, and wait for HTTPS. Set `APP_URL=https://YOUR_DOMAIN`, then set Supabase's Site URL and add `https://YOUR_DOMAIN/auth/callback`. Configure Hostinger's scheduler, or another trusted scheduler, to call `GET https://YOUR_DOMAIN/api/cron/verify` every minute with `Authorization: Bearer YOUR_CRON_SECRET`. This handles submissions interrupted after upload and recovers expired worker leases. Each invocation processes at most two photos concurrently.
-10. **Run the live acceptance test below.** Then decide the support contact, photo retention period, deletion process, and final privacy terms currently marked unfinished on `/guidelines` before opening real signups.
+10. **Run the live acceptance test below.** Set a monitored `SUPPORT_EMAIL`, choose retention/deletion policies, and finalize privacy terms before public signups. See [Hostinger deployment](docs/hostinger.md), [operations](docs/operations.md), and [security review](docs/security-review.md). Target domain is `playchambana.com`; purchase, plan verification, deployment, and DNS remain outstanding.
 
 ## Product rules implemented
 
 | Area                   | Beta behavior                                                                        |
 | ---------------------- | ------------------------------------------------------------------------------------ |
-| Access                 | Verified `@illinois.edu` email; email-link verified; Microsoft OAuth is planned      |
+| Access                 | Verified `@illinois.edu` email; email links and owner Microsoft callback verified |
 | Profiles               | Display name, bio, all-time score public to everyone; email private                  |
 | Organizers             | Explicit platform-admin email approval, including before signup                      |
 | Groups                 | Open join, expiring invite link/code, or organization request + organizer approval   |

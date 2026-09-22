@@ -62,6 +62,7 @@ export default async function Admin({
     proof_criteria: "",
     nuts: 20,
     published: false,
+    manual_review: false,
   };
   return (
     <>
@@ -340,6 +341,15 @@ export default async function Admin({
                   defaultValue={m.nuts}
                   required
                 />
+              </label>
+              <label className="check-label">
+                <input
+                  type="checkbox"
+                  name="manual_review"
+                  defaultChecked={m.manual_review}
+                />
+                Always require an admin review (timing, counts, or actions a
+                photo cannot prove)
               </label>
               <label className="check-label">
                 <input

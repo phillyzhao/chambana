@@ -1,9 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { readFile } from "node:fs/promises";
 import { parseCatalog } from "../scripts/catalog.mjs";
+import { catalogSchema } from "../scripts/replace-catalog.mjs";
+import temporary from "../missions/temporary-catalog.json";
 const valid =
   "Title: Example mission\nCategory: Campus discoveries\nNuts: 20\nInstructions: Photograph outdoor campus art.\nProof: Outdoor artwork clearly visible.";
 describe("text mission catalog", () => {
+  it("validates all seven temporary challenges with explicit review modes", () => {
+    expect(catalogSchema.parse(temporary)).toHaveLength(7);
+    expect(temporary.filter((m) => m.manual_review)).toHaveLength(4);
+    expect(() => catalogSchema.parse([...temporary, temporary[0]])).toThrow();
+  });
   it("parses the supplied template with multiline instructions", async () => {
     const text = await readFile(
       new URL("../missions/mission-catalog.example.txt", import.meta.url),

@@ -1,5 +1,5 @@
 import { PGlite } from "@electric-sql/pglite";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { randomUUID } from "node:crypto";
 import {
   beforeAll,
@@ -60,21 +60,11 @@ beforeAll(async () => {
     grant execute on function auth.uid() to anon, authenticated, service_role;
     create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
   `);
-  await db.exec(
-    await readFile(
-      new URL("../supabase/migrations/202609210001_beta.sql", import.meta.url),
-      "utf8",
-    ),
-  );
-  await db.exec(
-    await readFile(
-      new URL(
-        "../supabase/migrations/202609210002_review_status.sql",
-        import.meta.url,
-      ),
-      "utf8",
-    ),
-  );
+  const migrations = new URL("../supabase/migrations/", import.meta.url);
+  for (const file of (await readdir(migrations))
+    .filter((f) => f.endsWith(".sql"))
+    .sort())
+    await db.exec(await readFile(new URL(file, migrations), "utf8"));
   for (const [id, email] of [
     [owner, "owner@illinois.edu"],
     [member, "member@illinois.edu"],
@@ -117,6 +107,128 @@ afterAll(async () => {
 });
 
 describe("authentication and permissions", () => {
+  it("serves published catalog anonymously without exposing authorization helpers", async () => {
+    await db.exec("set local role anon");
+    expect(
+      Number(await scalar("select count(*) from missions")),
+    ).toBeGreaterThan(0);
+    await denied("select is_admin()", [], /permission/);
+    await denied("select is_member($1)", [group], /permission/);
+  });
+  it("hides internal wrapper functions and request limits from clients", async () => {
+    await asUser(member);
+    await denied("select * from request_limits", [], /permission/);
+    await denied(
+      "select consume_request_limit($1,2,60)",
+      ["a".repeat(64)],
+      /permission/,
+    );
+    await denied(
+      "select begin_submission_internal($1,$2)",
+      [assignment, randomUUID()],
+      /permission/,
+    );
+    await denied("select replace_mission_catalog('[]')", [], /permission/);
+  });
+  it("enforces atomic rate counters and expires old windows", async () => {
+    await asService();
+    const key = "a".repeat(64);
+    expect(await scalar("select consume_request_limit($1,2,60)", [key])).toBe(
+      true,
+    );
+    expect(await scalar("select consume_request_limit($1,2,60)", [key])).toBe(
+      true,
+    );
+    expect(await scalar("select consume_request_limit($1,2,60)", [key])).toBe(
+      false,
+    );
+    await db.query(
+      "update request_limits set expires_at=now()-interval '1 second' where key=$1",
+      [key],
+    );
+    expect(await scalar("select consume_request_limit($1,2,60)", [key])).toBe(
+      true,
+    );
+  });
+  it("requires admin review even when an AI worker approves a manual assignment", async () => {
+    await asService();
+    await db.query("update assignments set manual_review=true where id=$1", [
+      assignment,
+    ]);
+    const id = await submit();
+    const lease = await scalar("select lease_token from claim_submission($1)", [
+      id,
+    ]);
+    expect(
+      await scalar(
+        "select settle_submission($1,'approved','Looks good',null,$2)",
+        [id, lease],
+      ),
+    ).toBe("needs_review");
+    expect(Number(await scalar("select count(*) from nut_transactions"))).toBe(
+      0,
+    );
+    await asUser(admin);
+    expect(
+      await scalar(
+        "select review_submission($1,true,'Human checked the activity')",
+        [id],
+      ),
+    ).toBe("approved");
+  });
+  it("replaces the catalog idempotently without rewriting in-flight missions", async () => {
+    const oldTitle = await scalar("select title from assignments where id=$1", [
+      assignment,
+    ]);
+    await asService();
+    const catalog = [
+      {
+        key: "test-catalog",
+        category: "Campus discoveries",
+        title: "New temporary mission",
+        instructions: "Test challenge instructions.",
+        proof: "Evidence for human review.",
+        nuts: 15,
+        manual_review: true,
+      },
+    ];
+    for (let i = 0; i < 2; i++)
+      expect(
+        await scalar("select replace_mission_catalog($1)", [
+          JSON.stringify(catalog),
+        ]),
+      ).toBe(1);
+    expect(
+      Number(await scalar("select count(*) from missions where published")),
+    ).toBe(1);
+    expect(
+      await scalar("select title from assignments where id=$1", [assignment]),
+    ).toBe(oldTitle);
+    await denied(
+      "select replace_mission_catalog($1)",
+      [
+        JSON.stringify([
+          ...catalog,
+          { ...catalog[0], key: "test-bad", category: "Missing" },
+        ]),
+      ],
+      /category/,
+    );
+    expect(
+      Number(await scalar("select count(*) from missions where published")),
+    ).toBe(1);
+    await db.query(
+      "update assignments set status='declined',available_at=now()-interval '1 second' where id=$1",
+      [assignment],
+    );
+    await asUser(member);
+    await db.query("select refresh_missions($1)", [group]);
+    expect(
+      await scalar(
+        "select manual_review from assignments where title='New temporary mission'",
+      ),
+    ).toBe(true);
+  });
   it("rejects non-campus accounts at the database boundary", async () => {
     await db.exec("reset role");
     await denied(

@@ -62,6 +62,9 @@ export function MissionCard({
       </div>
       <h2>{mission.title}</h2>
       <p>{mission.instructions}</p>
+      {mission.manual_review && (
+        <p className="footnote">An admin reviews proof for this mission.</p>
+      )}
       <div className="mission-meta">
         <span>
           <Clock3 size={14} />

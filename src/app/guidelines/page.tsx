@@ -1,6 +1,7 @@
 import { PageIntro } from "@/components/ui";
 import { PROHIBITED } from "@/lib/rules";
 export default function Guidelines() {
+  const support = process.env.SUPPORT_EMAIL;
   return (
     <div className="narrow">
       <PageIntro
@@ -33,9 +34,9 @@ export default function Guidelines() {
         <p>
           Your display name, bio, score, and group details are public, including
           to people who are not signed in. Your Illinois email and submission
-          photos are not public. Proof photos are accessible to you through
-          submission status and to platform reviewers through private viewing
-          links.
+          photos are not public. You can see your submission status and review
+          explanation. Platform reviewers can view proof through private,
+          short-lived links.
         </p>
         <h2>Beta data</h2>
         <p>
@@ -46,6 +47,13 @@ export default function Guidelines() {
           signups.
         </p>
         <h2>Something off?</h2>
+        {support && (
+          <p>
+            For support or a data/deletion request, contact{" "}
+            <a href={`mailto:${support}`}>{support}</a>. Do not email passwords,
+            API keys, or sensitive proof photos.
+          </p>
+        )}
         <p>
           Signed-in members can report public profiles or groups from their
           pages. Chambana admins review reports. This site is not affiliated

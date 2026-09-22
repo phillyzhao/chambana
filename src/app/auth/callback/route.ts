@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { database, isConfigured } from "@/lib/supabase";
 import { campusEmail } from "@/lib/rules";
 import { safePath } from "@/lib/paths";
+import { appOrigin } from "@/lib/auth";
 
 export async function GET(request: NextRequest) {
-  const origin = process.env.APP_URL || request.nextUrl.origin;
+  const origin = appOrigin();
   if (!isConfigured()) return NextResponse.redirect(new URL("/login", origin));
   const code = request.nextUrl.searchParams.get("code");
   const db = await database();
