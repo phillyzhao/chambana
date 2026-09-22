@@ -1,6 +1,6 @@
 # Chambana Missions — Handoff
 
-Updated 2026-09-21. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
+Updated 2026-09-22. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
 
 ## Completed and verified
 
@@ -18,10 +18,12 @@ Updated 2026-09-21. A functional mobile-first UIUC group-challenge beta, not a l
 
 ## Current production blocker — Microsoft callback
 
-- The app is deployed at `https://playchambana.com`; public pages and the health endpoint were reachable.
+- The app is deployed at `https://playchambana.com`; public pages and the health endpoint were reachable. Hostinger confirms `d4527fb` is the completed current deployment, so its included `9bde9cb` proxy change is live.
 - After Microsoft returns a real authorization code, the production `/auth/callback` still returns HTTP 500. Production Microsoft sign-in is therefore **not complete** and should not be marked launch-ready.
-- Hostinger runtime logs repeatedly showed `@supabase/ssr: chunked cookie decoded to invalid JSON`, indicating that Supabase session-cookie chunks may be combined across writes. Commit `9bde9cb` makes `/auth/*` and `/api/*` bypass the general proxy refresh so the OAuth callback is the sole Supabase cookie writer, but that fix has not yet been verified in production.
-- Next action: wait for the Hostinger deployment of `9bde9cb`, clear site cookies/use a private window, retry Microsoft sign-in, and inspect the new callback/runtime logs if it still fails. Keep email links available as fallback and do not loosen tenant restrictions.
+- The login request creates valid, unchunked Supabase PKCE verifier cookies. Requests with deliberately invalid authorization codes are handled with the intended redirect, rather than a 500. The browser-visible 500 was reproduced only after Microsoft supplied a real code.
+- Hostinger runtime logs still repeatedly show `@supabase/ssr: chunked cookie decoded to invalid JSON`, meaning a request is receiving mismatched Supabase cookie chunks. The library treats those cookies as absent. Commit `9bde9cb` makes `/auth/*` and `/api/*` bypass the general proxy refresh so the OAuth callback is the sole Supabase cookie writer; this did not resolve the live callback failure.
+- Hostinger also records `failed to get redirect response TypeError: fetch failed` from Next.js's Server Action redirect handling. Next.js catches that failure and falls back to a normal redirect; its logged timestamp has not been tied to the real Microsoft callback and it is not yet established as the 500 cause.
+- Next action: capture the complete runtime log around a fresh real Microsoft callback, including the underlying cause of any fetch failure and all callback response headers. In Hostinger Runtime Logs, use the three-dot menu → **Download logs** and provide the file if direct inspection remains unreliable. Compare the actual callback's `Set-Cookie` headers against a local successful flow before changing auth architecture. Keep email links available as fallback and do not loosen tenant restrictions.
 - A separate `Server is not running` message appeared during an earlier Hostinger startup; it is not evidence of the current authentication cause.
 
 ## Gemini status — do not repeat the old claim
@@ -32,7 +34,7 @@ Only synthetic API-contract cases have been tested: matching approval, mismatchi
 
 ## Next steps, in order
 
-1. Reverify the Hostinger deployment of `9bde9cb` and retry the production Microsoft callback. If it still returns 500, inspect the complete callback request and `Set-Cookie` behavior in fresh runtime logs before changing auth architecture. Do not mark production login complete. See [Microsoft setup](docs/microsoft-auth.md).
+1. Capture and inspect the complete Hostinger runtime log for a fresh production Microsoft callback. `d4527fb`/`9bde9cb` are confirmed deployed, but the callback still returns 500. Inspect its complete response and `Set-Cookie` behavior before changing auth architecture. Do not mark production login complete. See [Microsoft setup](docs/microsoft-auth.md).
 2. Test Microsoft with another Illinois user and a rejected personal account; validate campus consent without weakening tenant restrictions.
 3. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
 4. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).
