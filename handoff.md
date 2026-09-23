@@ -1,6 +1,6 @@
 # Chambana Missions — Handoff
 
-Updated 2026-09-22. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
+Updated 2026-09-23. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
 
 ## Completed and verified
 
@@ -26,6 +26,15 @@ Updated 2026-09-22. A functional mobile-first UIUC group-challenge beta, not a l
 - Next action: capture the complete runtime log around a fresh real Microsoft callback, including the underlying cause of any fetch failure and all callback response headers. In Hostinger Runtime Logs, use the three-dot menu → **Download logs** and provide the file if direct inspection remains unreliable. Compare the actual callback's `Set-Cookie` headers against a local successful flow before changing auth architecture. Keep email links available as fallback and do not loosen tenant restrictions.
 - A separate `Server is not running` message appeared during an earlier Hostinger startup; it is not evidence of the current authentication cause.
 
+### Local callback repair prepared September 23 — production retest required
+
+- Marcos reports email-link login working on iPhone, but Microsoft failing in desktop Chrome, Incognito, and iPhone Safari. This makes stale cookies on a single browser an inadequate explanation; it does not prove the exact callback failure stage.
+- Corrected an earlier hypothesis: Next.js 16.3.5 already merges `cookies()` writes into a returned Route Handler response. Returning a new redirect is not itself proof that cookies were lost. This callback also does not stream a React layout.
+- The callback now owns one explicit response and writes every Supabase cookie update and cache-prevention header directly to it. Cookie-write errors are no longer swallowed by the shared Server Component helper. Exceptions redirect safely to login; newly written partial/rejected session chunks are expired without clearing an existing session when an invalid link wrote no replacement session. Ineligible-user sign-out is scoped to the current session.
+- Added `auth_callback` diagnostics with a random request ID, failure stage, controlled outcome, HTTP error status when available, and outgoing cookie counts/byte lengths. `X-Auth-Callback-Id` links the browser response to logs. No cookie values, codes, emails, tokens, or raw exception messages are included in these diagnostics.
+- Node 24 `npm run check` passed: 91 tests, TypeScript, and production build. Nine new tests use the real installed Supabase SSR/auth libraries with simulated HTTP responses, covering small and large sessions, stale chunks, campus/confirmed-email restrictions, error cleanup, cookie-write exceptions, and safe redirects. They do not prove Hostinger or real Microsoft acceptance.
+- No package upgrades, provider changes, or production deployment were performed for this local repair. The experimental PKCE flow-ID feature remains disabled. Deploy the candidate through the existing GitHub/Hostinger workflow, then capture one fresh real Microsoft attempt using the procedure in [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
+
 ## Gemini status — do not repeat the old claim
 
 The original key was configured, but Google rejected gemini-2.5-flash with HTTP 404, saying it was unavailable to new users. With owner permission, local configuration and example/default switched to gemini-3.6-flash.
@@ -34,7 +43,7 @@ Only synthetic API-contract cases have been tested: matching approval, mismatchi
 
 ## Next steps, in order
 
-1. Capture and inspect the complete Hostinger runtime log for a fresh production Microsoft callback. `d4527fb`/`9bde9cb` are confirmed deployed, but the callback still returns 500. Inspect its complete response and `Set-Cookie` behavior before changing auth architecture. Do not mark production login complete. See [Microsoft setup](docs/microsoft-auth.md).
+1. Deploy the locally tested September 23 callback candidate, then capture a fresh real Microsoft callback and its `auth_callback` runtime events. The last confirmed deployed revision is `d4527fb`; the candidate has not been verified in production. If the app logs `response/success` but the browser still gets 500, inspect Hostinger's response/header handling using the logged cookie sizes. Do not mark production login complete until real sign-in works. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
 2. Test Microsoft with another Illinois user and a rejected personal account; validate campus consent without weakening tenant restrictions.
 3. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
 4. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).
