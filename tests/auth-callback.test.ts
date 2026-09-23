@@ -146,7 +146,15 @@ describe("production auth callback cookie transport", () => {
       const response = await GET(flow.request());
       expect(response.status).toBe(307);
       expect(response.headers.get("location")).toBe(`${origin}/missions`);
-      expect(decodeSession(response)).toMatchObject(session);
+      const stored = decodeSession(response);
+      expect(stored).toMatchObject({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+        token_type: session.token_type,
+        user: session.user,
+      });
+      expect(stored).not.toHaveProperty("provider_token");
+      expect(stored).not.toHaveProperty("provider_refresh_token");
       expect(response.cookies.get(`${sessionKey}.99`)?.maxAge).toBe(0);
       expect(response.cookies.has("unrelated")).toBe(false);
       expect(response.headers.get("cache-control")).toContain("no-store");
@@ -160,8 +168,37 @@ describe("production auth callback cookie transport", () => {
         response.cookies.getAll().length,
       );
       if (large) {
-        expect(response.cookies.get(`${sessionKey}.0`)?.value).toBeTruthy();
-        expect(response.cookies.get(sessionKey)?.maxAge).toBe(0);
+        const events = logger.mock.calls.map(([line]) =>
+          JSON.parse(String(line)),
+        );
+        const before = events.find(
+          ({ outcome }) => outcome === "success_before_compaction",
+        );
+        const after = events.find(({ stage }) => stage === "response");
+        expect(before.cookieBytes).toBeGreaterThan(8192);
+        expect(after.cookieBytes).toBeLessThan(4096);
+        expect(response.cookies.get(sessionKey)?.value).toBeTruthy();
+        // Large temporary chunks were never sent, and none survive the final
+        // response to shadow/corrupt the compact session on the next request.
+        expect(response.cookies.get(`${sessionKey}.0`)?.maxAge).toBe(0);
+
+        // Model the browser applying this response, then a fresh server-side
+        // client reading the next request. The compact cookies must still
+        // authenticate without the discarded Microsoft API credentials.
+        for (const { name, value, maxAge } of response.cookies.getAll()) {
+          if (maxAge === 0) flow.jar.delete(name);
+          else flow.jar.set(name, value);
+        }
+        const nextClient = createServerClient(supabaseUrl, "fixture-key", {
+          cookies: {
+            getAll: () =>
+              [...flow.jar].map(([name, value]) => ({ name, value })),
+            setAll: () => {},
+          },
+        });
+        const nextUser = await nextClient.auth.getUser();
+        expect(nextUser.error).toBeNull();
+        expect(nextUser.data.user?.id).toBe(session.user.id);
       }
       expect(JSON.stringify(logger.mock.calls)).not.toContain(secret);
       expect(JSON.stringify(logger.mock.calls)).not.toContain(

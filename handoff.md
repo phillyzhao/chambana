@@ -18,6 +18,11 @@ Updated 2026-09-23. A functional mobile-first UIUC group-challenge beta, not a l
 
 ## Current production blocker — Microsoft callback
 
+- September 23, 11:16:50 Chicago: after deploying `8442bc9` (repair `2107ccf`), a real Microsoft callback logged `response/success`, with **4 Set-Cookie headers totaling 8,771 bytes**, largest 3,296 bytes, but the user still saw HTTP 500. The code exchange and confirmed-campus-user validation completed. The chunk-decoding warnings were nonfatal for this attempt. This points to response delivery/hosting behavior; a proxy header limit is a strong hypothesis, not yet a confirmed Hostinger limit.
+- A follow-up reduces OAuth response size using Supabase's supported `setSession` API: re-save the same Supabase access/refresh tokens and server-validated user without unused Microsoft `provider_token`/`provider_refresh_token` values. No app feature uses those provider API credentials. SSR manages all replacement/deletion chunks. New `exchange/success_before_compaction` and final `response/success` metrics show before/after cookie sizes. Production acceptance remains required.
+
+Earlier investigation:
+
 - The app is deployed at `https://playchambana.com`; public pages and the health endpoint were reachable. Hostinger confirms `d4527fb` is the completed current deployment, so its included `9bde9cb` proxy change is live.
 - After Microsoft returns a real authorization code, the production `/auth/callback` still returns HTTP 500. Production Microsoft sign-in is therefore **not complete** and should not be marked launch-ready.
 - The login request creates valid, unchunked Supabase PKCE verifier cookies. Requests with deliberately invalid authorization codes are handled with the intended redirect, rather than a 500. The browser-visible 500 was reproduced only after Microsoft supplied a real code.
@@ -33,7 +38,7 @@ Updated 2026-09-23. A functional mobile-first UIUC group-challenge beta, not a l
 - The callback now owns one explicit response and writes every Supabase cookie update and cache-prevention header directly to it. Cookie-write errors are no longer swallowed by the shared Server Component helper. Exceptions redirect safely to login; newly written partial/rejected session chunks are expired without clearing an existing session when an invalid link wrote no replacement session. Ineligible-user sign-out is scoped to the current session.
 - Added `auth_callback` diagnostics with a random request ID, failure stage, controlled outcome, HTTP error status when available, and outgoing cookie counts/byte lengths. `X-Auth-Callback-Id` links the browser response to logs. No cookie values, codes, emails, tokens, or raw exception messages are included in these diagnostics.
 - Node 24 `npm run check` passed: 91 tests, TypeScript, and production build. Nine new tests use the real installed Supabase SSR/auth libraries with simulated HTTP responses, covering small and large sessions, stale chunks, campus/confirmed-email restrictions, error cleanup, cookie-write exceptions, and safe redirects. They do not prove Hostinger or real Microsoft acceptance.
-- No package upgrades, provider changes, or production deployment were performed for this local repair. The experimental PKCE flow-ID feature remains disabled. Deploy the candidate through the existing GitHub/Hostinger workflow, then capture one fresh real Microsoft attempt using the procedure in [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
+- The initial repair was pushed as `2107ccf` (merged on main at `8442bc9`) and the owner's fresh production logs confirm its diagnostics are live. The size-reduction follow-up still requires production acceptance. No package upgrades or provider changes were made; the experimental PKCE flow-ID feature remains disabled. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
 
 ## Gemini status — do not repeat the old claim
 
@@ -43,7 +48,7 @@ Only synthetic API-contract cases have been tested: matching approval, mismatchi
 
 ## Next steps, in order
 
-1. Deploy the locally tested September 23 callback candidate, then capture a fresh real Microsoft callback and its `auth_callback` runtime events. The last confirmed deployed revision is `d4527fb`; the candidate has not been verified in production. If the app logs `response/success` but the browser still gets 500, inspect Hostinger's response/header handling using the logged cookie sizes. Do not mark production login complete until real sign-in works. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
+1. Deploy the September 23 OAuth cookie-size reduction, then retry from the login page and compare `success_before_compaction` with final `response/success` cookie sizes. If a compact successful response still arrives as 500, collect the failed response's `x-hcdn-request-id` and ask Hostinger to trace response/header handling at that exact timestamp. Do not replay consumed callback codes or mark production login complete until real sign-in works. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
 2. Test Microsoft with another Illinois user and a rejected personal account; validate campus consent without weakening tenant restrictions.
 3. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
 4. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).

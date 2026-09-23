@@ -114,20 +114,37 @@ export async function GET(request: NextRequest) {
     );
     stage = "exchange";
     log("started");
-    const { error } = await db.auth.exchangeCodeForSession(code);
+    const { data, error } = await db.auth.exchangeCodeForSession(code);
     if (error) {
       log("failed", error);
       return response;
     }
-    stage = "user_validation";
+    const session = data.session;
+    const hasProviderTokens = Boolean(
+      session?.provider_token || session?.provider_refresh_token,
+    );
+    if (hasProviderTokens) log("success_before_compaction");
+    stage = hasProviderTokens ? "session_compaction" : "user_validation";
+    // Microsoft API tokens are not used anywhere in this app. Re-establish
+    // the same Supabase session through the SDK so only its access/refresh
+    // tokens and verified user are persisted. This avoids sending oversized
+    // OAuth cookies through the host. setSession validates the user with Auth
+    // and lets SSR replace/delete all old chunks on this same response.
     const {
       data: { user },
       error: userError,
-    } = await db.auth.getUser();
+    } =
+      hasProviderTokens && session
+        ? await db.auth.setSession({
+            access_token: session.access_token,
+            refresh_token: session.refresh_token,
+          })
+        : await db.auth.getUser();
     if (userError) {
       log("failed", userError);
       return response;
     }
+    stage = "user_validation";
     if (
       !user?.email_confirmed_at ||
       !campusEmail.safeParse(user.email).success

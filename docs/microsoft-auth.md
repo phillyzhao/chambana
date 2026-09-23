@@ -22,7 +22,7 @@ Reference: [Supabase Azure sign-in](https://supabase.com/docs/guides/auth/social
 
 ## Production callback retest
 
-The September 23 callback candidate has passed local tests/build but still requires deployment and a real Microsoft login. The earlier production 500 is not yet explained conclusively. Next.js already merges request-scoped cookie changes into Route Handler responses; the new implementation makes those writes explicit, handles errors, and preserves Supabase's cache-prevention headers.
+The initial September 23 repair is deployed: a real callback at 11:16:50 Chicago logged application success with 8,771 bytes of cookie headers, yet the browser received HTTP 500. A host/proxy response-header limit is suspected but not confirmed. The follow-up uses Supabase `setSession` to retain the app's access/refresh tokens and server-validated user while dropping unused Microsoft API tokens before the response leaves the callback. Local tests verify cookie-size reduction, stale-chunk cleanup, and authentication on a subsequent request. Real production acceptance is still required.
 
 1. Publish the tested revision to the connected GitHub branch and deploy it in Hostinger using the existing workflow. Confirm the completed deployment's commit matches the repair before testing. Do not change Entra, tenant, or Supabase provider settings for this test.
 2. Open Runtime Logs, then attempt Microsoft sign-in once at `https://playchambana.com/login`. Note the exact time and timezone and the final page/error. Do not reload the callback URL; authorization codes are single-use.
@@ -33,7 +33,10 @@ The September 23 callback candidate has passed local tests/build but still requi
 Interpreting the new diagnostics:
 
 - `exchange/failed` with `upstreamStatus` means Supabase rejected the exchange; check its Auth logs at the same time.
+- `exchange/success_before_compaction` records outgoing cookie size before unused provider tokens are removed; compare with final `response/success`. `session_compaction/failed` identifies a failure re-establishing the compact Supabase session. Both branches still enforce confirmed Illinois email.
 - `cookie_write/write_failed` identifies an application cookie-write failure. Raw exceptions are replaced with a fixed message before reaching Supabase's subscriber logger.
 - `user_validation/failed` or `user_validation/ineligible` distinguishes user lookup failure from an account that does not meet the confirmed Illinois-email rule.
 - `response/success` means the application constructed a successful redirect. It does **not** prove the host transmitted it or the browser retained every cookie. A browser 500 at this point calls for Hostinger's proxy/runtime logs and header limits; a later login bounce calls for checking stored cookie names/chunks and the next request.
 - No `auth_callback` events can mean the wrong revision is deployed or the request failed before reaching the handler. Verify the deployment before changing authentication configuration.
+
+If compact cookie headers still yield HTTP 500 after `response/success`, collect the failed response's `x-hcdn-request-id` along with timestamp/timezone and callback ID for Hostinger support. Ask them to check the CDN/reverse-proxy upstream response/header limits and serialization. Do not send them session tokens. See [Hostinger's CDN error tracing guidance](https://www.hostinger.com/support/hostinger-cdn-troubleshooting-website-errors/) and [Supabase setSession](https://supabase.com/docs/reference/javascript/auth-setsession).
