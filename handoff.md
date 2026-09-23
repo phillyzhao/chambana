@@ -16,10 +16,11 @@ Updated 2026-09-23. A functional mobile-first UIUC group-challenge beta, not a l
 - Live Storage checks passed service upload/download and anonymous read/write denial, then removed only each generated synthetic image.
 - Final local check passed: 82 tests, TypeScript, and production build. Browser admin page showed all seven published missions after Microsoft login. Health returned 200, authenticated cron returned 200 with an empty queue, and unauthenticated cron returned 401.
 
-## Current production blocker — Microsoft callback
+## Microsoft production callback — resolved on desktop; mobile acceptance remains
 
 - September 23, 11:16:50 Chicago: after deploying `8442bc9` (repair `2107ccf`), a real Microsoft callback logged `response/success`, with **4 Set-Cookie headers totaling 8,771 bytes**, largest 3,296 bytes, but the user still saw HTTP 500. The code exchange and confirmed-campus-user validation completed. The chunk-decoding warnings were nonfatal for this attempt. This points to response delivery/hosting behavior; a proxy header limit is a strong hypothesis, not yet a confirmed Hostinger limit.
 - A follow-up reduces OAuth response size using Supabase's supported `setSession` API: re-save the same Supabase access/refresh tokens and server-validated user without unused Microsoft `provider_token`/`provider_refresh_token` values. No app feature uses those provider API credentials. SSR manages all replacement/deletion chunks. New `exchange/success_before_compaction` and final `response/success` metrics show before/after cookie sizes. Production acceptance remains required.
+- **Verified September 23:** after deploying `d81d31b`, Microsoft sign-in completed successfully on desktop. This supports the oversized OAuth-cookie response hypothesis and resolves the previously reproducible desktop production callback 500. The callback must still be tested on iPhone Safari, with another Illinois user, and with a rejected personal Microsoft account before production authentication is considered fully accepted.
 
 Earlier investigation:
 
@@ -31,14 +32,14 @@ Earlier investigation:
 - Next action: capture the complete runtime log around a fresh real Microsoft callback, including the underlying cause of any fetch failure and all callback response headers. In Hostinger Runtime Logs, use the three-dot menu → **Download logs** and provide the file if direct inspection remains unreliable. Compare the actual callback's `Set-Cookie` headers against a local successful flow before changing auth architecture. Keep email links available as fallback and do not loosen tenant restrictions.
 - A separate `Server is not running` message appeared during an earlier Hostinger startup; it is not evidence of the current authentication cause.
 
-### Local callback repair prepared September 23 — production retest required
+### Callback repair prepared September 23 — desktop production verification complete
 
 - Marcos reports email-link login working on iPhone, but Microsoft failing in desktop Chrome, Incognito, and iPhone Safari. This makes stale cookies on a single browser an inadequate explanation; it does not prove the exact callback failure stage.
 - Corrected an earlier hypothesis: Next.js 16.3.5 already merges `cookies()` writes into a returned Route Handler response. Returning a new redirect is not itself proof that cookies were lost. This callback also does not stream a React layout.
 - The callback now owns one explicit response and writes every Supabase cookie update and cache-prevention header directly to it. Cookie-write errors are no longer swallowed by the shared Server Component helper. Exceptions redirect safely to login; newly written partial/rejected session chunks are expired without clearing an existing session when an invalid link wrote no replacement session. Ineligible-user sign-out is scoped to the current session.
 - Added `auth_callback` diagnostics with a random request ID, failure stage, controlled outcome, HTTP error status when available, and outgoing cookie counts/byte lengths. `X-Auth-Callback-Id` links the browser response to logs. No cookie values, codes, emails, tokens, or raw exception messages are included in these diagnostics.
 - Node 24 `npm run check` passed: 91 tests, TypeScript, and production build. Nine new tests use the real installed Supabase SSR/auth libraries with simulated HTTP responses, covering small and large sessions, stale chunks, campus/confirmed-email restrictions, error cleanup, cookie-write exceptions, and safe redirects. They do not prove Hostinger or real Microsoft acceptance.
-- The initial repair was pushed as `2107ccf` (merged on main at `8442bc9`) and the owner's fresh production logs confirm its diagnostics are live. The size-reduction follow-up still requires production acceptance. No package upgrades or provider changes were made; the experimental PKCE flow-ID feature remains disabled. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
+- The initial repair was pushed as `2107ccf` (merged on main at `8442bc9`) and the owner's fresh production logs confirm its diagnostics are live. The size-reduction follow-up, `d81d31b`, is verified working for Microsoft desktop login. No package upgrades or provider changes were made; the experimental PKCE flow-ID feature remains disabled. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
 
 ## Gemini status — do not repeat the old claim
 
@@ -48,8 +49,7 @@ Only synthetic API-contract cases have been tested: matching approval, mismatchi
 
 ## Next steps, in order
 
-1. Deploy the September 23 OAuth cookie-size reduction, then retry from the login page and compare `success_before_compaction` with final `response/success` cookie sizes. If a compact successful response still arrives as 500, collect the failed response's `x-hcdn-request-id` and ask Hostinger to trace response/header handling at that exact timestamp. Do not replay consumed callback codes or mark production login complete until real sign-in works. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
-2. Test Microsoft with another Illinois user and a rejected personal account; validate campus consent without weakening tenant restrictions.
+1. Test Microsoft sign-in on iPhone Safari, with another Illinois user, and with a rejected personal Microsoft account. Desktop Microsoft login is verified after `d81d31b`; do not claim full production acceptance until these cases pass. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
 3. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
 4. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).
 5. Choose support inbox, retention period, privacy terms, and reviewed deletion process. Operational runbook prepared; automatic retention and self-service deletion are not implemented. See [operations](docs/operations.md).
