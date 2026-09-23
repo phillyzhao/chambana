@@ -16,11 +16,11 @@ Updated 2026-09-23. A functional mobile-first UIUC group-challenge beta, not a l
 - Live Storage checks passed service upload/download and anonymous read/write denial, then removed only each generated synthetic image.
 - Final local check passed: 82 tests, TypeScript, and production build. Browser admin page showed all seven published missions after Microsoft login. Health returned 200, authenticated cron returned 200 with an empty queue, and unauthenticated cron returned 401.
 
-## Microsoft production callback — resolved on desktop; mobile acceptance remains
+## Microsoft production callback — resolved; email-link mobile diagnosis remains
 
 - September 23, 11:16:50 Chicago: after deploying `8442bc9` (repair `2107ccf`), a real Microsoft callback logged `response/success`, with **4 Set-Cookie headers totaling 8,771 bytes**, largest 3,296 bytes, but the user still saw HTTP 500. The code exchange and confirmed-campus-user validation completed. The chunk-decoding warnings were nonfatal for this attempt. This points to response delivery/hosting behavior; a proxy header limit is a strong hypothesis, not yet a confirmed Hostinger limit.
 - A follow-up reduces OAuth response size using Supabase's supported `setSession` API: re-save the same Supabase access/refresh tokens and server-validated user without unused Microsoft `provider_token`/`provider_refresh_token` values. No app feature uses those provider API credentials. SSR manages all replacement/deletion chunks. New `exchange/success_before_compaction` and final `response/success` metrics show before/after cookie sizes. Production acceptance remains required.
-- **Verified September 23:** after deploying `d81d31b`, Microsoft sign-in completed successfully on desktop. This supports the oversized OAuth-cookie response hypothesis and resolves the previously reproducible desktop production callback 500. The callback must still be tested on iPhone Safari, with another Illinois user, and with a rejected personal Microsoft account before production authentication is considered fully accepted.
+- **Verified September 23:** after deploying `d81d31b`, Microsoft sign-in completed successfully on desktop and iPhone Safari, and a personal Outlook account was rejected. This supports the oversized OAuth-cookie response hypothesis and resolves the previously reproducible production callback 500. An additional Illinois-user Microsoft test was attempted; its final result has not yet been recorded. Email-link login through an iPhone link is now reported not to work and needs separate diagnosis.
 
 Earlier investigation:
 
@@ -49,13 +49,13 @@ Only synthetic API-contract cases have been tested: matching approval, mismatchi
 
 ## Next steps, in order
 
-1. Test Microsoft sign-in on iPhone Safari, with another Illinois user, and with a rejected personal Microsoft account. Desktop Microsoft login is verified after `d81d31b`; do not claim full production acceptance until these cases pass. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
+1. Diagnose and verify iPhone email-link authentication: record the exact final URL/status and runtime logs for one fresh link. Separately record the outcome of Microsoft sign-in with another Illinois user. Desktop/iPhone Microsoft login and personal Outlook rejection are verified after `d81d31b`. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
 3. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
 4. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).
 5. Choose support inbox, retention period, privacy terms, and reviewed deletion process. Operational runbook prepared; automatic retention and self-service deletion are not implemented. See [operations](docs/operations.md).
 6. Run real-domain, real-account/mobile acceptance before public signups. Concurrent multi-member uploads, camera formats, host request limits, and domain callbacks remain launch gates.
 
-Hostinger deployment and the `playchambana.com` domain are now in place. Production Microsoft callback behavior is still a launch blocker.
+Hostinger deployment and the `playchambana.com` domain are now in place. Production Microsoft callback behavior is no longer a desktop or iPhone Safari blocker; iPhone email-link behavior remains unresolved.
 
 ## Working commands
 
