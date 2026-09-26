@@ -25,7 +25,7 @@ export const groupSchema = z.object({
   description: z.string().trim().min(10).max(500),
   join_mode: z.enum(["open", "invite", "organization"]),
   organization: z.string().trim().max(120),
-  category_ids: z.array(z.string().uuid()).min(1).max(10),
+  category_ids: z.array(z.string().uuid()).max(10),
 });
 export const profileSchema = z.object({
   display_name: z.string().trim().min(2).max(40),

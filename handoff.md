@@ -1,6 +1,6 @@
 # Chambana Missions — Handoff
 
-Updated 2026-09-23. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
+Updated 2026-09-26. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
 
 ## Completed and verified
 
@@ -47,13 +47,16 @@ The original key was configured, but Google rejected gemini-2.5-flash with HTTP 
 
 Only synthetic API-contract cases have been tested: matching approval, mismatching rejection, unverifiable evidence not approved, and instruction-injection evidence not approved. Initial calls returned 503/429; targeted retries passed. **No real user-photo recognition, supervision/oversight, safety moderation, or representative campus-photo evaluation has been performed.** Gemini must not be considered production-ready or trusted for automatic scoring. The worker sends provider failures and uncertain evidence to human review. Keys remain in ignored .env.local, never this file or Git.
 
-## Next steps, in order
+## Next steps — launch priority
 
-1. Diagnose and verify iPhone email-link authentication: record the exact final URL/status and runtime logs for one fresh link. Desktop/iPhone Microsoft login for two Illinois users and personal Outlook rejection are verified after `d81d31b`. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
-3. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
-4. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).
-5. Choose support inbox, retention period, privacy terms, and reviewed deletion process. Operational runbook prepared; automatic retention and self-service deletion are not implemented. See [operations](docs/operations.md).
-6. Run real-domain, real-account/mobile acceptance before public signups. Concurrent multi-member uploads, camera formats, host request limits, and domain callbacks remain launch gates.
+Email-link authentication on iPhone is deferred. Microsoft sign-in is verified for two Illinois users on desktop and iPhone Safari, and personal Outlook accounts are rejected, so there is a working signup path while the email-link issue remains on the backburner.
+
+1. Category validation fix implemented locally: categories are optional, and the form explains that leaving all unchecked draws from every published category, including future categories. Explicit selections still filter missions. New migration `202609260005_optional_group_categories.sql` updates database validation and assignment selection while preserving organizer checks, account locking, and existing assignments. Node 24 checks passed: 97 tests, TypeScript, and production build. Apply the migration (dry-run first) and deploy the app before verifying the live group-creation flow; neither production step has been performed for this change.
+2. Evaluate consented representative photos against human labels. This must include actual Gemini photo recognition and supervision/oversight behavior; synthetic API-contract cases alone are insufficient. Configure Google quota/budget alerts and account for observed 503/429 responses.
+3. Keep the deployed `playchambana.com` environment and scheduled recovery documented; confirm production secrets, Supabase URLs/SMTP, HTTPS, and authenticated cron in the real environment. Follow [Hostinger runbook](docs/hostinger.md).
+4. Choose support inbox, retention period, privacy terms, and reviewed deletion process. Operational runbook prepared; automatic retention and self-service deletion are not implemented. See [operations](docs/operations.md).
+5. Run real-domain, real-account/mobile acceptance before public signups. Concurrent multi-member uploads, camera formats, host request limits, and domain callbacks remain launch gates.
+6. Backburner: diagnose and verify iPhone email-link authentication when it becomes a priority. Record the exact final URL/status and runtime logs for one fresh link. See [Microsoft setup](docs/microsoft-auth.md#production-callback-retest).
 
 Hostinger deployment and the `playchambana.com` domain are now in place. Production Microsoft callback behavior is no longer a desktop or iPhone Safari blocker; iPhone email-link behavior remains unresolved.
 

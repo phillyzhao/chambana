@@ -103,7 +103,7 @@ iOS app, video processing, cosmetics, payments, public media feed, friend graph,
 ## Live acceptance test (requires your accounts)
 
 1. Sign in with a verified Illinois account; confirm personal Gmail and lookalike domains cannot gain access.
-2. Bootstrap the platform admin, approve a second account as organizer, and create an open group with at least one category.
+2. Bootstrap the platform admin, approve a second account as organizer, and create an open group without selecting categories; confirm it receives missions from the full published catalog. Also create a group with selected categories and confirm its missions stay within those categories.
 3. Join with two ordinary member accounts. Publish at least four test missions, refresh slots, and verify there are three shared assignments.
 4. Submit a real photo. Confirm private storage, Gemini evaluation, review reason, and exactly one ledger award. Submit concurrently from another member and retry the first request; total points must not increase twice.
 5. Trigger a Gemini failure and uncertain verdict, and resolve through the admin panel. Confirm a stale worker cannot override a manual verdict.

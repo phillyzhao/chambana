@@ -16,7 +16,7 @@ The browser renders Next.js pages and submits forms to server actions. Server ac
 
 - `profiles`: public display fields only; auth email stays in `auth.users`.
 - `platform_admins`, `organizer_emails`: private access lists.
-- `groups`, `group_categories`: discovery information and selected mission pools.
+- `groups`, `group_categories`: discovery information and optional mission filters. No selected categories means the full published catalog, including future categories; selected categories restrict the pool.
 - `group_members`, `group_invites`: private membership/access state.
 - `categories`, `missions`: central, platform-reviewed catalog.
 - `settings`: default slot/timer settings.

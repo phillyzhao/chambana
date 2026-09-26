@@ -133,8 +133,12 @@ export default async function Groups({
               Organization name, if applicable
               <input name="organization" maxLength={120} />
             </label>
-            <fieldset>
-              <legend>Mission categories</legend>
+            <fieldset aria-describedby="mission-categories-help">
+              <legend>Mission categories (optional)</legend>
+              <p id="mission-categories-help" className="muted">
+                Leave all unchecked to receive missions from any category, or
+                select categories to narrow your group’s missions.
+              </p>
               {categories.map((c) => (
                 <label className="check-label" key={c.id}>
                   <input type="checkbox" name="category_ids" value={c.id} />

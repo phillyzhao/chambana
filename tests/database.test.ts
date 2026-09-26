@@ -348,6 +348,88 @@ describe("authentication and permissions", () => {
     await denied("select * from group_submission_status($1)", [group], /Join/);
   });
 });
+describe("optional group categories", () => {
+  it.each([
+    { label: "empty", categories: [], expected: 3 },
+    { label: "null", categories: null, expected: 3 },
+    { label: "selected", categories: [category], expected: 1 },
+  ])(
+    "assigns the correct mission pool for $label categories",
+    async ({ categories, expected }) => {
+      await asUser(owner);
+      const id = await scalar<string>(
+        "select create_group('New group','Explore any part of campus.','open','',$1::uuid[])",
+        [categories],
+      );
+      expect(
+        Number(
+          await scalar(
+            "select count(*) from group_categories where group_id=$1",
+            [id],
+          ),
+        ),
+      ).toBe(categories?.length ?? 0);
+      expect(
+        await scalar(
+          "select status from group_members where group_id=$1 and user_id=$2",
+          [id, owner],
+        ),
+      ).toBe("active");
+
+      // Add a category after group creation: unfiltered groups must include it.
+      await asService();
+      await db.exec("update missions set published=false");
+      const newCategory = randomUUID();
+      await db.query(
+        "insert into categories(id,name) values($1,'New category')",
+        [newCategory],
+      );
+      const published: string[] = [];
+      for (const [i, cat] of [
+        category,
+        newCategory,
+        newCategory,
+        newCategory,
+      ].entries()) {
+        const mission = randomUUID();
+        await db.query(
+          "insert into missions(id,category_id,title,instructions,proof_criteria,nuts,published) values($1,$2,$3,'Photograph campus art.','Visible outdoor artwork.',20,$4)",
+          [mission, cat, `New mission ${i}`, i < 3],
+        );
+        if (i < 3) published.push(mission);
+      }
+      await asUser(owner);
+      await db.query("select refresh_missions($1)", [id]);
+      await db.query("select refresh_missions($1)", [id]);
+      const assigned = (
+        await db.query<{ mission_id: string }>(
+          "select mission_id from assignments where group_id=$1",
+          [id],
+        )
+      ).rows.map((row) => row.mission_id);
+      expect(assigned.sort()).toEqual(published.slice(0, expected).sort());
+    },
+  );
+  it("keeps category limits and organizer permissions for unfiltered groups", async () => {
+    await asUser(owner);
+    await denied(
+      "select create_group('Too many','Too many category choices.','open','',array_fill($1::uuid,array[11]))",
+      [category],
+      /ten categories/,
+    );
+    await denied(
+      "select create_group_internal('Bypass','No direct internal access.','open','',array[]::uuid[])",
+      [],
+      /permission/,
+    );
+    await asUser(member);
+    await denied(
+      "select create_group('Unapproved','No organizer approval yet.','open','',array[]::uuid[])",
+      [],
+      /Organizer approval/,
+    );
+  });
+});
 describe("shared mission lifecycle", () => {
   it("fills exactly three slots even after repeated refreshes", async () => {
     for (let i = 0; i < 3; i++)
