@@ -348,6 +348,254 @@ describe("authentication and permissions", () => {
     await denied("select * from group_submission_status($1)", [group], /Join/);
   });
 });
+describe("group deletion", () => {
+  it.each(["", "test group", "Test group ", null])(
+    "rejects an inexact confirmation: %s",
+    async (confirmation) => {
+      await asUser(owner);
+      await denied(
+        "select delete_group($1,$2)",
+        [group, confirmation],
+        /exact group name/,
+      );
+      expect(
+        Number(
+          await scalar("select count(*) from groups where id=$1", [group]),
+        ),
+      ).toBe(1);
+    },
+  );
+  it.each([member, outsider, admin])(
+    "rejects deletion by a non-owner %s",
+    async (user) => {
+      await asUser(user);
+      await denied(
+        "select delete_group($1,'Test group')",
+        [group],
+        /approved group owner/,
+      );
+    },
+  );
+  it("rejects anonymous deletion and keeps the photo archive private", async () => {
+    await submit();
+    await db.exec("set local role anon");
+    await denied("select delete_group($1,'Test group')", [group], /permission/);
+    await denied("select * from photo_archive", [], /permission/);
+    await asUser(owner);
+    expect((await db.query("select * from photo_archive")).rows).toEqual([]);
+    await asUser(member);
+    expect((await db.query("select * from photo_archive")).rows).toEqual([]);
+    await denied("delete from photo_archive", [], /permission/);
+    await asUser(admin);
+    expect((await db.query("select * from photo_archive")).rows).toHaveLength(
+      1,
+    );
+    await asUser(owner);
+    await denied("delete from groups where id=$1", [group], /permission/);
+  });
+  it("deletes only the confirmed group while retaining archived photos, reports and audit history", async () => {
+    const submission = await submit();
+    await db.query(
+      "select settle_submission($1,'approved','Visible criteria')",
+      [submission],
+    );
+    await asUser(owner);
+    const otherGroup = await scalar<string>(
+      "select create_group('Other group','Keep this group intact.','open','',array[]::uuid[])",
+    );
+    await db.query("select refresh_missions($1)", [otherGroup]);
+    await db.query("select create_invite($1)", [group]);
+    await db.query(
+      "select report_content('group',$1,'A report for later review.')",
+      [group],
+    );
+    await db.query("select delete_group($1,'Test group')", [group]);
+    await asService();
+    for (const table of [
+      "groups",
+      "group_members",
+      "group_categories",
+      "group_invites",
+      "assignments",
+      "nut_transactions",
+    ]) {
+      const key = table === "groups" ? "id" : "group_id";
+      expect(
+        Number(
+          await scalar(`select count(*) from ${table} where ${key}=$1`, [
+            group,
+          ]),
+        ),
+      ).toBe(0);
+    }
+    expect(
+      Number(
+        await scalar("select count(*) from submissions where id=$1", [
+          submission,
+        ]),
+      ),
+    ).toBe(0);
+    expect(
+      await scalar("select storage_path from photo_archive where group_id=$1", [
+        group,
+      ]),
+    ).toBe(`${member}/${submission}.jpg`);
+    expect(
+      (
+        await db.query("select * from photo_archive where submission_id=$1", [
+          submission,
+        ])
+      ).rows[0],
+    ).toMatchObject({
+      user_id: member,
+      group_id: group,
+      group_name: "Test group",
+      assignment_id: assignment,
+      review_status: "approved",
+      review_reason: "Visible criteria",
+    });
+    expect(
+      Number(
+        await scalar("select nuts from player_leaderboard where id=$1", [
+          member,
+        ]),
+      ),
+    ).toBe(0);
+    expect(
+      Number(
+        await scalar("select count(*) from groups where id=$1", [otherGroup]),
+      ),
+    ).toBe(1);
+    expect(
+      Number(
+        await scalar("select count(*) from assignments where group_id=$1", [
+          otherGroup,
+        ]),
+      ),
+    ).toBe(3);
+    expect(
+      Number(
+        await scalar("select count(*) from reports where target_id=$1", [
+          group,
+        ]),
+      ),
+    ).toBe(1);
+    expect(
+      Number(
+        await scalar(
+          "select count(*) from audit_log where action='delete_group' and details->>'group'=$1",
+          [group],
+        ),
+      ),
+    ).toBe(1);
+    await asUser(owner);
+    await denied(
+      "select delete_group($1,'Test group')",
+      [group],
+      /Group not found/,
+    );
+  });
+  it.each(["uploading", "processing"])(
+    "waits for %s photos before deleting",
+    async (status) => {
+      const submission = randomUUID();
+      await db.query("select begin_submission($1,$2)", [
+        assignment,
+        submission,
+      ]);
+      if (status === "processing") {
+        await asService();
+        await db.query("select finish_upload($1,'fixture')", [submission]);
+        await db.query("select claim_submission($1)", [submission]);
+      }
+      await asUser(owner);
+      await denied(
+        "select delete_group($1,'Test group')",
+        [group],
+        /still uploading or being reviewed/,
+      );
+      await asService();
+      expect(Number(await scalar("select count(*) from photo_archive"))).toBe(
+        status === "processing" ? 1 : 0,
+      );
+      expect(
+        Number(
+          await scalar("select count(*) from groups where id=$1", [group]),
+        ),
+      ).toBe(1);
+    },
+  );
+  it("deletes pending reviews before workers can claim them", async () => {
+    const submission = await submit();
+    await asUser(owner);
+    await db.query("select delete_group($1,'Test group')", [group]);
+    await asService();
+    expect(
+      (await db.query("select * from claim_submission($1)", [submission])).rows,
+    ).toEqual([]);
+  });
+});
+describe("central photo archive", () => {
+  it("archives completed uploads immediately and keeps review results current", async () => {
+    const submission = await submit();
+    const before = (
+      await db.query<Record<string, unknown>>(
+        "select * from photo_archive where submission_id=$1",
+        [submission],
+      )
+    ).rows[0];
+    expect(before).toMatchObject({
+      submission_id: submission,
+      user_id: member,
+      group_id: group,
+      review_status: "pending",
+    });
+    expect(before.photo_hash).toBeTruthy();
+    expect(before.mission_title).toBeTruthy();
+    await db.query(
+      "select settle_submission($1,'rejected','Wrong photo',$2::jsonb)",
+      [submission, JSON.stringify({ decision: "rejected" })],
+    );
+    expect(
+      (
+        await db.query("select * from photo_archive where submission_id=$1", [
+          submission,
+        ])
+      ).rows,
+    ).toEqual([
+      expect.objectContaining({
+        review_status: "rejected",
+        review_reason: "Wrong photo",
+        ai_result: { decision: "rejected" },
+        storage_path: before.storage_path,
+      }),
+    ]);
+    await asUser(owner);
+    await db.query("select delete_group($1,'Test group')", [group]);
+    await asService();
+    expect(
+      Number(
+        await scalar(
+          "select count(*) from photo_archive where submission_id=$1",
+          [submission],
+        ),
+      ),
+    ).toBe(1);
+  });
+  it("does not catalog failed uploads as saved photos", async () => {
+    const submission = randomUUID();
+    await db.query("select begin_submission($1,$2)", [assignment, submission]);
+    await asService();
+    await db.query("select fail_upload($1)", [submission]);
+    expect(
+      (
+        await db.query("select * from photo_archive where submission_id=$1", [
+          submission,
+        ])
+      ).rows,
+    ).toEqual([]);
+  });
+});
 describe("optional group categories", () => {
   it.each([
     { label: "empty", categories: [], expected: 3 },

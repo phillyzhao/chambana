@@ -132,7 +132,8 @@ export function MissionCard({
                   <input type="checkbox" name="consent" value="yes" required />I
                   have permission to share this photo and agree to send it to
                   Google Gemini for review. It stays private to me and Chambana
-                  reviewers.
+                  reviewers. I understand that Chambana keeps the photo and its
+                  record in a private archive even if the group is deleted.
                 </label>
                 <SubmitButton />
               </form>

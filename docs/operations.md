@@ -7,12 +7,20 @@ Before public signups, the owner must select a monitored `SUPPORT_EMAIL`, a proo
 Until a reviewed deletion implementation exists, handle verified requests manually:
 
 1. Confirm the requester controls the account; do not rely on a supplied user ID alone. Never ask for passwords or API keys.
-2. Inventory only that account's profile, memberships, owned groups, submissions/proof objects, reports, and point history. Determine whether group ownership must be transferred and which records must be retained/anonymized under the published policy.
+2. Inventory only that account's profile, memberships, owned groups, submissions/proof objects, `photo_archive` records (including deleted groups), reports, and point history. Determine whether group ownership must be transferred and which records must be retained/anonymized under the published policy.
 3. Obtain an explicit, scoped deletion confirmation and review foreign-key/cascade effects. Do not blindly delete from `auth.users`: scoring and group ownership are linked.
-4. Remove approved proof objects through the Storage API, record `proof_deleted_at`, and handle affected database records according to the reviewed plan. Storage and Postgres writes are not one atomic transaction; record failures and retry only the exact paths.
+4. Remove approved proof objects through the Storage API, record `proof_deleted_at` in both any live submission and its archive record, and handle affected database records according to the reviewed plan. Storage and Postgres writes are not one atomic transaction; record failures and retry only the exact paths.
 5. Verify private links no longer work and document completion. Explain any backup-retention delay and retained records to the requester.
 
 `proof_deleted_at` is schema groundwork, not an active cleanup service. There is no automated retention or self-service account deletion yet. Never delete pending/admin-review evidence as routine cleanup. Failed-upload orphan cleanup also remains an operational follow-up.
+
+## Group deletion
+
+The approved owner can delete a group from its detail page by typing its exact, case-sensitive name. The database verifies ownership and confirmation under a group lock; client-side button disabling is only a convenience. Deletion removes memberships, invites, category filters, assignments, submissions, and the group's point transactions, so members lose the points earned through that group. Other groups and their data remain unchanged. Group reports and a deletion audit event remain for platform review.
+
+Active uploads or processing reviews must finish before deletion; stale work is recovered by the existing cron job. Photos remain in the private `mission-proof` Storage bucket. The `photo_archive` table catalogs every completed upload, including rejected and review-pending submissions, with its uploader, original group, mission criteria, timestamps, storage path, hash, and review result. A database trigger creates the record on upload completion and updates review metadata. Existing completed uploads are backfilled by the migration. Archive records have no cascading links to deleted groups, assignments, or accounts; reviewed deletion requests must explicitly include the archive. Only platform admins and the server service role can read the archive. There is no automatic archive deletion or group-photo cleanup job. Upload consent and the group deletion confirmation disclose this retention. This does not set a final retention period or authorize other uses of the photos.
+
+Apply migration `202609260006_delete_groups.sql` before deploying this feature. Verify group deletion and private photo preservation with a disposable test group on the real environment before relying on it for user requests. Photo bytes are stored once in object storage; the indexed archive stores searchable records rather than image bytes. Capacity remains subject to the project's storage limits and billing; no plan change or capacity benchmark has been performed.
 
 ## Abuse and incident response
 

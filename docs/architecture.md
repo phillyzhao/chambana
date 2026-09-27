@@ -22,6 +22,7 @@ The browser renders Next.js pages and submits forms to server actions. Server ac
 - `settings`: default slot/timer settings.
 - `assignments`: group-specific snapshots of published missions.
 - `submissions`: photo reference, state, AI evidence, retry lease.
+- `photo_archive`: private indexed catalog of completed uploads, including their original group, uploader, mission and review metadata. Photos remain in private Storage and archive records survive group deletion; admins/server credentials can read the archive.
 - `nut_transactions`: unique completion ledger; group and person rankings are views of the same event.
 - `reports`, `audit_log`: moderation intake and admin history.
 - `request_limits`: service-only fixed-window counters with HMAC-hashed subjects; expired counters are cleaned by cron.

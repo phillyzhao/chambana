@@ -11,6 +11,7 @@ import {
 import { database } from "@/lib/supabase";
 import { Action, Empty, Notice, PageIntro, ReportForm } from "@/components/ui";
 import { MissionCard } from "@/components/mission-card";
+import { DeleteGroupForm } from "@/components/delete-group-form";
 
 export default async function GroupPage({
   params,
@@ -222,6 +223,7 @@ export default async function GroupPage({
         </section>
       )}
       {me.user && <ReportForm type="group" id={id} back={back} />}
+      {owner && <DeleteGroupForm id={id} name={group.name} />}
     </>
   );
 }

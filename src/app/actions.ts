@@ -116,6 +116,16 @@ export async function mutate(form: FormData) {
         notice = "Your group is ready.";
         break;
       }
+      case "delete_group": {
+        await rpc("delete_group", {
+          p_group: uuid(form, "group_id"),
+          p_confirmation: value(form, "confirmation"),
+        });
+        destination = "/groups";
+        notice =
+          "Group deleted. Submitted photos remain in the private archive.";
+        break;
+      }
       case "join_group": {
         const status = await rpc("join_group", {
           p_group: uuid(form, "group_id"),
