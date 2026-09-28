@@ -52,5 +52,49 @@ do $$ begin
   if (select nuts from public.player_leaderboard where id=current_setting('chambana.qa_member')::uuid)<>20 then raise exception 'Player score mismatch'; end if;
   if (select public from storage.buckets where id='mission-proof') then raise exception 'Proof bucket public'; end if;
 end; $$;
+-- Verify migrations 005/006 using only this transaction's disposable fixtures.
+set local role authenticated;
+select set_config('request.jwt.claim.sub',current_setting('chambana.qa_owner'),true);
+select set_config('chambana.qa_unfiltered', public.create_group('Temporary QA unfiltered','Controlled test, rolled back.','open','',array[]::uuid[])::text,true);
+select public.refresh_missions(current_setting('chambana.qa_unfiltered')::uuid);
+do $$ begin
+  if exists(select 1 from public.group_categories where group_id=current_setting('chambana.qa_unfiltered')::uuid) then raise exception 'Empty categories created a filter'; end if;
+  if (select count(*) from public.assignments where group_id=current_setting('chambana.qa_unfiltered')::uuid)<>3 then raise exception 'Unfiltered group slots failed'; end if;
+  if exists(select 1 from public.photo_archive where submission_id=current_setting('chambana.qa_submission')::uuid) then raise exception 'Archive exposed to organizer'; end if;
+  begin
+    perform public.delete_group(current_setting('chambana.qa_group')::uuid,'temporary QA group');
+    raise exception 'Wrong deletion confirmation accepted';
+  exception when raise_exception then
+    if sqlerrm <> 'Enter the exact group name to confirm deletion.' then raise; end if;
+  end;
+end; $$;
+select set_config('request.jwt.claim.sub',current_setting('chambana.qa_member'),true);
+do $$ begin
+  if exists(select 1 from public.photo_archive where submission_id=current_setting('chambana.qa_submission')::uuid) then raise exception 'Archive exposed to uploader'; end if;
+  begin
+    perform public.delete_group(current_setting('chambana.qa_group')::uuid,'Temporary QA group');
+    raise exception 'Non-owner deletion accepted';
+  exception when raise_exception then
+    if sqlerrm <> 'Only the approved group owner can delete this group.' then raise; end if;
+  end;
+end; $$;
+select set_config('request.jwt.claim.sub',current_setting('chambana.qa_admin'),true);
+do $$ begin
+  if not exists(select 1 from public.photo_archive where submission_id=current_setting('chambana.qa_submission')::uuid and review_status='approved') then raise exception 'Admin archive or review synchronization failed'; end if;
+  if has_table_privilege('anon','public.photo_archive','SELECT') then raise exception 'Archive exposed anonymously'; end if;
+end; $$;
+select set_config('request.jwt.claim.sub',current_setting('chambana.qa_owner'),true);
+select public.delete_group(current_setting('chambana.qa_group')::uuid,'Temporary QA group');
+reset role;
+do $$ begin
+  if exists(select 1 from public.groups where id=current_setting('chambana.qa_group')::uuid) then raise exception 'Group deletion failed'; end if;
+  if exists(select 1 from public.assignments where group_id=current_setting('chambana.qa_group')::uuid) then raise exception 'Assignments retained'; end if;
+  if exists(select 1 from public.submissions where id=current_setting('chambana.qa_submission')::uuid) then raise exception 'Live submission retained'; end if;
+  if exists(select 1 from public.nut_transactions where group_id=current_setting('chambana.qa_group')::uuid) then raise exception 'Group points retained'; end if;
+  if exists(select 1 from public.group_members where group_id=current_setting('chambana.qa_group')::uuid) then raise exception 'Memberships retained'; end if;
+  if not exists(select 1 from public.photo_archive where submission_id=current_setting('chambana.qa_submission')::uuid and storage_path=current_setting('chambana.qa_member')||'/'||current_setting('chambana.qa_submission')||'.jpg' and review_status='approved') then raise exception 'Photo archive not preserved'; end if;
+  if not exists(select 1 from public.audit_log where action='delete_group' and details->>'group'=current_setting('chambana.qa_group')) then raise exception 'Deletion audit missing'; end if;
+  if not exists(select 1 from public.groups where id=current_setting('chambana.qa_unfiltered')::uuid) then raise exception 'Other group affected'; end if;
+end; $$;
 rollback;
-select 'Hosted acceptance checks passed; all fixture rows rolled back.' as result;
+select 'Hosted acceptance checks passed, including optional categories, deletion guards, private archive preservation and review synchronization; all fixture rows rolled back. No Storage objects were created or deleted.' as result;

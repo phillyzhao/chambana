@@ -1,6 +1,6 @@
 # Hostinger deployment runbook
 
-Target domain: **playchambana.com** (owner has not purchased it yet). Having another domain at Hostinger does not establish that the account has Node.js hosting. No deployment or DNS changes have been made.
+Production domain: **https://playchambana.com**. Verified September 28, 2026: Hostinger's current deployment is completed at commit `6e7e7554` on `main`, deployed September 26 at 19:02 with Node 24; auto-deployment is enabled. The production health endpoint returns 200. The setup instructions below are a reference for provisioning or recovery, not evidence that existing setup needs to be repeated.
 
 ## 1. Confirm hosting before buying
 
