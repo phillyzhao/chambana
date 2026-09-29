@@ -118,6 +118,16 @@ export async function mutate(form: FormData) {
         notice = "Your group is ready.";
         break;
       }
+      case "update_group_categories":
+        await rpc("update_group_categories", {
+          p_group: uuid(form, "group_id"),
+          p_categories: groupSchema.shape.category_ids.parse(
+            form.getAll("category_ids"),
+          ),
+        });
+        notice =
+          "Categories updated. Your choices apply to future mission draws.";
+        break;
       case "delete_group": {
         await rpc("delete_group", {
           p_group: uuid(form, "group_id"),

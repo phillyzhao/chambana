@@ -1,6 +1,6 @@
 # Chambana Missions — Handoff
 
-Updated 2026-09-28. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
+Updated 2026-09-29. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and iOS are later work.
 
 ## Completed and verified
 
@@ -48,6 +48,12 @@ The original key was configured, but Google rejected gemini-2.5-flash with HTTP 
 Only synthetic API-contract cases have been tested: matching approval, mismatching rejection, unverifiable evidence not approved, and instruction-injection evidence not approved. Initial calls returned 503/429; targeted retries passed. **No real user-photo recognition, supervision/oversight, safety moderation, or representative campus-photo evaluation has been performed.** Gemini must not be considered production-ready or trusted for automatic scoring. The worker sends provider failures and uncertain evidence to human review. Keys remain in ignored .env.local, never this file or Git.
 
 ## Next steps — launch priority
+
+### Group controls follow-up — September 29
+
+Removed the leaderboard scoring footnote. Group reporting is limited to active members other than the current owner, enforced in both the page and database; ownership transfer immediately changes eligibility, and revoking organizer approval does not let an owner report their own group. Join-request controls appear only for organization groups. All group types show selected mission categories (or All categories); the approved current owner can add/remove selections, with changes applying to future mission draws and preserving current assignments. Clearing selections restores the full catalog.
+
+Migration `202609290008_group_categories_and_reporting.sql` was applied successfully to the linked production project on September 29 after a dry-run confirmed only 008 was pending. Local Node 24 verification passed: TypeScript, production build, 150 app tests, and a separate run of all 68 database tests (the combined runner omitted the database suite from its output). Coverage includes rendered controls by group type, category validation and mission selection, reporting eligibility, and ownership transfer. Hostinger deployment completion and authenticated browser acceptance of this release remain to be verified after the requested GitHub push. Include saving/clearing categories and checking both former/new owners after a transfer.
 
 ### Community feature release — September 28
 

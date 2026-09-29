@@ -407,10 +407,12 @@ describe("group deletion", () => {
     );
     await db.query("select refresh_missions($1)", [otherGroup]);
     await db.query("select create_invite($1)", [group]);
+    await asUser(member);
     await db.query(
       "select report_content('group',$1,'A report for later review.')",
       [group],
     );
+    await asUser(owner);
     await db.query("select delete_group($1,'Test group')", [group]);
     await asService();
     for (const table of [
@@ -678,6 +680,194 @@ describe("optional group categories", () => {
       [],
       /Organizer approval/,
     );
+  });
+});
+describe("group category editing and reporting", () => {
+  it.each(["open", "invite", "organization"])(
+    "edits categories for %s groups without changing current missions",
+    async (mode) => {
+      await asService();
+      await db.query("update groups set join_mode=$2 where id=$1", [
+        group,
+        mode,
+      ]);
+      const extra = randomUUID();
+      await db.query(
+        "insert into categories(id,name) values($1,'Another category')",
+        [extra],
+      );
+      const before = (
+        await db.query(
+          "select * from assignments where group_id=$1 order by id",
+          [group],
+        )
+      ).rows;
+      await asUser(owner);
+      await db.query("select update_group_categories($1,$2::uuid[])", [
+        group,
+        [category, extra],
+      ]);
+      expect(
+        Number(
+          await scalar(
+            "select count(*) from group_categories where group_id=$1",
+            [group],
+          ),
+        ),
+      ).toBe(2);
+      await db.query("select update_group_categories($1,$2::uuid[])", [
+        group,
+        [extra],
+      ]);
+      expect(
+        await scalar(
+          "select category_id from group_categories where group_id=$1",
+          [group],
+        ),
+      ).toBe(extra);
+      expect(
+        (
+          await db.query(
+            "select * from assignments where group_id=$1 order by id",
+            [group],
+          )
+        ).rows,
+      ).toEqual(before);
+      await db.query("select update_group_categories($1,array[]::uuid[])", [
+        group,
+      ]);
+      expect(
+        Number(
+          await scalar(
+            "select count(*) from group_categories where group_id=$1",
+            [group],
+          ),
+        ),
+      ).toBe(0);
+    },
+  );
+  it("validates selections atomically and restricts edits to the approved owner", async () => {
+    for (const user of [member, outsider, admin]) {
+      await asUser(user);
+      await denied(
+        "select update_group_categories($1,array[]::uuid[])",
+        [group],
+        /organizer/,
+      );
+    }
+    await asUser(owner);
+    await denied(
+      "select update_group_categories($1,$2::uuid[])",
+      [group, [randomUUID()]],
+      /valid mission categories/,
+    );
+    await denied(
+      "select update_group_categories($1,array[null]::uuid[])",
+      [group],
+      /valid mission categories/,
+    );
+    await denied(
+      "select update_group_categories($1,array_fill($2::uuid,array[11]))",
+      [group, category],
+      /ten categories/,
+    );
+    expect(
+      await scalar(
+        "select category_id from group_categories where group_id=$1",
+        [group],
+      ),
+    ).toBe(category);
+    await asUser(admin);
+    await db.query("select approve_organizer('owner@illinois.edu',false)");
+    await asUser(owner);
+    await denied(
+      "select update_group_categories($1,array[]::uuid[])",
+      [group],
+      /organizer/,
+    );
+    await denied(
+      "select report_content('group',$1,'Owner access revoked.')",
+      [group],
+      /Only active members/,
+    );
+  });
+  it("uses updated categories for future draws", async () => {
+    await asService();
+    const extra = randomUUID();
+    await db.query(
+      "insert into categories(id,name) values($1,'Future draws')",
+      [extra],
+    );
+    const mission = await scalar(
+      "insert into missions(category_id,title,instructions,proof_criteria,nuts,published) values($1,'New choice','Photograph campus art.','Visible artwork.',20,true) returning id",
+      [extra],
+    );
+    await db.query(
+      "update assignments set status='expired',available_at=now()-interval '1 second' where group_id=$1",
+      [group],
+    );
+    await asUser(owner);
+    await db.query("select update_group_categories($1,array[$2::uuid])", [
+      group,
+      extra,
+    ]);
+    await db.query("select refresh_missions($1)", [group]);
+    expect(
+      (
+        await db.query(
+          "select mission_id from assignments where group_id=$1 and status='active'",
+          [group],
+        )
+      ).rows,
+    ).toEqual([{ mission_id: mission }]);
+  });
+  it("allows only active non-owner members to report and follows ownership transfers", async () => {
+    for (const user of [owner, outsider, admin]) {
+      await asUser(user);
+      await denied(
+        "select report_content('group',$1,'Please review this group.')",
+        [group],
+        /Only active members/,
+      );
+    }
+    await asService();
+    await db.query(
+      "insert into group_members(group_id,user_id,status) values($1,$2,'pending')",
+      [group, outsider],
+    );
+    await asUser(outsider);
+    await denied(
+      "select report_content('group',$1,'Please review this group.')",
+      [group],
+      /Only active members/,
+    );
+    await asUser(member);
+    await db.query(
+      "select report_content('group',$1,'Please review this group.')",
+      [group],
+    );
+    await asUser(admin);
+    await db.query("select approve_organizer('member@illinois.edu',true)");
+    await asUser(owner);
+    await db.query("select transfer_group_ownership($1,$2)", [group, member]);
+    await db.query(
+      "select report_content('group',$1,'Former owner can report.')",
+      [group],
+    );
+    await denied(
+      "select update_group_categories($1,array[]::uuid[])",
+      [group],
+      /organizer/,
+    );
+    await asUser(member);
+    await denied(
+      "select report_content('group',$1,'New owner cannot report.')",
+      [group],
+      /Only active members/,
+    );
+    await db.query("select update_group_categories($1,array[]::uuid[])", [
+      group,
+    ]);
   });
 });
 describe("community permissions and notifications", () => {

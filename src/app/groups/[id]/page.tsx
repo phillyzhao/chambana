@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import {
   checked,
   demoAssignments,
+  demoCategories,
   demoGroups,
   viewer,
   type Assignment,
@@ -34,6 +35,8 @@ export default async function GroupPage({
     pending: { user_id: string; profiles: { display_name: string } }[] = [];
   let submissions: Submission[] = [];
   let score = 0;
+  let categories = demoCategories;
+  let selectedCategoryIds: string[] = [];
   let memberCount = 0;
   let members: {
     id: string;
@@ -52,6 +55,16 @@ export default async function GroupPage({
     if (result.error) notFound();
     group = result.data || undefined;
     if (group) {
+      const [allCategories, selectedCategories] = await Promise.all([
+        db.from("categories").select("*").order("name").then(checked),
+        db
+          .from("group_categories")
+          .select("category_id")
+          .eq("group_id", id)
+          .then(checked),
+      ]);
+      categories = allCategories;
+      selectedCategoryIds = selectedCategories.map((c) => c.category_id);
       const points = checked(
         await db.from("group_leaderboard").select("nuts").eq("id", id).single(),
       );
@@ -91,7 +104,11 @@ export default async function GroupPage({
         submissions = checked(
           await db.rpc("group_submission_status", { p_group: id }),
         );
-      if (me.organizer && group.owner_id === me.user.id) {
+      if (
+        me.organizer &&
+        group.owner_id === me.user.id &&
+        group.join_mode === "organization"
+      ) {
         const rows = checked(
           await db
             .from("group_members")
@@ -143,6 +160,51 @@ export default async function GroupPage({
           membership
         </span>
       </div>
+      <section className="panel">
+        <h2>Mission categories</h2>
+        {selectedCategoryIds.length ? (
+          <ul>
+            {categories
+              .filter((c) => selectedCategoryIds.includes(c.id))
+              .map((c) => (
+                <li key={c.id}>{c.name}</li>
+              ))}
+          </ul>
+        ) : (
+          <p>All categories · Missions can come from any category.</p>
+        )}
+        {owner && (
+          <details>
+            <summary>Edit mission categories</summary>
+            <Action
+              kind="update_group_categories"
+              back={back}
+              fields={{ group_id: id }}
+            >
+              <fieldset aria-describedby="edit-categories-help">
+                <legend>Choose mission categories</legend>
+                <p id="edit-categories-help" className="muted">
+                  Choose up to 10 categories, or leave all unchecked for all
+                  categories. Changes apply to future mission draws; current
+                  missions stay available.
+                </p>
+                {categories.map((c) => (
+                  <label className="check-label" key={c.id}>
+                    <input
+                      type="checkbox"
+                      name="category_ids"
+                      value={c.id}
+                      defaultChecked={selectedCategoryIds.includes(c.id)}
+                    />
+                    {c.name}
+                  </label>
+                ))}
+              </fieldset>
+              <button className="button">Save categories</button>
+            </Action>
+          </details>
+        )}
+      </section>
       {me.admin && (
         <details className="panel">
           <summary>Edit group about section</summary>
@@ -278,33 +340,47 @@ export default async function GroupPage({
               Create 7-day invite link
             </button>
           </Action>
-          <h3>Join requests</h3>
-          {pending.length ? (
-            pending.map((p) => (
-              <div className="review-row" key={p.user_id}>
-                <Link href={`/people/${p.user_id}`}>
-                  {p.profiles.display_name}
-                </Link>
-                <Action
-                  kind="review_member"
-                  back={back}
-                  fields={{ group_id: id, user_id: p.user_id }}
-                >
-                  <button name="approve" value="true" className="button small">
-                    Approve
-                  </button>
-                  <button name="approve" value="false" className="text-button">
-                    Decline
-                  </button>
-                </Action>
-              </div>
-            ))
-          ) : (
-            <p>No pending requests.</p>
+          {group.join_mode === "organization" && (
+            <>
+              <h3>Join requests</h3>
+              {pending.length ? (
+                pending.map((p) => (
+                  <div className="review-row" key={p.user_id}>
+                    <Link href={`/people/${p.user_id}`}>
+                      {p.profiles.display_name}
+                    </Link>
+                    <Action
+                      kind="review_member"
+                      back={back}
+                      fields={{ group_id: id, user_id: p.user_id }}
+                    >
+                      <button
+                        name="approve"
+                        value="true"
+                        className="button small"
+                      >
+                        Approve
+                      </button>
+                      <button
+                        name="approve"
+                        value="false"
+                        className="text-button"
+                      >
+                        Decline
+                      </button>
+                    </Action>
+                  </div>
+                ))
+              ) : (
+                <p>No pending requests.</p>
+              )}
+            </>
           )}
         </section>
       )}
-      {me.user && <ReportForm type="group" id={id} back={back} />}
+      {member && me.user && group.owner_id !== me.user.id && (
+        <ReportForm type="group" id={id} back={back} />
+      )}
       {owner && (
         <details className="panel">
           <summary>Transfer group ownership</summary>

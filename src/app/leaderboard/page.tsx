@@ -95,11 +95,6 @@ export default async function Leaderboard({
           credit the person whose photo completes the mission.
         </Empty>
       )}
-      <p className="footnote">
-        Nuts are leaderboard points only. Group and individual scores come from
-        the same approved completion. Equal scores share bragging rights;
-        display order is stable.
-      </p>
     </>
   );
 }
