@@ -127,7 +127,7 @@ export default async function Missions({
                 {missions.filter((m) => m.status === "active").length}
               </span>
             </h2>
-            {!me.demo && (
+            {!me.demo && me.organizer && group.owner_id === me.user?.id && (
               <Action
                 kind="refresh"
                 back={`/missions?group=${group.id}`}
@@ -154,8 +154,9 @@ export default async function Missions({
           </div>
           {!missions.length && (
             <Empty title="Your next adventure starts here">
-              Use “Refresh slots” to draw missions from your group’s categories.
-              Your organizer may still be waiting for the first mission catalog.
+              {me.organizer && group.owner_id === me.user?.id
+                ? "Use “Refresh slots” to draw missions for your group."
+                : "Your group organizer can refresh the mission slots."}
             </Empty>
           )}
           <Link className="explore-link" href="/groups">

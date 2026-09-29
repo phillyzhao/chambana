@@ -123,6 +123,12 @@ export function GroupCard({
         </span>
         <h2>{group.name}</h2>
         <p>{group.description}</p>
+        {group.member_count !== undefined && (
+          <p>
+            {group.member_count}{" "}
+            {group.member_count === 1 ? "member" : "members"}
+          </p>
+        )}
         <span className="text-link">
           Explore group <ArrowUpRight size={15} />
         </span>

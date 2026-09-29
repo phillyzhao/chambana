@@ -25,7 +25,9 @@ select set_config('request.jwt.claim.sub',current_setting('chambana.qa_owner'),t
 select set_config('chambana.qa_group', public.create_group('Temporary QA group','Controlled test, rolled back.','open','',array[current_setting('chambana.qa_category')::uuid])::text,true);
 select set_config('request.jwt.claim.sub',current_setting('chambana.qa_member'),true);
 select public.join_group(current_setting('chambana.qa_group')::uuid);
+select set_config('request.jwt.claim.sub',current_setting('chambana.qa_owner'),true);
 select public.refresh_missions(current_setting('chambana.qa_group')::uuid);
+select set_config('request.jwt.claim.sub',current_setting('chambana.qa_member'),true);
 do $$
 begin
   if (select count(*) from public.assignments where group_id=current_setting('chambana.qa_group')::uuid)<>3 then raise exception 'Slot count failed'; end if;

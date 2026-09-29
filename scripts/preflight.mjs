@@ -20,7 +20,7 @@ export function checkEnvironment(
   for (const name of Object.keys(env))
     if (
       name.startsWith("NEXT_PUBLIC_") &&
-      /SECRET|SERVICE_ROLE|GEMINI.*KEY/i.test(name)
+      /SECRET|PASSWORD|SERVICE_ROLE|GEMINI.*KEY/i.test(name)
     )
       issues.push(`Remove server credential from public variable ${name}.`);
   try {
@@ -53,6 +53,20 @@ export function checkEnvironment(
     issues.push("Invalid GEMINI_MODEL.");
   if (production && !env.SUPPORT_EMAIL)
     issues.push("Set a monitored SUPPORT_EMAIL before public signups.");
+  if (production) {
+    for (const name of [
+      "SMTP_HOST",
+      "SMTP_USER",
+      "SMTP_PASSWORD",
+      "EMAIL_FROM",
+    ])
+      if (!env[name]?.trim())
+        issues.push(`Missing ${name} for notification email delivery.`);
+    if (![465, 587].includes(Number(env.SMTP_PORT || 587)))
+      issues.push("SMTP_PORT must be 465 or 587 for encrypted delivery.");
+    if (env.EMAIL_FROM && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(env.EMAIL_FROM))
+      issues.push("EMAIL_FROM must be a sender email address.");
+  }
   return issues;
 }
 if (process.argv[1]?.endsWith("preflight.mjs")) {

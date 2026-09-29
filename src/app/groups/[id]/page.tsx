@@ -12,6 +12,8 @@ import { database } from "@/lib/supabase";
 import { Action, Empty, Notice, PageIntro, ReportForm } from "@/components/ui";
 import { MissionCard } from "@/components/mission-card";
 import { DeleteGroupForm } from "@/components/delete-group-form";
+import { LinkedText } from "@/components/linked-text";
+import { Avatar } from "@/components/avatar";
 
 export default async function GroupPage({
   params,
@@ -32,6 +34,14 @@ export default async function GroupPage({
     pending: { user_id: string; profiles: { display_name: string } }[] = [];
   let submissions: Submission[] = [];
   let score = 0;
+  let memberCount = 0;
+  let members: {
+    id: string;
+    display_name: string;
+    has_avatar: boolean;
+    is_owner: boolean;
+    can_own: boolean;
+  }[] = [];
   if (!me.demo) {
     const db = await database();
     const result = await db
@@ -46,6 +56,10 @@ export default async function GroupPage({
         await db.from("group_leaderboard").select("nuts").eq("id", id).single(),
       );
       score = Number(points.nuts);
+      const counts = checked(
+        await db.rpc("group_member_counts", { p_groups: [id] }),
+      );
+      memberCount = Number(counts[0]?.member_count || 0);
     }
     if (me.user && group) {
       const membershipResult = await db
@@ -58,6 +72,8 @@ export default async function GroupPage({
       const membership = membershipResult.data as { status: string } | null;
       status = membership?.status || "";
       member = status === "active";
+      if (member || me.admin)
+        members = checked(await db.rpc("group_directory", { p_group: id }));
       if (member)
         missions = checked(
           await db
@@ -106,9 +122,13 @@ export default async function GroupPage({
         }
         title={group.name}
       >
-        {group.description}
+        <LinkedText text={group.description} />
       </PageIntro>
       <div className="group-stats">
+        <span>
+          <strong>{me.demo ? "—" : memberCount}</strong>{" "}
+          {memberCount === 1 ? "member" : "members"}
+        </span>
         <span>
           <strong>{me.demo ? "—" : score}</strong> nuts earned
         </span>
@@ -123,6 +143,66 @@ export default async function GroupPage({
           membership
         </span>
       </div>
+      {me.admin && (
+        <details className="panel">
+          <summary>Edit group about section</summary>
+          <Action kind="edit_group_about" back={back} fields={{ group_id: id }}>
+            <label>
+              About this group
+              <textarea
+                name="description"
+                defaultValue={group.description}
+                required
+                minLength={10}
+                maxLength={500}
+              />
+            </label>
+            <p className="muted">Website addresses become clickable links.</p>
+            <button className="button">Save about section</button>
+          </Action>
+        </details>
+      )}
+      {(member || me.admin) && (
+        <details className="panel">
+          <summary>Members ({memberCount})</summary>
+          <ul className="member-list">
+            {members.map((person) => (
+              <li key={person.id}>
+                <Link href={`/people/${person.id}`}>
+                  <Avatar
+                    id={person.id}
+                    name={person.display_name}
+                    hasAvatar={person.has_avatar}
+                  />
+                  <span>
+                    {person.display_name}
+                    {person.is_owner && <small>Owner · Organizer</small>}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+      {me.user &&
+        group.owner_id !== me.user.id &&
+        (member || status === "pending") && (
+          <details className="leave-group">
+            <summary className="text-button">
+              {member ? "Leave group" : "Cancel join request"}
+            </summary>
+            <p>
+              {member
+                ? "You’ll lose access to this group’s missions. Your past submissions and earned points stay recorded. We’ll email you a confirmation."
+                : "Cancel your pending membership request."}
+            </p>
+            <Action kind="leave_group" back={back} fields={{ group_id: id }}>
+              <button className="button secondary">
+                {member ? "Confirm leave group" : "Confirm cancellation"}
+              </button>
+            </Action>
+          </details>
+        )}
       {group.join_mode === "organization" && !group.organization_verified && (
         <p className="notice">
           Organization verification is pending. Join requests can be submitted,
@@ -162,7 +242,7 @@ export default async function GroupPage({
         <>
           <div className="section-heading">
             <h2>Group missions</h2>
-            {!me.demo && (
+            {owner && !me.demo && (
               <Action kind="refresh" back={back} fields={{ group_id: id }}>
                 <button className="text-button">Refresh slots ↻</button>
               </Action>
@@ -182,8 +262,10 @@ export default async function GroupPage({
           </div>
           {!missions.length && (
             <Empty title="Ready when you are">
-              Refresh slots to draw missions from this group’s selected
-              categories. New challenges will appear as they are published.
+              {owner
+                ? "Refresh slots to draw missions for your group."
+                : "Your group organizer can refresh the mission slots."}{" "}
+              New challenges will appear as they are published.
             </Empty>
           )}
         </>
@@ -223,6 +305,44 @@ export default async function GroupPage({
         </section>
       )}
       {me.user && <ReportForm type="group" id={id} back={back} />}
+      {owner && (
+        <details className="panel">
+          <summary>Transfer group ownership</summary>
+          <p>
+            Choose an active member who is already an approved organizer.
+            They’ll become the owner, and you’ll become a regular member of this
+            group. You can then leave the group.
+          </p>
+          {members.some((person) => !person.is_owner && person.can_own) ? (
+            <Action kind="transfer_group" back={back} fields={{ group_id: id }}>
+              <label>
+                New group owner
+                <select name="owner_id" required defaultValue="">
+                  <option value="" disabled>
+                    Choose an approved organizer
+                  </option>
+                  {members
+                    .filter((person) => !person.is_owner && person.can_own)
+                    .map((person) => (
+                      <option key={person.id} value={person.id}>
+                        {person.display_name}
+                      </option>
+                    ))}
+                </select>
+              </label>
+              <button className="button secondary">
+                Transfer ownership and become a member
+              </button>
+            </Action>
+          ) : (
+            <p>
+              No other active members are approved organizers yet. Ask a
+              platform admin to approve the member you want to transfer
+              ownership to.
+            </p>
+          )}
+        </details>
+      )}
       {owner && <DeleteGroupForm id={id} name={group.name} />}
     </>
   );

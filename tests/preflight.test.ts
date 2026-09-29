@@ -9,6 +9,10 @@ const env = {
   GEMINI_MODEL: "gemini-2.5-flash",
   CRON_SECRET: "x".repeat(32),
   SUPPORT_EMAIL: "support@example.com",
+  SMTP_HOST: "smtp.example.com",
+  SMTP_USER: "fixture",
+  SMTP_PASSWORD: "fixture-secret",
+  EMAIL_FROM: "hello@example.com",
 };
 describe("deployment preflight", () => {
   it("accepts a configured Node 24 host without printing keys", () =>

@@ -3,6 +3,7 @@
 import { randomUUID, createHash } from "node:crypto";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { database, serviceDatabase, isConfigured } from "@/lib/supabase";
 import {
@@ -17,6 +18,7 @@ import { appOrigin, microsoftEnabled, microsoftOptions } from "@/lib/auth";
 import { allowRequest } from "@/lib/rate-limit";
 import { normalizePhoto } from "@/lib/photos";
 import { operationalEvent } from "@/lib/observability";
+import { deliverNotifications, emailConfigured } from "@/lib/email";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
 const uuid = (form: FormData, key: string) =>
@@ -137,6 +139,32 @@ export async function mutate(form: FormData) {
             : "You joined the group.";
         break;
       }
+      case "leave_group":
+        await rpc("leave_group", { p_group: uuid(form, "group_id") });
+        destination = "/groups?mode=mine";
+        notice =
+          "Membership ended. If you were an active member, your email confirmation is queued.";
+        break;
+      case "edit_group_about":
+        await rpc("edit_group_about", {
+          p_group: uuid(form, "group_id"),
+          p_description: z
+            .string()
+            .trim()
+            .min(10)
+            .max(500)
+            .parse(value(form, "description")),
+        });
+        notice = "Group about section updated.";
+        break;
+      case "transfer_group":
+        await rpc("transfer_group_ownership", {
+          p_group: uuid(form, "group_id"),
+          p_owner: uuid(form, "owner_id"),
+        });
+        notice =
+          "Ownership transferred. You’re now a regular member of this group and can leave if you choose.";
+        break;
       case "join_code": {
         const id = await rpc("join_by_code", {
           p_code: z.string().trim().min(1).max(40).parse(value(form, "code")),
@@ -182,6 +210,53 @@ export async function mutate(form: FormData) {
           .update(profile)
           .eq("id", user.id);
         if (error) throw new Error("Could not update your profile.");
+        break;
+      }
+      case "avatar": {
+        const file = form.get("avatar");
+        if (
+          !(file instanceof File) ||
+          !file.size ||
+          file.size > MAX_PHOTO_BYTES ||
+          !["image/jpeg", "image/png", "image/webp"].includes(file.type)
+        )
+          throw new Error(
+            "Choose a JPG, PNG, or WebP picture smaller than 8 MB.",
+          );
+        if (!(await allowRequest("avatar", user.id, 5, 3600)))
+          throw new Error("Please wait before changing your picture again.");
+        const image = await normalizePhoto(
+          Buffer.from(await file.arrayBuffer()),
+        );
+        const service = serviceDatabase();
+        const path = `${user.id}/${randomUUID()}.jpg`;
+        const previous = await db
+          .from("profiles")
+          .select("avatar_path")
+          .eq("id", user.id)
+          .single();
+        if (previous.error) throw new Error("Could not load your profile.");
+        const upload = await service.storage
+          .from("profile-avatars")
+          .upload(path, image, { contentType: "image/jpeg", upsert: false });
+        if (upload.error)
+          throw new Error("Could not save your profile picture.");
+        const saved = await service
+          .from("profiles")
+          .update({ avatar_path: path })
+          .eq("id", user.id);
+        if (saved.error) {
+          await service.storage.from("profile-avatars").remove([path]);
+          throw new Error("Could not update your profile picture.");
+        }
+        const oldPath = previous.data.avatar_path;
+        if (oldPath && oldPath.startsWith(`${user.id}/`)) {
+          const cleanup = await service.storage
+            .from("profile-avatars")
+            .remove([oldPath]);
+          if (cleanup.error) operationalEvent("avatar_cleanup_failed", user.id);
+        }
+        notice = "Profile picture saved.";
         break;
       }
       case "photo": {
@@ -286,11 +361,32 @@ export async function mutate(form: FormData) {
         break;
       case "resolve_report":
         await rpc("resolve_report", { p_report: uuid(form, "report_id") });
+        notice =
+          "Report resolved. The reporter’s email confirmation is queued.";
         break;
       default:
         throw new Error("Unknown action.");
     }
     revalidatePath("/", "layout");
+    if (
+      emailConfigured() &&
+      [
+        "create_group",
+        "join_group",
+        "join_code",
+        "review_member",
+        "leave_group",
+        "resolve_report",
+      ].includes(value(form, "action"))
+    ) {
+      after(async () => {
+        try {
+          await deliverNotifications();
+        } catch {
+          operationalEvent("email_queue_unavailable");
+        }
+      });
+    }
   } catch (error) {
     failure = message(error);
   }

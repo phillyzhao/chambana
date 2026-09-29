@@ -1,7 +1,9 @@
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { Action, Notice, PageIntro } from "@/components/ui";
 import { checked, viewer } from "@/lib/data";
 import { database, serviceDatabase } from "@/lib/supabase";
+import { emailConfigured } from "@/lib/email";
 
 export default async function Admin({
   searchParams,
@@ -67,6 +69,13 @@ export default async function Admin({
   return (
     <>
       <Notice params={params} />
+      {!emailConfigured() && (
+        <p className="notice error">
+          Notification email delivery is not configured. Join, leave, and
+          report-resolution notifications will remain queued until the SMTP
+          sender is configured.
+        </p>
+      )}
       <PageIntro eyebrow="CHAMBANA OPERATIONS" title="Keep campus moving.">
         Approve organizers, manage the mission catalog, and review uncertain
         photos.
@@ -260,7 +269,20 @@ export default async function Admin({
           reports.map((r) => (
             <div className="review-photo" key={r.id}>
               <p>
-                {r.target_type}: <code>{r.target_id}</code>
+                {r.target_type === "group"
+                  ? "Group"
+                  : r.target_type === "profile"
+                    ? "Profile"
+                    : "Mission"}
+                :{" "}
+                {r.target_type === "group" &&
+                r.target_name !== "Deleted group" ? (
+                  <Link className="text-link" href={`/groups/${r.target_id}`}>
+                    {r.target_name || "Reported group"}
+                  </Link>
+                ) : (
+                  r.target_name || "Reported content"
+                )}
               </p>
               <p>{r.reason}</p>
               <Action

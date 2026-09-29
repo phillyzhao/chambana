@@ -2,6 +2,7 @@ import { timingSafeEqual } from "node:crypto";
 import { serviceDatabase } from "@/lib/supabase";
 import { verifySubmission } from "@/lib/verification";
 import { operationalEvent } from "@/lib/observability";
+import { deliverNotifications } from "@/lib/email";
 export const maxDuration = 60;
 export async function GET(request: Request) {
   const expected = process.env.CRON_SECRET;
@@ -42,9 +43,10 @@ export async function GET(request: Request) {
       .limit(2);
     if (queue.error)
       return Response.json({ error: "Queue unavailable" }, { status: 503 });
-    const results = await Promise.allSettled(
-      (queue.data || []).map((s) => verifySubmission(s.id)),
-    );
+    const [results, email] = await Promise.all([
+      Promise.allSettled((queue.data || []).map((s) => verifySubmission(s.id))),
+      deliverNotifications(),
+    ]);
     const cleanup = await db
       .from("request_limits")
       .delete()
@@ -56,8 +58,12 @@ export async function GET(request: Request) {
       {
         processed: results.filter((r) => r.status === "fulfilled").length,
         failed,
+        email,
       },
-      { status: failed ? 503 : 200, headers: { "Cache-Control": "no-store" } },
+      {
+        status: failed || email.failed || !email.configured ? 503 : 200,
+        headers: { "Cache-Control": "no-store" },
+      },
     );
   } catch {
     operationalEvent("queue_unavailable");

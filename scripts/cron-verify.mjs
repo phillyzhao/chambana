@@ -19,9 +19,12 @@ try {
   console.log(
     `Verification queue processed ${Number(result.processed) || 0} submissions.`,
   );
+  console.log(
+    `Notification queue sent ${Number(result.email?.sent) || 0} emails.`,
+  );
 } catch {
   console.error(
-    "Verification queue call failed. Check the server logs, APP_URL and CRON_SECRET.",
+    "Verification/notification queue call failed. Check server logs, APP_URL, CRON_SECRET and SMTP configuration.",
   );
   process.exitCode = 1;
 }

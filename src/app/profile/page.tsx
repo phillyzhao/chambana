@@ -3,6 +3,7 @@ import { signOut } from "@/app/actions";
 import { Action, Empty, Notice, PageIntro } from "@/components/ui";
 import { checked, viewer } from "@/lib/data";
 import { database } from "@/lib/supabase";
+import { Avatar } from "@/components/avatar";
 export default async function ProfilePage({
   searchParams,
 }: {
@@ -44,6 +45,28 @@ export default async function ProfilePage({
       </div>
       <section className="panel">
         <h2>Your public profile</h2>
+        <Avatar
+          id={me.user.id}
+          name={me.profile.display_name}
+          hasAvatar={Boolean(me.profile.avatar_path)}
+          large
+        />
+        <Action kind="avatar" back="/profile">
+          <label>
+            Profile picture
+            <input
+              type="file"
+              name="avatar"
+              accept="image/jpeg,image/png,image/webp"
+              required
+            />
+          </label>
+          <p className="muted">
+            JPG, PNG, or WebP, up to 8 MB. Your profile picture is public. Photo
+            location and other metadata are removed.
+          </p>
+          <button className="button secondary">Save picture</button>
+        </Action>
         <Action kind="profile" back="/profile">
           <label>
             Display name

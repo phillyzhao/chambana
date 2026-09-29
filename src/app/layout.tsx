@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Brand } from "@/components/ui";
 import { Navigation } from "@/components/navigation";
 import { viewer } from "@/lib/data";
+import { AboutMenu } from "@/components/about-menu";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -29,10 +30,16 @@ export default async function Layout({
       <body>
         <header className="topbar">
           <Brand />
-          <Link className="account-link" href={me.user ? "/profile" : "/login"}>
-            {me.profile ? me.profile.display_name.split(" ")[0] : "Sign in"}
-            <span className="account-dot" />
-          </Link>
+          <div className="header-links">
+            <AboutMenu />
+            <Link
+              className="account-link"
+              href={me.user ? "/profile" : "/login"}
+            >
+              {me.profile ? me.profile.display_name.split(" ")[0] : "Sign in"}
+              <span className="account-dot" />
+            </Link>
+          </div>
         </header>
         {me.demo && (
           <div className="preview-banner">

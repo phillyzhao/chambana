@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { database } from "@/lib/supabase";
 import { checked, viewer } from "@/lib/data";
 import { Notice, PageIntro, ReportForm } from "@/components/ui";
+import { Avatar } from "@/components/avatar";
 export default async function Person({
   params,
   searchParams,
@@ -33,6 +34,12 @@ export default async function Person({
   return (
     <div className="narrow">
       <Notice params={query} />
+      <Avatar
+        id={id}
+        name={profile.display_name}
+        hasAvatar={Boolean(profile.avatar_path)}
+        large
+      />
       <PageIntro eyebrow="MEET AN ILLINI" title={profile.display_name}>
         {profile.bio || "Making a little more of campus life."}
       </PageIntro>

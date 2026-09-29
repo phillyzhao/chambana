@@ -10,6 +10,7 @@ export type Group = {
   join_mode: string;
   organization: string;
   organization_verified: boolean;
+  member_count?: number;
 };
 export type Assignment = {
   id: string;
@@ -30,6 +31,7 @@ export type Profile = {
   display_name: string;
   bio: string;
   created_at: string;
+  avatar_path?: string | null;
 };
 export type Submission = {
   id: string;

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Search, ArrowRight } from "lucide-react";
+import { GroupFilter } from "@/components/group-filter";
 import { checked, demoCategories, demoGroups, viewer } from "@/lib/data";
 import { database } from "@/lib/supabase";
 import { Action, Empty, GroupCard, Notice, PageIntro } from "@/components/ui";
@@ -12,24 +13,60 @@ export default async function Groups({
   const [me, params] = await Promise.all([viewer(), searchParams]);
   let groups = demoGroups,
     categories = demoCategories;
+  const modes = [
+    ["", "All groups"],
+    ["open", "Open to everyone"],
+    ["organization", "Organizations"],
+    ["invite", "Invite only"],
+    ["mine", "My groups"],
+  ];
+  const mode = modes.some(([key]) => key === params.mode)
+    ? params.mode || ""
+    : "";
+  let myGroups: string[] = [];
   if (!me.demo) {
     const db = await database();
+    if (me.user)
+      myGroups = checked(
+        await db
+          .from("group_members")
+          .select("group_id")
+          .eq("user_id", me.user.id)
+          .eq("status", "active"),
+      ).map((m) => m.group_id);
+    let groupQuery = db
+      .from("groups")
+      .select("*")
+      .order("created_at", { ascending: false });
+    if (mode === "mine")
+      groupQuery = groupQuery.in(
+        "id",
+        myGroups.length ? myGroups : ["00000000-0000-0000-0000-000000000000"],
+      );
+    else if (mode) groupQuery = groupQuery.eq("join_mode", mode);
     [groups, categories] = await Promise.all([
-      db
-        .from("groups")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(100)
-        .then(checked),
+      groupQuery.then(checked),
       db.from("categories").select("*").order("name").then(checked),
     ]);
+    if (groups.length) {
+      const counts = checked(
+        await db.rpc("group_member_counts", {
+          p_groups: groups.map((g) => g.id),
+        }),
+      ) as { group_id: string; member_count: number }[];
+      const byId = new Map(
+        counts.map((c) => [c.group_id, Number(c.member_count)]),
+      );
+      groups = groups.map((g) => ({ ...g, member_count: byId.get(g.id) ?? 0 }));
+    }
   }
   const filtered = groups.filter(
     (g) =>
       `${g.name} ${g.description} ${g.organization}`
         .toLowerCase()
         .includes((params.q || "").toLowerCase()) &&
-      (!params.mode || g.join_mode === params.mode),
+      (!mode ||
+        (mode === "mine" ? myGroups.includes(g.id) : g.join_mode === mode)),
   );
   return (
     <>
@@ -38,6 +75,7 @@ export default async function Groups({
         Same campus. A thousand ways to explore it.
       </PageIntro>
       <form className="search" action="/groups">
+        <input type="hidden" name="mode" value={mode} />
         <Search size={19} />
         <input
           name="q"
@@ -49,25 +87,17 @@ export default async function Groups({
           <ArrowRight size={18} />
         </button>
       </form>
-      <div className="chips">
-        {[
-          ["", "All groups"],
-          ["open", "Open to everyone"],
-          ["organization", "Organizations"],
-          ["invite", "Invite only"],
-        ].map(([key, name]) => (
-          <Link
-            className={`chip ${(params.mode || "") === key ? "selected" : ""}`}
-            key={key}
-            href={`/groups?mode=${key}&q=${encodeURIComponent(params.q || "")}`}
-          >
-            {name}
-          </Link>
-        ))}
-      </div>
+      <GroupFilter mode={mode} query={params.q || ""} />
+      {mode === "mine" && !me.user && (
+        <p className="notice">
+          <Link href="/login">Sign in</Link> to see your groups.
+        </p>
+      )}
       <div className="section-heading">
         <h2>Explore campus groups</h2>
-        <span className="muted">{filtered.length} groups</span>
+        <span className="muted">
+          {filtered.length} {filtered.length === 1 ? "group" : "groups"}
+        </span>
       </div>
       <div className="groups-grid">
         {filtered.map((g, i) => (

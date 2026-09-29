@@ -1,5 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({ db: vi.fn(), verify: vi.fn() }));
+vi.mock("../src/lib/email", () => ({
+  deliverNotifications: async () => ({ sent: 0, failed: 0, configured: true }),
+}));
 vi.mock("../src/lib/supabase", () => ({ serviceDatabase: mocks.db }));
 vi.mock("../src/lib/verification", () => ({ verifySubmission: mocks.verify }));
 import { GET } from "../src/app/api/cron/verify/route";
@@ -55,7 +58,7 @@ describe("queue processing", () => {
     const response = await GET(request());
     expect(response.status).toBe(200);
     expect(response.headers.get("cache-control")).toBe("no-store");
-    expect(await response.json()).toEqual({ processed: 2, failed: 0 });
+    expect(await response.json()).toMatchObject({ processed: 2, failed: 0 });
     expect(chain.limit).toHaveBeenCalledWith(2);
   });
   it("reports worker failures to the scheduler", async () => {
@@ -63,7 +66,7 @@ describe("queue processing", () => {
     mocks.verify.mockRejectedValue(new Error("fixture"));
     const response = await GET(request());
     expect(response.status).toBe(503);
-    expect(await response.json()).toEqual({ processed: 0, failed: 2 });
+    expect(await response.json()).toMatchObject({ processed: 0, failed: 2 });
   });
   it("does not call workers when the queue cannot be read", async () => {
     database(true);

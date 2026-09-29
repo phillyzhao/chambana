@@ -1160,3 +1160,34 @@ body { -webkit-font-smoothing: auto; }
 .notice.error { background: #eee; border-color: #aaa; color: #222; }
 .focus-visible, button:focus-visible, a:focus-visible, input:focus-visible,
 textarea:focus-visible, select:focus-visible, summary:focus-visible { outline-color: #222; }
+
+.header-links { display: flex; align-items: center; gap: 24px; }
+.header-menu, .group-filter { position: relative; font-size: 13px; }
+.header-menu summary { display: flex; align-items: center; gap: 6px; cursor: pointer; min-height: 44px; }
+.dropdown-panel { position: absolute; z-index: 20; background: #fff; border: 1px solid #ccc; border-radius: 6px; padding: 6px; min-width: 185px; box-shadow: 0 8px 20px #0001; }
+.header-menu .dropdown-panel { right: 0; }
+.dropdown-panel a { display: block; padding: 12px; border-radius: 3px; color: #222; }
+.dropdown-panel a:hover, .dropdown-panel a[aria-current="true"] { background: #eee; }
+.group-filter { margin: 18px 0; width: fit-content; }
+.group-filter summary { cursor: pointer; }
+.linked-text { white-space: pre-wrap; overflow-wrap: anywhere; }
+.linked-text a { text-decoration: underline; text-underline-offset: 3px; }
+.member-list { padding: 0; list-style: none; }
+.member-list li { padding: 12px 0; border-bottom: 1px solid #ddd; }
+.member-list a { display: flex; align-items: center; gap: 12px; }
+.member-list small { display: block; color: #666; }
+.profile-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.profile-avatar.large { width: 96px; height: 96px; margin: 12px 0 20px; }
+.avatar-initial { display: inline-grid; place-items: center; background: #eee; color: #222; font-weight: 600; }
+.avatar-initial.large { font-size: 32px; }
+.leave-group { margin: 18px 0; font-size: 13px; }
+.panel > summary { cursor: pointer; font-weight: 600; min-height: 44px; display: flex; align-items: center; }
+.about-section { scroll-margin-top: 24px; }
+@media (max-width: 600px) {
+  .header-links { gap: 12px; }
+  .topbar { padding-left: 14px; padding-right: 14px; gap: 8px; }
+  .brand { font-size: 20px; gap: 5px; }
+  .brand-mark { display: none; }
+  .header-menu { font-size: 12px; }
+  .group-stats { gap: 20px; flex-wrap: wrap; }
+}

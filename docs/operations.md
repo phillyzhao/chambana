@@ -16,6 +16,30 @@ Until a reviewed deletion implementation exists, handle verified requests manual
 
 ## Group deletion
 
+### Community updates — September 28
+
+The groups filter includes All groups, Open to everyone, Organizations, Invite only, and My groups. Counts include all active members, including the current owner; pending requests are excluded. Active members and platform admins can open the member directory, which contains public profile names/pictures and the owner's role, never email addresses.
+
+Regular members can leave or cancel a pending request. Leaving preserves previous submissions and point history, but removes mission access. Owners cannot leave while they own the group: they can delete it or transfer ownership to another active, confirmed-campus member who is already an approved organizer. Transfer immediately removes the old owner's group controls without changing their global organizer approval or granting the recipient platform-admin access. The old owner can then leave as a member. Only the approved current owner can refresh missions; this is enforced in SQL as well as both mission screens. Platform admins can edit the group description; HTTP(S) and www addresses render as safe links.
+
+Profile photos are public through `/api/avatars/[id]`, stored separately in the private `profile-avatars` bucket, and normalized with the existing image validation/metadata removal. Only the server can update avatar paths. Replacing an avatar attempts to remove the previous object; `avatar_cleanup_failed` requires a scoped orphan check. Include avatars in reviewed account-deletion requests.
+
+### Notification email delivery
+
+Migration `202609280007_community_features.sql` transactionally queues notifications when a membership becomes active (including organizer approval), an active member voluntarily leaves, or a report changes from open to resolved. Repeating the same join/resolve call does not create another event. Group deletion does not emit voluntary-leave emails. Report records snapshot a readable target name so resolution emails can still identify deleted groups. Already-active memberships and already-resolved reports are not retroactively emailed.
+
+**Pending owner setup, explicitly deferred September 28:** choose an email provider and sending email address, verify the sender with that provider, and configure its credentials. Configure `SMTP_HOST`, `SMTP_PORT` (587 with required STARTTLS, or 465 with TLS), `SMTP_USER`, `SMTP_PASSWORD`, and `EMAIL_FROM` in private host settings. This is separate from Supabase Auth email configuration. No provider account, sender identity, or credentials have been selected or configured by this change; local delivery tests mock SMTP and send no real emails.
+
+The About Team section lists Marcos Monroe — Co-Founder and Phillip Zhao — Co-Founder, as supplied by the owner. Expanded team biographies and further About details will be added later; Origin remains a placeholder, and Mission retains the existing short app tagline.
+
+After successful membership/report actions, Next.js schedules a delivery attempt after the response. The existing authenticated `/api/cron/verify` endpoint also drains email retries in bounded batches. Confirm the trusted runner still invokes it every minute. SMTP downtime leaves events queued, with exponential backoff and a maximum of eight attempts. Leases protect overlapping workers; a stable Message-ID is reused. SMTP delivery is at-least-once: a crash after provider acceptance but before the database acknowledgment can produce a duplicate. Provider acceptance does not prove inbox delivery; verify receipt in a real Illinois inbox before launch.
+
+Missing SMTP configuration is shown to admins and makes production preflight/cron fail rather than silently reporting successful delivery. Email rows with eight attempts and no `sent_at` require operator review. Confirm the cause and provider acceptance before resetting attempts/availability on specific failed rows. Never bulk-requeue sent notifications or include recipient addresses, credentials, or raw SMTP errors in logs.
+
+Migration 007 was applied to linked production project `Backend_Chambana` on September 28 before the app push; the hosted rollback-only regression checks passed afterward. Do not reapply it manually. Until SMTP is configured, events remain queued. Test open/invite joins, organization approval, voluntary leave, owner transfer, and report resolution using consented test accounts after deployment.
+
+### Deletion behavior
+
 The approved owner can delete a group from its detail page by typing its exact, case-sensitive name. The database verifies ownership and confirmation under a group lock; client-side button disabling is only a convenience. Deletion removes memberships, invites, category filters, assignments, submissions, and the group's point transactions, so members lose the points earned through that group. Other groups and their data remain unchanged. Group reports and a deletion audit event remain for platform review.
 
 Active uploads or processing reviews must finish before deletion; stale work is recovered by the existing cron job. Photos remain in the private `mission-proof` Storage bucket. The `photo_archive` table catalogs every completed upload, including rejected and review-pending submissions, with its uploader, original group, mission criteria, timestamps, storage path, hash, and review result. A database trigger creates the record on upload completion and updates review metadata. Existing completed uploads are backfilled by the migration. Archive records have no cascading links to deleted groups, assignments, or accounts; reviewed deletion requests must explicitly include the archive. Only platform admins and the server service role can read the archive. There is no automatic archive deletion or group-photo cleanup job. Upload consent and the group deletion confirmation disclose this retention. This does not set a final retention period or authorize other uses of the photos.

@@ -93,11 +93,13 @@ beforeEach(async () => {
   );
   await asUser(member);
   await db.query("select join_group($1)", [group]);
+  await asUser(owner);
   await db.query("select refresh_missions($1)", [group]);
   assignment = await scalar(
     "select id from assignments where group_id=$1 order by slot limit 1",
     [group],
   );
+  await asUser(member);
 });
 afterEach(async () => {
   await db.exec("rollback; reset role");
@@ -221,7 +223,7 @@ describe("authentication and permissions", () => {
       "update assignments set status='declined',available_at=now()-interval '1 second' where id=$1",
       [assignment],
     );
-    await asUser(member);
+    await asUser(owner);
     await db.query("select refresh_missions($1)", [group]);
     expect(
       await scalar(
@@ -252,7 +254,7 @@ describe("authentication and permissions", () => {
       [member],
     );
     await asUser(member);
-    await denied("select refresh_missions($1)", [group], /Join/);
+    await denied("select refresh_missions($1)", [group], /organizer/);
   });
   it("does not let members create groups or approve themselves", async () => {
     await asUser(member);
@@ -678,8 +680,261 @@ describe("optional group categories", () => {
     );
   });
 });
+describe("community permissions and notifications", () => {
+  it("lets only the approved owner refresh and hides the internal bypass", async () => {
+    await asUser(member);
+    await denied("select refresh_missions($1)", [group], /organizer/);
+    await denied("select refresh_missions_internal($1)", [group], /permission/);
+    await asUser(admin);
+    await denied("select refresh_missions($1)", [group], /organizer/);
+    await asUser(owner);
+    await db.query("select refresh_missions($1)", [group]);
+  });
+  it("counts the creator and active members but excludes pending requests", async () => {
+    await asService();
+    await db.query(
+      "insert into group_members(group_id,user_id,status) values($1,$2,'pending')",
+      [group, outsider],
+    );
+    await db.exec("set role anon");
+    expect(
+      Number(
+        await scalar(
+          "select member_count from group_member_counts(array[$1::uuid])",
+          [group],
+        ),
+      ),
+    ).toBe(2);
+    await asUser(member);
+    const directory = (
+      await db.query<{ id: string; is_owner: boolean; can_own: boolean }>(
+        "select * from group_directory($1)",
+        [group],
+      )
+    ).rows;
+    expect(directory.map((p) => p.id).sort()).toEqual([owner, member].sort());
+    expect(directory.find((p) => p.id === owner)).toMatchObject({
+      is_owner: true,
+      can_own: true,
+    });
+    expect(directory.find((p) => p.id === member)).toMatchObject({
+      is_owner: false,
+      can_own: false,
+    });
+    await asUser(outsider);
+    await denied("select * from group_directory($1)", [group], /Join/);
+  });
+  it("allows leaving once, preserves scores and proof history, and queues a named email", async () => {
+    const submission = await submit();
+    await db.query(
+      "select settle_submission($1,'approved','Visible criteria')",
+      [submission],
+    );
+    await asUser(member);
+    await db.query("select leave_group($1)", [group]);
+    await db.query("select leave_group($1)", [group]);
+    expect(await scalar("select is_member($1)", [group])).toBe(false);
+    await denied(
+      "select begin_submission($1,$2)",
+      [assignment, randomUUID()],
+      /Join/,
+    );
+    await asService();
+    expect(
+      Number(
+        await scalar("select count(*) from nut_transactions where user_id=$1", [
+          member,
+        ]),
+      ),
+    ).toBe(1);
+    expect(
+      Number(
+        await scalar("select count(*) from photo_archive where user_id=$1", [
+          member,
+        ]),
+      ),
+    ).toBe(1);
+    expect(
+      (
+        await db.query(
+          "select subject_name from email_notifications where user_id=$1 and kind='group_left'",
+          [member],
+        )
+      ).rows,
+    ).toEqual([{ subject_name: "Test group" }]);
+  });
+  it("prevents owners from leaving and ordinary members from assigning owners", async () => {
+    await asUser(owner);
+    await denied("select leave_group($1)", [group], /creator/);
+    await denied(
+      "select transfer_group_ownership($1,$2)",
+      [group, member],
+      /approved organizer/,
+    );
+    await denied(
+      "select transfer_group_ownership($1,$2)",
+      [group, outsider],
+      /active group member/,
+    );
+    await asUser(member);
+    await denied(
+      "select transfer_group_ownership($1,$2)",
+      [group, member],
+      /approved group owner/,
+    );
+  });
+  it("transfers ownership to an approved member before the old owner can leave", async () => {
+    await asUser(admin);
+    await db.query("select approve_organizer('member@illinois.edu',true)");
+    await asUser(owner);
+    await db.query("select transfer_group_ownership($1,$2)", [group, member]);
+    expect(await scalar("select owns_group($1)", [group])).toBe(false);
+    await denied("select refresh_missions($1)", [group], /organizer/);
+    await denied("select delete_group($1,'Test group')", [group], /owner/);
+    await db.query("select leave_group($1)", [group]);
+    await asUser(member);
+    expect(await scalar("select owns_group($1)", [group])).toBe(true);
+    await db.query("select refresh_missions($1)", [group]);
+    await denied("select leave_group($1)", [group], /creator/);
+  });
+  it("queues one join confirmation for activation, including organization approval", async () => {
+    await db.query("select join_group($1)", [group]);
+    await asService();
+    expect(
+      Number(
+        await scalar(
+          "select count(*) from email_notifications where user_id=$1 and kind='group_joined'",
+          [member],
+        ),
+      ),
+    ).toBe(1);
+    await asUser(owner);
+    const org = await scalar<string>(
+      "select create_group('QA organization','Organization description','organization','QA organization',array[]::uuid[])",
+    );
+    await asUser(member);
+    await db.query("select join_group($1)", [org]);
+    await asService();
+    expect(
+      Number(
+        await scalar(
+          "select count(*) from email_notifications where user_id=$1 and group_id=$2",
+          [member, org],
+        ),
+      ),
+    ).toBe(0);
+    await asUser(admin);
+    await db.query("select verify_organization($1,true)", [org]);
+    await asUser(owner);
+    await db.query("select review_member($1,$2,true)", [org, member]);
+    await db.query("select review_member($1,$2,true)", [org, member]);
+    await asService();
+    expect(
+      Number(
+        await scalar(
+          "select count(*) from email_notifications where user_id=$1 and group_id=$2",
+          [member, org],
+        ),
+      ),
+    ).toBe(1);
+  });
+  it("keeps report names after group deletion and queues only one resolution email", async () => {
+    await asUser(member);
+    await db.query(
+      "select report_content('group',$1,'Please review this group.')",
+      [group],
+    );
+    await asUser(admin);
+    const report = await scalar<string>(
+      "select id from reports where target_id=$1",
+      [group],
+    );
+    expect(
+      await scalar("select target_name from reports where id=$1", [report]),
+    ).toBe("Test group");
+    await asUser(owner);
+    await db.query("select delete_group($1,'Test group')", [group]);
+    await asUser(admin);
+    await db.query("select resolve_report($1)", [report]);
+    await db.query("select resolve_report($1)", [report]);
+    await asService();
+    expect(
+      (
+        await db.query(
+          "select user_id,subject_name from email_notifications where kind='report_resolved'",
+        )
+      ).rows,
+    ).toEqual([{ user_id: member, subject_name: "Test group" }]);
+    expect(
+      Number(
+        await scalar(
+          "select count(*) from email_notifications where kind='group_left'",
+        ),
+      ),
+    ).toBe(0);
+  });
+  it("protects the email queue and leases prevent overlapping delivery", async () => {
+    await asUser(member);
+    await denied("select * from email_notifications", [], /permission/);
+    await denied(
+      "select * from claim_email_notifications(5)",
+      [],
+      /permission/,
+    );
+    await asService();
+    const claimed = (
+      await db.query<{ id: string; attempts: number }>(
+        "select * from claim_email_notifications(1)",
+      )
+    ).rows;
+    expect(claimed).toHaveLength(1);
+    expect(claimed[0].attempts).toBe(1);
+    const second = (
+      await db.query<{ id: string; attempts: number }>(
+        "select * from claim_email_notifications(5)",
+      )
+    ).rows;
+    expect(second).toHaveLength(1);
+    expect(second[0].id).not.toBe(claimed[0].id);
+    expect(
+      (await db.query("select * from claim_email_notifications(5)")).rows,
+    ).toHaveLength(0);
+    await db.query(
+      "update email_notifications set lease_until=now()-interval '1 second' where id=$1",
+      [claimed[0].id],
+    );
+    expect(
+      (await db.query("select attempts from claim_email_notifications(1)"))
+        .rows,
+    ).toEqual([{ attempts: 2 }]);
+  });
+  it("restricts description editing to admins and avatar paths to the server", async () => {
+    await asUser(owner);
+    await denied(
+      "select edit_group_about($1,'A changed group description.')",
+      [group],
+      /admin/,
+    );
+    await denied(
+      "update profiles set avatar_path='other-user/photo.jpg' where id=$1",
+      [owner],
+      /permission/,
+    );
+    await asUser(admin);
+    await db.query(
+      "select edit_group_about($1,'Visit https://example.com for updates.')",
+      [group],
+    );
+    expect(
+      await scalar("select description from groups where id=$1", [group]),
+    ).toBe("Visit https://example.com for updates.");
+    await denied("select edit_group_about($1,'short')", [group], /10–500/);
+  });
+});
+
 describe("shared mission lifecycle", () => {
   it("fills exactly three slots even after repeated refreshes", async () => {
+    await asUser(owner);
     for (let i = 0; i < 3; i++)
       await db.query("select refresh_missions($1)", [group]);
     expect(
@@ -729,7 +984,7 @@ describe("shared mission lifecycle", () => {
       "update assignments set available_at=now()-interval '1 second' where id=$1",
       [assignment],
     );
-    await asUser(member);
+    await asUser(owner);
     await db.query("select refresh_missions($1)", [group]);
     expect(
       Number(
@@ -766,7 +1021,7 @@ describe("shared mission lifecycle", () => {
       "update assignments set expires_at=now()-interval '1 minute' where id=$1",
       [assignment],
     );
-    await asUser(member);
+    await asUser(owner);
     await db.query("select refresh_missions($1)", [group]);
     expect(
       await scalar("select status from assignments where id=$1", [assignment]),
@@ -784,7 +1039,7 @@ describe("shared mission lifecycle", () => {
       "update assignments set expires_at=now()-interval '1 second' where id=$1",
       [assignment],
     );
-    await asUser(member);
+    await asUser(owner);
     await db.query("select refresh_missions($1)", [group]);
     expect(
       await scalar("select status from assignments where id=$1", [assignment]),
