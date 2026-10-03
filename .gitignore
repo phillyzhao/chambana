@@ -4,6 +4,7 @@ node_modules/
 !.env.example
 *.tsbuildinfo
 .DS_Store
+._*
 coverage/
 test-results/
 .supabase/

@@ -8,7 +8,9 @@ The **Chambana Missions** Entra app was created on 2026-09-21 with explicit owne
 
 These identifiers are not secrets. Never add a client secret to this document, the frontend, or chat.
 
-## Finish configuration
+## Existing configuration (recovery reference)
+
+Setup is complete. Do not recreate the Entra app, replace its secret, or reconfigure the provider merely to repeat acceptance.
 
 1. The owner creates a client secret in Entra → Chambana Missions → Certificates & secrets. Choose a suitable expiry and record its renewal date in the team's private operational calendar.
 2. Paste its **Value**, not its Secret ID, directly into Supabase Authentication → Providers → Azure (Microsoft), along with the client ID and tenant URL above. Enable/save that provider. The application itself does not need the Microsoft secret.
@@ -16,15 +18,17 @@ These identifiers are not secrets. Never add a client secret to this document, t
 4. Set `AUTH_MICROSOFT_ENABLED=true` in the app environment and restart/redeploy. Code uses `provider: "azure"`, requests `email`, and keeps email-link fallback.
 5. Test a real Illinois account, callback, sign-out/sign-in, and rejection of a personal Outlook account. Existing campus checks continue to require a confirmed `@illinois.edu` email.
 
-Verified on 2026-09-21: the owner created the secret and enabled Azure in Supabase; the public provider endpoint confirms it is enabled. The recommended email/xms_edov claims were saved. Local AUTH_MICROSOFT_ENABLED=true, and the owner confirmed Microsoft sign-in returned to Chambana Missions. Another-user consent, personal-account rejection, and production-domain callbacks still need acceptance testing.
+Verified on 2026-09-21: the owner created the secret and enabled Azure in Supabase; the public provider endpoint confirmed it enabled. The recommended email/xms_edov claims were saved. On September 23, production Microsoft sign-in succeeded on desktop and iPhone Safari for a second Illinois user after `d81d31b`; personal Outlook rejection was also verified. **The remaining authentication issue is iPhone email-link login.**
 
 Reference: [Supabase Azure sign-in](https://supabase.com/docs/guides/auth/social-login/auth-azure).
 
 ## Production callback retest
 
-The initial September 23 repair is deployed: a real callback at 11:16:50 Chicago logged application success with 8,771 bytes of cookie headers, yet the browser received HTTP 500. A host/proxy response-header limit is suspected but not confirmed. The follow-up uses Supabase `setSession` to retain the app's access/refresh tokens and server-validated user while dropping unused Microsoft API tokens before the response leaves the callback. Local tests verify cookie-size reduction, stale-chunk cleanup, and authentication on a subsequent request. Real production acceptance is still required.
+Microsoft acceptance is complete for desktop and iPhone Safari. Historically, the initial September 23 repair logged application success with 8,771 bytes of cookie headers at 11:16:50 Chicago, yet the browser received HTTP 500. The successful follow-up uses Supabase `setSession` to retain the app's access/refresh tokens and server-validated user while dropping unused Microsoft API tokens. This supports a host/proxy response-header-size hypothesis; it does not establish a documented Hostinger limit.
 
-1. Publish the tested revision to the connected GitHub branch and deploy it in Hostinger using the existing workflow. Confirm the completed deployment's commit matches the repair before testing. Do not change Entra, tenant, or Supabase provider settings for this test.
+For the unresolved iPhone email-link issue, request one fresh link and record the browser that requested it, the browser that opened it, and the timestamp/timezone. Capture the final origin/path, sanitized query names, HTTP status and callback ID, then match host logs by time and ID. Do not reload a single-use callback. Never paste a full sign-in URL, code, token, cookie, or unredacted HAR into chat or Git. An iPhone tester was unavailable on October 3, and the owner subsequently paused the goal. The steps below are a regression procedure if Microsoft fails again, not unfinished Microsoft setup.
+
+1. Confirm the completed Hostinger deployment includes the tested repair before retesting. Do not redeploy or change Entra, tenant, or Supabase provider settings unless evidence requires a change.
 2. Open Runtime Logs, then attempt Microsoft sign-in once at `https://playchambana.com/login`. Note the exact time and timezone and the final page/error. Do not reload the callback URL; authorization codes are single-use.
 3. If it fails, copy the `auth_callback` JSON lines around that time. These contain only a random ID, controlled stages/outcomes, byte counts, and optional HTTP status/allowlisted transport code. If they are missing, download logs using the Runtime Logs three-dot menu. Redact secrets and personal data from any other log lines before sharing.
 4. If needed, use Chrome DevTools → Network with **Preserve log** enabled for a fresh attempt. Select the request to `playchambana.com/auth/callback` and report its status and `X-Auth-Callback-Id`, plus `Cache-Control`, `Pragma`, and `Expires`. For `Set-Cookie`, share only cookie names, number of separate headers, and lengths. Never share cookie values, authorization codes, the full callback URL, or an unredacted HAR.
