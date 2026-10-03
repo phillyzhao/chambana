@@ -1,6 +1,6 @@
 # Hostinger deployment runbook
 
-Production domain: **https://playchambana.com**. An owner-provided screenshot on October 3, 2026 confirms the Current deployment is Completed at commit `5d1aba00` on `main`, using Next.js and Node 24.x. It shows the app Running, auto-deployment and SSL enabled, and deployment time `2026-10-03 09:43` (timezone not displayed), duration 55 seconds. This release includes the group-controls changes and canonical www redirect. Actual browser redirect behavior remains to be checked; the deployment screenshot does not prove request limits, scheduler operation, credentials, or email delivery. Earlier October 3 health probing returned 200. The setup instructions below are a recovery reference, not a request to repeat existing setup.
+Production domain: **https://playchambana.com**. An owner-provided screenshot on October 3, 2026 confirms the Current deployment is Completed at commit `5d1aba00` on `main`, using Next.js and Node 24.x. It shows the app Running, auto-deployment and SSL enabled, and deployment time `2026-10-03 09:43` (timezone not displayed), duration 55 seconds. This release includes the group-controls changes and canonical www redirect. A subsequent owner-run browser check confirms the www groups link lands on the bare domain with `/groups?mode=all` preserved; HTTP status was not captured. Neither screenshot proves request limits, scheduler operation, credentials, or email delivery. Earlier October 3 health probing returned 200. The setup instructions below are a recovery reference, not a request to repeat existing setup.
 
 ## 1. Confirm hosting before buying
 
@@ -22,7 +22,7 @@ Run `npm run preflight -- --production` in that environment, then deploy. The pr
 
 ## 3. Domain and auth
 
-The domain is already attached. During recovery, apply **only the DNS records given by your Hostinger app** and do not change DNS for other domains. Confirm HTTPS and use the bare domain as canonical. The October 3 audit found HTTPS `www` serving 200 rather than redirecting. The app now includes an exact-host Next.js 308 redirect from `www.playchambana.com` to the bare HTTPS origin, preserving path/query and request method; confirm it on the real domain after deployment. Localhost, preview hosts and the bare domain must not loop or redirect through this rule.
+The domain is already attached. During recovery, apply **only the DNS records given by your Hostinger app** and do not change DNS for other domains. Confirm HTTPS and use the bare domain as canonical. The earlier October 3 audit found HTTPS `www` serving 200 rather than redirecting. The app now includes an exact-host Next.js 308 redirect from `www.playchambana.com` to the bare HTTPS origin, preserving path/query and request method. After deployment, the owner confirmed the www groups link reaches `playchambana.com/groups?mode=all`; the supplied screenshot shows the loaded page and final address. Production status/redirect-chain and POST preservation remain uncaptured. Localhost, preview hosts and the bare domain must not loop or redirect through this rule; seven local HTTP checks passed.
 
 In Supabase Authentication → URL Configuration:
 

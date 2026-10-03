@@ -10,9 +10,9 @@ Updated October 3, 2026. This is a plan and evidence checklist, not a completed 
 | Category add/save/clear controls | Pass for owner UI: owner confirms checklist step 2 works, covering one category, adding a second, saving/reloading, and clearing to All categories. | G1/G2 cross-account views and future mission-draw behavior still need acceptance. |
 | Organization-only join-request visibility | Pass for display: owner confirms no Join requests section for Test 1/open and Test 2/invite-only, and a section for Test 3/organization. | G3 actual request submission and approval remain unverified. |
 | Transfer and reporting | Deferred: Marcos is unavailable now and will participate later. | G4–G6 still require both accounts; membership and organizer eligibility must be confirmed. |
-| www canonical redirect | Code deployment confirmed; seven local HTTP checks previously passed. | Real-domain final URL/status remains unverified. |
+| www canonical redirect | Pass for browser destination: owner opened `https://www.playchambana.com/groups?mode=all` and confirmed the expected final address. The October 3 screenshot (filename timestamp 10:25:07 AM) shows `playchambana.com/groups?mode=all` and the loaded groups page. | HTTP status/redirect chain and production POST-method preservation were not captured. Seven earlier local HTTP checks cover those local behaviors only. Last exact deployment evidence remains `5d1aba00`. |
 
-The confirmations above are user-run production checks; no agent-operated browser acceptance is claimed. The screenshot is retained in the conversation, not copied into the repository. Category and join-control confirmations were supplied in text. No overall production-readiness conclusion follows from these partial results.
+The confirmations above are user-run production checks; no agent-operated browser acceptance is claimed. Screenshots are retained in the conversation, not copied into the repository. Category and join-control confirmations were supplied in text. No overall production-readiness conclusion follows from these partial results.
 
 ## Evidence rules
 
