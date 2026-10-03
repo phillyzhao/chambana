@@ -24,11 +24,13 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. For checks: `npm run check`. Tests use PGlite (real Postgres compiled to WASM) with lightweight Auth/Storage schema fixtures; they do not require Docker or cloud credentials. They test SQL constraints, permissions, RLS, mission transitions, duplicate awards, verifier leases, Gemini request/response handling with mocks, and the catalog parser. They do not replace live email-link/Microsoft OAuth, Supabase Storage, hosted concurrency/load testing, or Gemini evaluation.
+Open http://localhost:3000. For checks: `npm run check`. `npm test` explicitly runs `test:app` and `test:database` in separate processes, making both counts visible in local and CI output. The current baseline is **150 unique tests: 82 app tests plus 68 database tests**. Earlier notes incorrectly counted the database suite twice. Tests use PGlite (real Postgres compiled to WASM) with lightweight Auth/Storage schema fixtures; they do not require Docker or cloud credentials. They test SQL constraints, permissions, RLS, mission transitions, duplicate awards, verifier leases, Gemini request/response handling with mocks, and the catalog parser. They do not replace live email-link/Microsoft OAuth, Supabase Storage, hosted concurrency/load testing, or Gemini evaluation.
+
+On the Crucial X10 ExFAT workspace, keep `TURBOPACK_FILESYSTEM_CACHE=false` in ignored `.env.local`. This disables only Turbopack's persisted dev/build cache after AppleDouble metadata made the cache unreadable. Build output stays on the SSD; production keeps default caching when the variable is omitted.
 
 ## Current live status
 
-Production is `https://playchambana.com`. Supabase setup, the first platform admin, organizer approval, deployment, and Microsoft desktop/iPhone acceptance are complete. Migrations 001–008 were confirmed applied on October 3; do not repeat setup or reapply them. This is still a beta, not a verified production-ready service. The owner paused the launch-readiness goal on October 3. See [handoff](handoff.md) for completed checks and the [live acceptance checklist](#live-acceptance-test-requires-your-accounts) for pending work.
+Production is `https://playchambana.com`. Supabase setup, the first platform admin, organizer approval, deployment, and Microsoft desktop/iPhone acceptance are complete. Migrations 001–008 were confirmed applied on October 3; do not repeat setup or reapply them. This is still a beta, not a verified production-ready service. The owner resumed launch-readiness work on October 3 after the SSD move. See [handoff](handoff.md) for completed checks and the [launch acceptance plan](docs/launch-acceptance.md) for pending evidence.
 
 1. Confirm Hostinger's completed release and finish authenticated category, organization, ownership-transfer, and reporting acceptance.
 2. Audit production configuration, canonical redirects, authenticated cron and scheduled recovery; health alone does not prove these.
