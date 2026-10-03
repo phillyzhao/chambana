@@ -1,6 +1,6 @@
 # Hostinger deployment runbook
 
-Production domain: **https://playchambana.com**. The last exact Hostinger deployment recorded here was verified September 28, 2026: completed commit `6e7e7554` on `main`, deployed September 26 at 19:02 with Node 24 and auto-deployment enabled. Later releases have been pushed; their exact completed Hostinger commit still needs inspection. On October 3, public production showed the group-category display and health returned 200. These observations do not identify the exact deployed revision. The setup instructions below are a recovery reference, not a request to repeat existing setup.
+Production domain: **https://playchambana.com**. An owner-provided screenshot on October 3, 2026 confirms the Current deployment is Completed at commit `5d1aba00` on `main`, using Next.js and Node 24.x. It shows the app Running, auto-deployment and SSL enabled, and deployment time `2026-10-03 09:43` (timezone not displayed), duration 55 seconds. This release includes the group-controls changes and canonical www redirect. Actual browser redirect behavior remains to be checked; the deployment screenshot does not prove request limits, scheduler operation, credentials, or email delivery. Earlier October 3 health probing returned 200. The setup instructions below are a recovery reference, not a request to repeat existing setup.
 
 ## 1. Confirm hosting before buying
 

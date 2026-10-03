@@ -32,7 +32,9 @@ On the Crucial X10 ExFAT workspace, keep `TURBOPACK_FILESYSTEM_CACHE=false` in i
 
 Production is `https://playchambana.com`. Supabase setup, the first platform admin, organizer approval, deployment, and Microsoft desktop/iPhone acceptance are complete. Migrations 001–008 were confirmed applied on October 3; do not repeat setup or reapply them. This is still a beta, not a verified production-ready service. The owner resumed launch-readiness work on October 3 after the SSD move. See [handoff](handoff.md) for completed checks and the [launch acceptance plan](docs/launch-acceptance.md) for pending evidence.
 
-1. Confirm Hostinger's completed release and finish authenticated category, organization, ownership-transfer, and reporting acceptance.
+The owner's October 3 Hostinger screenshot confirms completed deployment `5d1aba00` on `main` with Node 24.x. The owner confirmed adding/saving/clearing group categories and join-request controls appearing only for organization groups. Ownership transfer and former/current-owner reporting await Marcos; real-domain www redirect behavior and actual organization request/approval are still unverified.
+
+1. Complete ownership-transfer and reporting acceptance with Marcos, plus actual organization request/approval and cross-account/future-draw category checks. Preserve the already-confirmed owner category controls and organization-only request visibility.
 2. Audit production configuration, canonical redirects, authenticated cron and scheduled recovery; health alone does not prove these.
 3. Obtain the owner's SMTP provider/sender details, configure them privately on the host, and verify a real notification in a monitored Illinois inbox.
 4. Evaluate consented, non-personal representative photos against human labels. Mocked or synthetic contract tests do not establish Gemini readiness.

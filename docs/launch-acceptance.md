@@ -2,6 +2,18 @@
 
 Updated October 3, 2026. This is a plan and evidence checklist, not a completed acceptance report. The owner resumed work after the SSD move and authorized meaningful, tested progress to be pushed to GitHub. Use `/Volumes/Crucial X10/Chambana`; stop if the SSD is unavailable.
 
+## Results recorded October 3
+
+| Check | Status and evidence | Remaining scope |
+| --- | --- | --- |
+| Exact Hostinger deployment | Pass: owner-provided screenshot shows Current/Completed `5d1aba00`, branch `main`, Next.js, Node 24.x and Running. Displayed deployment time is October 3 at 09:43, timezone unspecified. | Later documentation pushes do not supersede this last verified deployment. Host configuration and real request behavior need separate evidence. |
+| Category add/save/clear controls | Pass for owner UI: owner confirms checklist step 2 works, covering one category, adding a second, saving/reloading, and clearing to All categories. | G1/G2 cross-account views and future mission-draw behavior still need acceptance. |
+| Organization-only join-request visibility | Pass for display: owner confirms no Join requests section for Test 1/open and Test 2/invite-only, and a section for Test 3/organization. | G3 actual request submission and approval remain unverified. |
+| Transfer and reporting | Deferred: Marcos is unavailable now and will participate later. | G4–G6 still require both accounts; membership and organizer eligibility must be confirmed. |
+| www canonical redirect | Code deployment confirmed; seven local HTTP checks previously passed. | Real-domain final URL/status remains unverified. |
+
+The confirmations above are user-run production checks; no agent-operated browser acceptance is claimed. The screenshot is retained in the conversation, not copied into the repository. Category and join-control confirmations were supplied in text. No overall production-readiness conclusion follows from these partial results.
+
 ## Evidence rules
 
 For each run, record Chicago timestamp, Git commit, completed Hostinger deployment commit, account aliases/roles, browser/device versions, case ID, expected outcome, actual outcome, and pass/fail/blocked. Keep only sanitized paths/statuses, aggregate counts, and necessary test record IDs in Git. Keep private diagnostics outside Git. Never save passwords, keys, session cookies, sign-in links, raw HARs, personal photos, or private recipient addresses in the report.
