@@ -6,21 +6,19 @@ export default function About() {
     <div className="narrow">
       <PageIntro
         eyebrow="ABOUT CHAMBANA"
-        title="A little more campus, together."
+        title="Connected, together"
       />
       <section id="team" className="panel about-section">
         <h2>Team</h2>
-        <p>Marcos Monroe — Co-Founder</p>
         <p>Phillip Zhao — Co-Founder</p>
+        <p>Marcos Monroe — Co-Founder</p>
       </section>
       <section id="origin" className="panel about-section">
         <h2>Origin</h2>
-        <p>The story behind Chambana is coming soon.</p>
-      </section>
-      <section id="mission" className="panel about-section">
-        <h2>Mission</h2>
         <p>
-          Small adventures. Shared missions. A little more campus, together.
+          Chambana aims to connect clubs, RSOs, and other groups through fun
+          activities when meetings aren't happening. Stay connected with the
+          people you care about by doing more.
         </p>
       </section>
     </div>

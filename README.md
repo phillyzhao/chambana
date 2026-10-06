@@ -4,6 +4,7 @@ A mobile-first Next.js + TypeScript website with a Supabase/Postgres backend and
 
 ## What runs now
 
+- About uses “Connected, together,” describes connecting clubs, RSOs, and other groups between meetings, and lists Phillip Zhao before Marcos Monroe. Its menu links to Team and Origin.
 - A clearly labeled design preview works without credentials. Sample groups, missions, and scores are illustrative; preview mode cannot create accounts or award real points.
 - The real application has campus authentication, public profiles, group discovery, invitation codes/links, organization approval, shared missions, photo submission, scoring, and platform administration.
 - The real Supabase project is connected. The migrations have been applied, Illinois email-link sign-in has been verified, and the first platform admin has created accounts and approved organizers.

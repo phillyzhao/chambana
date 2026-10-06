@@ -12,7 +12,7 @@ export const metadata: Metadata = {
     template: "%s · Chambana",
   },
   description:
-    "Small adventures. Shared missions. A little more campus, together. The UIUC-only mobile web beta.",
+    "Small adventures. Shared missions. Connected, together. The UIUC-only mobile web beta.",
 };
 export const viewport: Viewport = {
   width: "device-width",

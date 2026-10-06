@@ -156,4 +156,6 @@ Photos are JPEG/PNG/WebP up to 8 MB, normalized, stripped of metadata, and store
 
 ## Resume instructions
 
+October 6 About update: removed the Mission section and menu entry, added the owner's Origin copy, changed the headline to “Connected, together,” and positioned Phillip Zhao before Marcos Monroe with equal Co-Founder labels. Updated the shared metadata tagline. Node 24.21.0 typecheck and production build passed; the locally served `/about` returned HTTP 200 and verified copy, founder order, and absence of the removed section/link. Browser visual review and hosted deployment were not performed for this update.
+
 Inspect current Git/provider state; do not restart Supabase setup or re-create Entra registration. Do not equate a configured key with a usable Gemini model. Respect outstanding owner decisions; keep secrets out of logs/chat/commits. Preserve the temporary UI unless asked.
