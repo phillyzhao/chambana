@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Search, ArrowRight } from "lucide-react";
 import { GroupFilter } from "@/components/group-filter";
+import { matchesGroupModes, parseGroupModes } from "@/lib/group-filters";
 import { checked, demoCategories, demoGroups, viewer } from "@/lib/data";
 import { database } from "@/lib/supabase";
 import { Action, Empty, GroupCard, Notice, PageIntro } from "@/components/ui";
@@ -8,21 +9,19 @@ import { Action, Empty, GroupCard, Notice, PageIntro } from "@/components/ui";
 export default async function Groups({
   searchParams,
 }: {
-  searchParams: Promise<Record<string, string | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const [me, params] = await Promise.all([viewer(), searchParams]);
+  const [me, rawParams] = await Promise.all([viewer(), searchParams]);
+  const selectedModes = parseGroupModes(rawParams.mode);
+  const mode = selectedModes.join(",");
+  const params = Object.fromEntries(
+    Object.entries(rawParams).map(([key, value]) => [
+      key,
+      Array.isArray(value) ? value[0] : value,
+    ]),
+  );
   let groups = demoGroups,
     categories = demoCategories;
-  const modes = [
-    ["", "All groups"],
-    ["open", "Open to everyone"],
-    ["organization", "Organizations"],
-    ["invite", "Invite only"],
-    ["mine", "My groups"],
-  ];
-  const mode = modes.some(([key]) => key === params.mode)
-    ? params.mode || ""
-    : "";
   let myGroups: string[] = [];
   if (!me.demo) {
     const db = await database();
@@ -43,7 +42,8 @@ export default async function Groups({
         "id",
         myGroups.length ? myGroups : ["00000000-0000-0000-0000-000000000000"],
       );
-    else if (mode) groupQuery = groupQuery.eq("join_mode", mode);
+    else if (selectedModes.length && !selectedModes.includes("mine"))
+      groupQuery = groupQuery.in("join_mode", selectedModes);
     [groups, categories] = await Promise.all([
       groupQuery.then(checked),
       db.from("categories").select("*").order("name").then(checked),
@@ -65,8 +65,7 @@ export default async function Groups({
       `${g.name} ${g.description} ${g.organization}`
         .toLowerCase()
         .includes((params.q || "").toLowerCase()) &&
-      (!mode ||
-        (mode === "mine" ? myGroups.includes(g.id) : g.join_mode === mode)),
+      matchesGroupModes(g, selectedModes, myGroups),
   );
   return (
     <>
@@ -88,7 +87,7 @@ export default async function Groups({
         </button>
       </form>
       <GroupFilter mode={mode} query={params.q || ""} />
-      {mode === "mine" && !me.user && (
+      {selectedModes.includes("mine") && !me.user && (
         <p className="notice">
           <Link href="/login">Sign in</Link> to see your groups.
         </p>

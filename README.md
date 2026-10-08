@@ -4,7 +4,9 @@ A mobile-first Next.js + TypeScript website with a Supabase/Postgres backend and
 
 ## What runs now
 
-- About uses “Connected, together,” describes connecting clubs, RSOs, and other groups between meetings, and lists Phillip Zhao before Marcos Monroe. Its menu links to Team and Origin.
+- About uses “Connected, together,” describes connecting classes, RSOs, and other groups between meetings, and lists Phillip Zhao before Marcos Monroe. Its menu links to Team, Origin, and an intentionally blank FAQ section.
+- Group discovery combines selected filters (for example, Open to everyone + Organizations). All groups clears the selection; searches preserve the applied filters.
+- Mission countdowns display only “Ready to refresh” once their deadline is reached. Photo proof can come from an uploaded image or browser camera capture, with a preview and retake option.
 - A clearly labeled design preview works without credentials. Sample groups, missions, and scores are illustrative; preview mode cannot create accounts or award real points.
 - The real application has campus authentication, public profiles, group discovery, invitation codes/links, organization approval, shared missions, photo submission, scoring, and platform administration.
 - The real Supabase project is connected. The migrations have been applied, Illinois email-link sign-in has been verified, and the first platform admin has created accounts and approved organizers.
@@ -25,7 +27,7 @@ npm ci
 npm run dev
 ```
 
-Open http://localhost:3000. For checks: `npm run check`. `npm test` explicitly runs `test:app` and `test:database` in separate processes, making both counts visible in local and CI output. The current baseline is **150 unique tests: 82 app tests plus 68 database tests**. Earlier notes incorrectly counted the database suite twice. Tests use PGlite (real Postgres compiled to WASM) with lightweight Auth/Storage schema fixtures; they do not require Docker or cloud credentials. They test SQL constraints, permissions, RLS, mission transitions, duplicate awards, verifier leases, Gemini request/response handling with mocks, and the catalog parser. They do not replace live email-link/Microsoft OAuth, Supabase Storage, hosted concurrency/load testing, or Gemini evaluation.
+Open http://localhost:3000. For checks: `npm run check`. `npm test` explicitly runs `test:app` and `test:database` in separate processes, making both counts visible in local and CI output. The current baseline is **166 unique tests: 98 app tests plus 68 database tests**. Earlier notes incorrectly counted the database suite twice. Tests use PGlite (real Postgres compiled to WASM) with lightweight Auth/Storage schema fixtures; they do not require Docker or cloud credentials. They test SQL constraints, permissions, RLS, mission transitions, duplicate awards, verifier leases, Gemini request/response handling with mocks, and the catalog parser. They do not replace live email-link/Microsoft OAuth, Supabase Storage, hosted concurrency/load testing, or Gemini evaluation.
 
 On the Crucial X10 ExFAT workspace, keep `TURBOPACK_FILESYSTEM_CACHE=false` in ignored `.env.local`. This disables only Turbopack's persisted dev/build cache after AppleDouble metadata made the cache unreadable. Build output stays on the SSD; production keeps default caching when the variable is omitted.
 

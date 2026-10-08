@@ -1170,6 +1170,15 @@ textarea:focus-visible, select:focus-visible, summary:focus-visible { outline-co
 .dropdown-panel a:hover, .dropdown-panel a[aria-current="true"] { background: #eee; }
 .group-filter { margin: 18px 0; width: fit-content; }
 .group-filter summary { cursor: pointer; }
+.group-filter > summary { max-width: min(100%, 85vw); white-space: normal; text-align: left; }
+.group-filter .dropdown-panel { width: 230px; max-width: 85vw; }
+.group-filter .check-label { align-items: center; margin: 0; padding: 10px; cursor: pointer; }
+.group-filter .button { width: 100%; }
+.camera-panel, .photo-preview { margin: 14px 0; }
+.camera-panel video, .photo-preview img { display: block; width: 100%; max-height: 360px; object-fit: contain; background: #eee; border-radius: 4px; }
+.camera-panel .button-row { margin-top: 10px; flex-wrap: wrap; }
+.camera-panel .button-row .button { flex: 1 1 120px; }
+.photo-preview p { margin-top: 8px; }
 .linked-text { white-space: pre-wrap; overflow-wrap: anywhere; }
 .linked-text a { text-decoration: underline; text-underline-offset: 3px; }
 .member-list { padding: 0; list-style: none; }

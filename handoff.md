@@ -1,6 +1,16 @@
 # Chambana Missions — Handoff
 
-Updated 2026-10-03. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and native iOS are later work. Historical entries below are dated evidence, not instructions to repeat completed setup.
+Updated 2026-10-08. A functional mobile-first UIUC group-challenge beta, not a launched production service. Keep the deliberately skeletal monochrome UI; visual redesign and native iOS are later work. Historical entries below are dated evidence, not instructions to repeat completed setup.
+
+## Requested website changes — October 8
+
+- Stopped mission countdowns show “Ready to refresh” without a countdown prefix; future cooldowns still show the next-mission countdown.
+- Group discovery accepts several filters, combining their results. All groups clears them. My groups can be combined with join types; search and URLs preserve the applied selection.
+- Applied the owner's shorter homepage/Origin copy, removed the homepage subtitle, and added a blank About FAQ with a menu link.
+- Added browser camera preview, JPEG capture, retake, and the existing file-upload choice. Capture uses the existing consent, authenticated action, server deadlines, private storage, and review path. Camera tracks stop on capture, cancel, collapsed details, hidden page, and unmount; late permission responses are also stopped.
+- Node 24.21.0 typecheck, 98 app + 68 database tests, and the Next.js 16.3.6 production build passed. Vitest now ignores macOS AppleDouble files on the external SSD. Local browser checks passed for expired timers, filter selection/reset/search, camera capture/consent/upload replacement/cancellation/permission denial, and 390px layouts. Camera checks used a synthetic camera and a mocked submission action; real cameras, physical iPhone Safari, authenticated uploads, and hosted deployment still need verification.
+- Local review artifacts and the reproducible component harness are in ignored `test-results/october-8-ui/` on the SSD. These are local checks, not production acceptance evidence.
+- Before the requested GitHub push, rebased onto upstream `2796f4f` to preserve the merged sharp security update. Repaired its stale package lock from sharp 0.35.4 to 0.35.5 and matching image dependencies. Clean-install validation and the full 166-test/typecheck/build check passed again on the combined revision.
 
 ## Current resumed work — October 3
 

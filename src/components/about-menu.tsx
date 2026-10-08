@@ -25,7 +25,7 @@ export function AboutMenu() {
         About <ChevronDown size={14} />
       </summary>
       <nav aria-label="About Chambana" className="dropdown-panel">
-        {["Team", "Origin"].map((name) => (
+        {["Team", "Origin", "FAQ"].map((name) => (
           <Link
             key={name}
             href={`/about#${name.toLowerCase()}`}

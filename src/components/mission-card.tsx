@@ -1,27 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Camera, ChevronDown, Clock3, Check, Sprout } from "lucide-react";
-import { useFormStatus } from "react-dom";
+import { ChevronDown, Clock3, Check, Sprout } from "lucide-react";
 import { mutate } from "@/app/actions";
+import { PhotoSubmissionForm } from "@/components/photo-submission-form";
 import type { Assignment, Submission } from "@/lib/data";
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return (
-    <button className="button" disabled={pending}>
-      <Camera size={17} />
-      {pending ? "Saving & checking photo…" : "Submit photo"}
-    </button>
-  );
-}
-function timeLeft(at: string, now: number) {
-  const delta = Math.max(0, new Date(at).getTime() - now);
-  if (!delta) return "Ready to refresh";
-  const hours = Math.floor(delta / 3600000),
-    minutes = Math.floor((delta % 3600000) / 60000);
-  return `${hours}h ${minutes}m`;
-}
+import { missionCountdown } from "@/lib/mission-timing";
 export function MissionCard({
   mission,
   submission,
@@ -68,10 +52,7 @@ export function MissionCard({
       <div className="mission-meta">
         <span>
           <Clock3 size={14} />
-          {active ? "Ends in " : "Next mission in "}
-          {now === null
-            ? "—"
-            : timeLeft(active ? mission.expires_at : mission.available_at, now)}
+          {missionCountdown(mission, now)}
         </span>
         <span className={`status ${mission.status}`}>
           {mission.status === "completed" ? (
@@ -111,32 +92,7 @@ export function MissionCard({
                 the beta is connected.
               </p>
             ) : (
-              <form action={mutate}>
-                <input type="hidden" name="action" value="photo" />
-                <input type="hidden" name="back" value={back} />
-                <input type="hidden" name="assignment_id" value={mission.id} />
-                <label>
-                  Photo proof
-                  <input
-                    name="photo"
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp"
-                    required
-                  />
-                </label>
-                <small>
-                  JPG, PNG, or WebP · up to 8 MB. One photo completes the
-                  mission for your whole group.
-                </small>
-                <label className="check-label">
-                  <input type="checkbox" name="consent" value="yes" required />I
-                  have permission to share this photo and agree to send it to
-                  Google Gemini for review. It stays private to me and Chambana
-                  reviewers. I understand that Chambana keeps the photo and its
-                  record in a private archive even if the group is deleted.
-                </label>
-                <SubmitButton />
-              </form>
+              <PhotoSubmissionForm assignmentId={mission.id} back={back} />
             ))}
           {owner && active && !underReview && !demo && (
             <form action={mutate} className="decline">

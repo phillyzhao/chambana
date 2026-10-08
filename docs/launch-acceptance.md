@@ -96,6 +96,10 @@ Use authorized QA accounts and consented non-personal fixtures only. Record star
 
 A real iPhone tester remains unavailable. Desktop viewport emulation is not evidence of iPhone camera/library behavior.
 
+October 8 local browser checks passed using a synthetic camera and mocked submission action: JPEG capture/preview, consent enforcement, retake/cancel, collapsed-details cleanup, upload replacing capture, permission-denied fallback, and a 390px layout. Next.js page checks also passed locally. These do not establish real-device camera access or authenticated hosted submission.
+
+Test a real desktop camera and physical iPhone Safari using “Take photo,” “Capture photo,” and “Retake photo.” Confirm permission prompts, camera selection, capture preview, cancellation, denied permission with upload still available, and that the camera stops when leaving the form or hiding the page. Submit a consented non-personal captured photo through an authorized QA account and verify private storage/review as described above.
+
 Record iPhone model, iOS/Safari version, network, account alias and deployment revision. Test camera capture and library selection, supported JPEG/PNG/WebP, rotation and stripped metadata, and native HEIC selection. The app supports JPEG/PNG/WebP only: verify the actual Safari conversion or clear rejection; do not assume native HEIC works. Confirm loading/error/retry behavior on interrupted or slow connections.
 
 Test valid non-personal images below and close to 8 MiB and a controlled over-limit image. Record file bytes, total multipart request size, response status, elapsed time, visible error and any CDN/runtime request ID. The app limit is 8 MiB; Server Actions allow 10 MB bodies including multipart overhead. Verify the host accepts supported near-limit requests and handles over-limit requests safely. Confirm at least 60-second host request support using a scoped controlled test approved for that environment; do not introduce a public slow endpoint or overload production. Check after-response worker completion and scheduled recovery after an interrupted response.

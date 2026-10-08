@@ -4,6 +4,8 @@ The browser renders Next.js pages and submits forms to server actions. Server ac
 
 ## Photo path
 
+The mission form lets a member choose an existing photo or open the device camera with browser permission. The camera requests video only, captures a JPEG frame with a 1600-pixel maximum edge, and allows preview/retake before submission. Capture replaces the form's photo file without submitting automatically. Tracks stop when the camera closes or the page becomes hidden, and late permission responses cannot leave a camera running. Both input methods use the same action and required consent below.
+
 1. User action verifies campus identity, rate limits, required consent, and declared image type/size.
 2. `begin_submission` checks group membership, the server deadline, and per-hour limits; under a group lock, it reserves the mission's one pending proof slot.
 3. Only after authorization/reservation, the server decodes the actual format, rejects animated/disguised/over-pixel-limit files, removes metadata, normalizes to JPEG, and saves it to private storage. `finish_upload` records a hash and makes the durable job pending. Failure closes the attempt without awarding points.

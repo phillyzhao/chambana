@@ -1,19 +1,20 @@
 "use client";
 
-import Link from "next/link";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { SlidersHorizontal } from "lucide-react";
-
-export const groupModes = [
-  ["", "All groups"],
-  ["open", "Open to everyone"],
-  ["organization", "Organizations"],
-  ["invite", "Invite only"],
-  ["mine", "My groups"],
-];
+import { groupModes, parseGroupModes } from "@/lib/group-filters";
 
 export function GroupFilter({ mode, query }: { mode: string; query: string }) {
   const menu = useRef<HTMLDetailsElement>(null);
+  const [selected, setSelected] = useState(() => parseGroupModes(mode));
+  useEffect(() => setSelected(parseGroupModes(mode)), [mode]);
+  const applied = parseGroupModes(mode);
+  const label = !applied.length
+    ? "All groups"
+    : groupModes
+        .filter(([key]) => key && applied.includes(key))
+        .map(([, name]) => name)
+        .join(", ");
   return (
     <details
       className="group-filter"
@@ -30,23 +31,35 @@ export function GroupFilter({ mode, query }: { mode: string; query: string }) {
       }}
     >
       <summary className="button secondary">
-        <SlidersHorizontal size={16} /> Filter:{" "}
-        {groupModes.find(([key]) => key === mode)?.[1]}
+        <SlidersHorizontal size={16} /> Filter: {label}
       </summary>
-      <nav className="dropdown-panel" aria-label="Filter groups">
+      <form
+        className="dropdown-panel"
+        action="/groups"
+        aria-label="Filter groups"
+      >
+        <input type="hidden" name="q" value={query} />
+        <input type="hidden" name="mode" value={selected.join(",")} />
         {groupModes.map(([key, name]) => (
-          <Link
-            key={key}
-            aria-current={mode === key ? "true" : undefined}
-            href={`/groups?mode=${key}&q=${encodeURIComponent(query)}`}
-            onClick={() => {
-              if (menu.current) menu.current.open = false;
-            }}
-          >
+          <label className="check-label" key={key}>
+            <input
+              type="checkbox"
+              checked={key ? selected.includes(key) : !selected.length}
+              onChange={() =>
+                setSelected((current) =>
+                  !key
+                    ? []
+                    : current.includes(key)
+                      ? current.filter((mode) => mode !== key)
+                      : [...current, key],
+                )
+              }
+            />
             {name}
-          </Link>
+          </label>
         ))}
-      </nav>
+        <button className="button small">Apply filters</button>
+      </form>
     </details>
   );
 }

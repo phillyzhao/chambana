@@ -71,9 +71,7 @@ export default async function Missions({
   return (
     <>
       <Notice params={params} />
-      <PageIntro eyebrow="UIUC • CAMPUS, TOGETHER" title="Go make a memory.">
-        A little outside your routine. A little closer to your people.
-      </PageIntro>
+      <PageIntro eyebrow="UIUC • CAMPUS, TOGETHER" title="Go make a memory." />
       <section className="hero-note">
         <div className="hero-symbol">
           <Sprout size={36} />
@@ -81,8 +79,7 @@ export default async function Missions({
         <div>
           <h2>Small adventures. Shared wins.</h2>
           <p>
-            Join a group, tackle a mission, and collect nuts together. One
-            person completes it. The whole group wins.
+            Join a group, tackle a mission, and collect nuts together.
           </p>
         </div>
         <span className="hero-stamp">
