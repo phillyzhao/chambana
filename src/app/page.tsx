@@ -49,7 +49,8 @@ export default function Home() {
           Member sign in <ArrowUpRight size={12} />
         </Link>
       </footer>
-      {process.env.NODE_ENV === "development" && (
+      {(process.env.NODE_ENV === "development" ||
+        process.env.CHAMBANA_DESIGN_PREVIEW === "true") && (
         <Link className={styles.previewLink} href="/design-preview">
           iOS concepts <ArrowUpRight size={12} />
         </Link>

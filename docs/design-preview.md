@@ -17,15 +17,15 @@ Dialogs, notification-read state, mission save/join, group membership, conversat
 
 Desktop review uses fixed logical phone screens: iPhone 15/16 at 393 × 852, iPhone 17 at 402 × 874. The narrow layout fits the current browser viewport instead of stretching a narrow frame to an unrelated fixed height. These are browser prototypes, not native-device screenshots or a claim of physical-size calibration on the reviewer's monitor.
 
-The preview route is noindex and unavailable in production unless `CHAMBANA_DESIGN_PREVIEW=true`. The waitlist's concept-preview link appears only in development. Existing community routes retain their prior header, navigation, and authentication through `CommunityLayout`.
+The preview route is noindex and unavailable in production unless `CHAMBANA_DESIGN_PREVIEW=true`. The waitlist's concept-preview link appears in development or when that flag is enabled. Existing community routes retain their prior header, navigation, and authentication through `CommunityLayout`.
 
-The preview and member sign-in share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). The campus sign-in action also verifies that cookie. This is a preview entry gate; it does not replace account authentication. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. A private local secret is configured only in the ignored SSD `.env.local` file.
+The preview and member sign-in share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). The campus sign-in action also verifies that cookie. This is a preview entry gate; it does not replace account authentication. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. The private secret is configured in Hostinger and the ignored SSD `.env.local` file; its value is never committed.
 
-## Release dependency
+## Production configuration — October 13, 2026
 
-`supabase/migrations/202610120009_waitlist.sql` must be applied before real waitlist collection can work. It has **not** been applied by this design task. It creates a private, RLS-enabled table, denies anonymous/authenticated table access, and grants service-role insert/select. The action validates Illinois emails, normalizes and deduplicates them, rate-limits submissions, and reports storage failure honestly. It does not send confirmation or invitation emails. The changes are recorded on `codex/chambana-waitlist-ios`; deployment remains separate. See [the restore point and rollback guide](rollback-waitlist.md).
+The owner authorized publishing to `main`. Migration `202610120009_waitlist.sql` was applied to the linked `Backend_Chambana` project (`donwucdijtmkvpjovtcw`) after a dry-run confirmed it was the only pending migration. The private table has RLS enabled, denies anonymous/authenticated table access, and grants service-role insert/select. Production SQL checks confirmed these permissions and exercised insertion, deduplication, and campus-email constraints inside a rolled-back transaction. No test addresses were retained. Migrations 001–008 were not replayed.
 
-Before publishing: review the visual design, apply the new migration to the intended existing Supabase project, deploy the reviewed code, and verify one authorized signup. Do not replay migrations 001–008 or populate the live waitlist with test addresses.
+Hostinger is configured with `PREVIEW_ACCESS_SECRET` and `CHAMBANA_DESIGN_PREVIEW=true`. Its GitHub integration auto-deploys `main` on Node 24. The waitlist action validates Illinois emails, normalizes and deduplicates them, rate-limits submissions, and reports storage failure honestly. It does not send confirmation or invitation emails. See [the restore point and rollback guide](rollback-waitlist.md).
 
 ## References
 
