@@ -19,6 +19,7 @@ import { allowRequest } from "@/lib/rate-limit";
 import { normalizePhoto } from "@/lib/photos";
 import { operationalEvent } from "@/lib/observability";
 import { deliverNotifications, emailConfigured } from "@/lib/email";
+import { hasPreviewAccess } from "@/lib/preview-access";
 
 const value = (form: FormData, key: string) => String(form.get(key) ?? "");
 const uuid = (form: FormData, key: string) =>
@@ -31,6 +32,7 @@ function message(error: unknown) {
 }
 
 export async function signIn(form: FormData) {
+  if (!(await hasPreviewAccess())) redirect("/login");
   if (!isConfigured()) redirect("/login?error=The+beta+is+not+connected+yet.");
   const db = await database();
   const origin = appOrigin();

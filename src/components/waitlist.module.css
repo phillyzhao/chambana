@@ -1,0 +1,356 @@
+.page {
+  position: relative;
+  isolation: isolate;
+  background: #171717;
+  min-height: 100svh;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+  display: flex;
+  flex-direction: column;
+  overflow: clip;
+}
+.page :is(a, button, input):focus-visible {
+  outline: 1px solid #fff;
+  outline-offset: 5px;
+}
+.roomImage {
+  object-fit: cover;
+  object-position: 50% 60%;
+  filter: grayscale(1) brightness(0.5);
+  z-index: -3;
+  animation: breathe 28s ease-in-out infinite alternate;
+}
+.atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background:
+    radial-gradient(
+      ellipse at 50% 42%,
+      #1010103b,
+      #10101088 68%,
+      #101010cb 100%
+    ),
+    linear-gradient(0deg, #111b, #1111 50%, #1118);
+}
+.skip {
+  position: fixed;
+  top: -100px;
+  left: 20px;
+  z-index: 10;
+  background: #222;
+  padding: 12px 20px;
+}
+.skip:focus {
+  top: 12px;
+}
+.header {
+  min-height: 108px;
+  padding: max(20px, env(safe-area-inset-top)) 5%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.wordmark {
+  font:
+    32px Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -1.4px;
+}
+.headerNote {
+  color: #ddd;
+  font-size: 8px;
+  letter-spacing: 2.5px;
+}
+.main {
+  display: grid;
+  place-items: center;
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 65px 24px 108px;
+  min-height: 0;
+  flex: 1;
+}
+.content {
+  width: 100%;
+  text-align: center;
+}
+.intro {
+  margin: 0;
+  font:
+    400 clamp(48px, 6.4vw, 91px)/1.12 Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -3.5px;
+  text-shadow: 0 2px 35px #0004;
+}
+.introLine {
+  display: block;
+  white-space: nowrap;
+}
+.introLine + .introLine {
+  font-style: italic;
+}
+.letter {
+  display: inline-block;
+  animation: cascade 0.75s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay);
+}
+.formArea {
+  width: min(320px, 100%);
+  margin: 42px auto 0;
+  animation: arrive 1.2s 1.7s both;
+  scroll-margin-top: 30px;
+}
+.formArea:focus-within {
+  animation: none;
+}
+.form {
+  position: relative;
+  margin: 0;
+}
+.entry {
+  display: flex;
+  align-items: center;
+  background: #ffffff0a;
+  border: 1px solid #ffffff4d;
+  border-radius: 3px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition:
+    border-color 0.2s,
+    background 0.2s;
+}
+.entry:focus-within {
+  border-color: #ffffffa1;
+  background: #ffffff12;
+}
+.entry input {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  margin: 0;
+  min-width: 0;
+  width: 100%;
+  height: 54px;
+  padding: 0 17px;
+  color: #fff;
+  font-size: 16px;
+  font-weight: 300;
+  box-shadow: none;
+}
+.entry input::placeholder {
+  color: #e2e2e2;
+  font-size: 12px;
+  letter-spacing: 0.1px;
+  opacity: 1;
+}
+.entry input:focus-visible {
+  outline-offset: -5px;
+}
+.entry button {
+  width: 53px;
+  height: 52px;
+  min-width: 53px;
+  background: transparent;
+  color: white;
+  display: grid;
+  place-items: center;
+  border-radius: 2px;
+}
+.entry button:hover {
+  background: #ffffff16;
+}
+.formNote {
+  font-size: 7px;
+  letter-spacing: 2.3px;
+  color: #ddd;
+  margin: 17px 0 0;
+}
+.visuallyHidden,
+.honeypot {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+.honeypot {
+  pointer-events: none;
+}
+.error {
+  margin: 16px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #fff;
+  background: #111a;
+  padding: 10px;
+  border-radius: 3px;
+}
+.footer {
+  min-height: 86px;
+  padding: 17px 5% max(17px, env(safe-area-inset-bottom));
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: #ddd;
+  font-size: 7px;
+  letter-spacing: 2.1px;
+}
+.footer a {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  min-height: 44px;
+  font-size: 10px;
+  letter-spacing: 0.3px;
+}
+.previewLink {
+  color: #ddd;
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 9px;
+  min-height: 44px;
+}
+.success {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  text-align: left;
+  padding: 16px 0;
+}
+.successIcon {
+  height: 35px;
+  width: 35px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #ffffff70;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.success h2 {
+  font:
+    23px Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -0.3px;
+  margin: 0 0 5px;
+}
+.success p {
+  margin: 0;
+  font-size: 11px;
+  color: #ddd;
+}
+.spinner {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes cascade {
+  from {
+    opacity: 0;
+    transform: translateY(11px);
+    filter: blur(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes breathe {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.035);
+  }
+}
+@media (max-width: 760px) {
+  .header {
+    min-height: 88px;
+    padding-inline: 27px;
+  }
+  .wordmark {
+    font-size: 28px;
+  }
+  .headerNote {
+    font-size: 7px;
+    letter-spacing: 1.6px;
+  }
+  .main {
+    padding: 50px 25px 95px;
+  }
+  .intro {
+    font-size: clamp(29px, 9.2vw, 61px);
+    letter-spacing: -1.8px;
+    line-height: 1.17;
+  }
+  .formArea {
+    width: min(288px, 100%);
+    margin-top: 35px;
+  }
+  .roomImage {
+    object-position: 49% center;
+  }
+  .atmosphere {
+    background:
+      radial-gradient(ellipse at 50% 38%, #1115, #1119 70%),
+      linear-gradient(0deg, #111d, transparent 55%, #1114);
+  }
+  .footer {
+    min-height: 77px;
+    padding-inline: 27px;
+    font-size: 6px;
+    letter-spacing: 1.4px;
+    padding-bottom: max(20px, env(safe-area-inset-bottom));
+  }
+  .footer a {
+    font-size: 9px;
+    gap: 5px;
+  }
+  .previewLink {
+    bottom: 8px;
+    min-height: 25px;
+    font-size: 8px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .roomImage,
+  .letter,
+  .formArea,
+  .spinner {
+    animation: none;
+  }
+  .entry {
+    transition: none;
+  }
+}
