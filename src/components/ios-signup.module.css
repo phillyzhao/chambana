@@ -87,14 +87,6 @@
 .stage {
   animation: arrive 340ms ease-out both;
 }
-.eyebrow {
-  display: block;
-  color: #626262;
-  font-size: 10px;
-  letter-spacing: 2px;
-  margin-top: 20px;
-  margin-bottom: 24px;
-}
 .title {
   font-family: Georgia, "Times New Roman", serif;
   font-size: 43px;
@@ -106,13 +98,70 @@
   overflow-wrap: anywhere;
   outline: none;
 }
+.welcomeTitle {
+  display: grid;
+  margin-top: 24px;
+  max-width: none;
+  font-size: 38px;
+  line-height: 1.12;
+  letter-spacing: -1.7px;
+  overflow-wrap: normal;
+}
+.welcomeGreeting {
+  grid-area: 1 / 1;
+  opacity: 0;
+  transition: opacity 1800ms ease-in-out;
+}
+.welcomeGreeting[data-active="true"] {
+  opacity: 1;
+}
+.welcomeFigure {
+  margin: 28px 0 0;
+}
 .welcomeImage {
+  position: relative;
   width: 100%;
   aspect-ratio: 1.1;
-  margin-top: 37px;
-  background: #e2e2e2 url("/design-assets/campus.jpg") 50% 50% / cover;
+  overflow: hidden;
+  background: #e2e2e2;
   border-radius: 140px 140px 4px 4px;
+}
+.welcomePhoto {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-repeat: no-repeat;
   filter: grayscale(1);
+  opacity: 0;
+  transition: opacity 1800ms ease-in-out;
+}
+.welcomePhoto[data-active="true"] {
+  opacity: 1;
+}
+.welcomeCaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 44px;
+}
+.welcomeCaption a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #707070;
+  font-size: 9px;
+  text-decoration-color: #b9b9b9;
+  text-underline-offset: 3px;
+}
+.rotationControl {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin-right: -12px;
+  border: 0;
+  background: transparent;
+  color: #707070;
 }
 .field {
   margin-top: 56px;
@@ -340,6 +389,10 @@
   .title {
     font-size: 38px;
   }
+  .welcomeTitle {
+    font-size: 32px;
+    letter-spacing: -1.4px;
+  }
   .interestGrid {
     gap: 8px;
   }
@@ -353,7 +406,12 @@
   .stage {
     animation: none;
   }
-  .interestGrid button {
+  .interestGrid button,
+  .welcomeGreeting,
+  .welcomePhoto {
     transition: none;
+  }
+  .rotationControl {
+    display: none;
   }
 }

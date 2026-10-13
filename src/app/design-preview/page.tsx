@@ -5,8 +5,8 @@ import { PreviewAccessGate } from "@/components/preview-access-gate";
 import { hasPreviewAccess } from "@/lib/preview-access";
 
 export const metadata: Metadata = {
-  title: "The Commons · iPhone preview",
-  description: "The Commons app and signup flow for Chambana.",
+  title: "Chambana · iPhone preview",
+  description: "Chambana app and signup flow.",
   robots: { index: false, follow: false },
 };
 

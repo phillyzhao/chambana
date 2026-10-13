@@ -9,6 +9,8 @@ import {
   Film,
   Headphones,
   Palette,
+  Pause,
+  Play,
   Plus,
   Trees,
   Utensils,
@@ -35,7 +37,7 @@ const interests = [
 ];
 
 const titles = [
-  "Hello, Chambana.",
+  "Hello, Japan House.",
   "What should we call you?",
   "Your Illinois email.",
   "Confirm your email.",
@@ -43,12 +45,41 @@ const titles = [
   "What brings you out?",
 ];
 
+const welcomeScenes = [
+  {
+    place: "Japan House",
+    image: "/design-assets/campus.jpg",
+    description: "A quiet path beside the Japan House garden pond",
+    position: "50% 50%",
+  },
+  {
+    place: "State Farm Center",
+    image: "/design-assets/state-farm-center.jpg",
+    description: "The domed exterior of State Farm Center in Champaign",
+    position: "50% 64%",
+  },
+  {
+    place: "Busey Evans",
+    image: "/design-assets/busey-evans.jpg",
+    description: "Busey Hall at the Busey-Evans residence halls in Urbana",
+    position: "52% 50%",
+  },
+  {
+    place: "Ikenberry",
+    image: "/design-assets/ikenberry.jpg",
+    description: "Bookshelves and study space inside the Ikenberry library",
+    position: "55% 50%",
+  },
+];
+
 export function SignupFlow({
   onComplete,
   onBack,
+  active = true,
 }: {
   onComplete: (profile: SignupProfile) => void;
   onBack: () => void;
+  active?: boolean;
 }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState("");
@@ -57,6 +88,8 @@ export function SignupFlow({
   const [handle, setHandle] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
   const [error, setError] = useState("");
+  const [welcomeScene, setWelcomeScene] = useState(0);
+  const [rotationPaused, setRotationPaused] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -76,6 +109,34 @@ export function SignupFlow({
       titleRef.current.focus({ preventScroll: true });
     }
   }, [step]);
+
+  useEffect(() => {
+    if (active) setWelcomeScene(0);
+  }, [active]);
+
+  useEffect(() => {
+    if (!active || step !== 0) return;
+
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    let interval: ReturnType<typeof setInterval> | undefined;
+
+    function syncRotation() {
+      clearInterval(interval);
+      if (rotationPaused || reducedMotion.matches || document.hidden) return;
+      interval = setInterval(() => {
+        setWelcomeScene((current) => (current + 1) % welcomeScenes.length);
+      }, 7500);
+    }
+
+    syncRotation();
+    reducedMotion.addEventListener("change", syncRotation);
+    document.addEventListener("visibilitychange", syncRotation);
+    return () => {
+      clearInterval(interval);
+      reducedMotion.removeEventListener("change", syncRotation);
+      document.removeEventListener("visibilitychange", syncRotation);
+    };
+  }, [active, step, rotationPaused]);
 
   function goTo(next: number) {
     setError("");
@@ -160,24 +221,74 @@ export function SignupFlow({
             </div>
           ) : null}
           <div className={styles.stage} key={step}>
-            {step === 0 ? (
-              <span className={styles.eyebrow}>THE COMMONS</span>
-            ) : null}
             <h2
               ref={titleRef}
               tabIndex={-1}
               id={`${id}-title`}
-              className={styles.title}
+              className={`${styles.title} ${step === 0 ? styles.welcomeTitle : ""}`}
+              aria-label={
+                step === 0
+                  ? `Hello, ${welcomeScenes[welcomeScene].place}.`
+                  : undefined
+              }
             >
-              {title}
+              {step === 0
+                ? welcomeScenes.map((scene, index) => (
+                    <span
+                      className={styles.welcomeGreeting}
+                      data-active={index === welcomeScene}
+                      key={scene.place}
+                      aria-hidden="true"
+                    >
+                      Hello,
+                      <br />
+                      {scene.place}.
+                    </span>
+                  ))
+                : title}
             </h2>
 
             {step === 0 ? (
-              <div
-                className={styles.welcomeImage}
-                role="img"
-                aria-label="A quiet path beside the Japan House garden pond"
-              />
+              <figure className={styles.welcomeFigure}>
+                <div
+                  className={styles.welcomeImage}
+                  role="img"
+                  aria-label={welcomeScenes[welcomeScene].description}
+                >
+                  {welcomeScenes.map((scene, index) => (
+                    <div
+                      className={styles.welcomePhoto}
+                      data-active={index === welcomeScene}
+                      key={scene.place}
+                      style={{
+                        backgroundImage: `url("${scene.image}")`,
+                        backgroundPosition: scene.position,
+                      }}
+                    />
+                  ))}
+                </div>
+                <figcaption className={styles.welcomeCaption}>
+                  <a
+                    href="/design-assets/CREDITS.md"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    Photo credits
+                  </a>
+                  <button
+                    type="button"
+                    className={styles.rotationControl}
+                    aria-label={
+                      rotationPaused
+                        ? "Play campus photos"
+                        : "Pause campus photos"
+                    }
+                    onClick={() => setRotationPaused((current) => !current)}
+                  >
+                    {rotationPaused ? <Play size={13} /> : <Pause size={13} />}
+                  </button>
+                </figcaption>
+              </figure>
             ) : null}
 
             {step === 1 ? (

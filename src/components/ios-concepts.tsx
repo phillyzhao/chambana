@@ -14,7 +14,7 @@ import {
   MapPin,
   MessageCircle,
   Plus,
-  Send,
+  SlidersHorizontal,
   Search,
   Signal,
   Users,
@@ -22,6 +22,7 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { IOSConversation } from "./ios-conversation";
 import { SignupFlow } from "./ios-signup";
 import styles from "./ios-concepts.module.css";
 
@@ -33,7 +34,7 @@ type Sheet =
   | { type: "notifications" }
   | { type: "mission"; id: number }
   | { type: "group"; id: number }
-  | { type: "conversation"; id: number };
+  | { type: "filters"; target: "missions" | "groups" };
 
 const missions = [
   {
@@ -81,7 +82,7 @@ const groups = [
   {
     name: "The in-between club",
     initials: "IC",
-    members: 23,
+    members: 4,
     category: "Outdoors",
     next: "The long way home · Today, 5:30 PM",
     mission: 0,
@@ -89,7 +90,7 @@ const groups = [
   {
     name: "Good company",
     initials: "GC",
-    members: 18,
+    members: 3,
     category: "Social",
     next: "A table for six · Today, 7 PM",
     mission: 1,
@@ -97,7 +98,7 @@ const groups = [
   {
     name: "Outside the syllabus",
     initials: "OS",
-    members: 32,
+    members: 4,
     category: "Arts",
     next: "A book worth sharing · Tomorrow, 4 PM",
     mission: 2,
@@ -110,6 +111,7 @@ const chats = [
     initials: "IC",
     preview: "Julia: Meet by the garden entrance?",
     time: "4m",
+    members: ["Maya Chen", "Julia Lee", "Alex Morgan", "Sam Kim"],
     messages: [
       "Hey everyone! Looking forward to the walk later.",
       "Meet by the garden entrance? I’ll be there at 5:25.",
@@ -120,6 +122,7 @@ const chats = [
     initials: "GC",
     preview: "That sounds like a perfect Monday.",
     time: "18m",
+    members: ["Maya Chen", "Theo Kim", "Avery Shah"],
     messages: [
       "Thanks for the coffee invite!",
       "That sounds like a perfect Monday.",
@@ -130,6 +133,7 @@ const chats = [
     initials: "OS",
     preview: "Eli: Bringing my favorite Joan Didion.",
     time: "1h",
+    members: ["Maya Chen", "Eli Carter", "Jamie Nguyen", "Nora Patel"],
     messages: [
       "What’s everyone reading this week?",
       "Bringing my favorite Joan Didion.",
@@ -177,7 +181,7 @@ export function IOSConcepts() {
         <a href="/" className={styles.previewBrand}>
           chambana.
         </a>
-        <h1>The Commons</h1>
+
         <span className={styles.privateLabel}>LOCAL DEMO</span>
       </header>
       <div className={styles.previewControls}>
@@ -254,21 +258,26 @@ function AppPhone({
     isNewProfile ? [] : [0],
   );
   const [notificationsRead, setNotificationsRead] = useState(isNewProfile);
-  const [filter, setFilter] = useState("For you");
-  const [message, setMessage] = useState("");
+  const [missionFilters, setMissionFilters] = useState<string[]>([]);
+  const [conversation, setConversation] = useState<number | null>(null);
   const [sentMessages, setSentMessages] = useState<Record<number, string[]>>(
     {},
   );
   const [toast, setToast] = useState("");
-  const dialogRef = useRef<HTMLDialogElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const messagesRef = useRef<HTMLDivElement>(null);
   const lastTrigger = useRef<HTMLElement | null>(null);
   const uid = useId();
   const [groupSearch, setGroupSearch] = useState("");
-  const [groupCategory, setGroupCategory] = useState("All");
-  const [onlyJoined, setOnlyJoined] = useState(false);
+  const [groupFilters, setGroupFilters] = useState<string[]>([]);
+  const groupCategories = groupFilters.filter((value) => value !== "Joined");
+  const filteredMissions = missions.filter(
+    (mission) =>
+      missionFilters.length === 0 ||
+      (missionFilters.includes("Saved") && saved.includes(mission.id)) ||
+      (missionFilters.includes("Joined") && joined.includes(mission.id)),
+  );
   const initials = profile.name
     .split(/\s+/)
     .map((part) => part[0])
@@ -279,35 +288,63 @@ function AppPhone({
     .map((group, id) => ({ ...group, id }))
     .filter(
       (group) =>
-        (groupCategory === "All" || group.category === groupCategory) &&
-        (!onlyJoined || joinedGroups.includes(group.id)) &&
+        (groupCategories.length === 0 ||
+          groupCategories.includes(group.category)) &&
+        (!groupFilters.includes("Joined") || joinedGroups.includes(group.id)) &&
         `${group.name} ${group.category}`
           .toLowerCase()
           .includes(groupSearch.trim().toLowerCase()),
     );
   const resetGroups = () => {
     setGroupSearch("");
-    setGroupCategory("All");
-    setOnlyJoined(false);
+    setGroupFilters([]);
   };
 
-  useEffect(() => {
-    const dialog = dialogRef.current;
-    if (!dialog) return;
-    if (sheet && !dialog.open) {
-      lastTrigger.current = document.activeElement as HTMLElement;
-      dialog.showModal();
-    } else if (!sheet && dialog.open) {
-      dialog.close();
-    } else if (sheet && dialog.open) {
-      closeRef.current?.focus();
-    }
-  }, [sheet]);
+  const hasSheet = sheet !== null && mode === "app";
 
   useEffect(() => {
-    const messages = messagesRef.current;
-    if (messages) messages.scrollTop = messages.scrollHeight;
-  }, [sentMessages]);
+    if (!hasSheet) return;
+    lastTrigger.current = document.activeElement as HTMLElement;
+    closeRef.current?.focus({ preventScroll: true });
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setSheet(null);
+      }
+      if (event.key !== "Tab") return;
+      const focusable = Array.from(
+        dialogRef.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled), input:not(:disabled), [tabindex="0"]',
+        ) ?? [],
+      ).filter((element) => element.getClientRects().length);
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!dialogRef.current?.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first)?.focus();
+      } else if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      if (lastTrigger.current?.getClientRects().length) {
+        lastTrigger.current.focus({ preventScroll: true });
+      }
+    };
+  }, [hasSheet]);
+
+  useEffect(() => {
+    if (hasSheet) {
+      dialogRef.current?.scrollTo({ top: 0 });
+      closeRef.current?.focus({ preventScroll: true });
+    }
+  }, [sheet, hasSheet]);
 
   useEffect(() => {
     if (!toast) return;
@@ -316,6 +353,7 @@ function AppPhone({
   }, [toast]);
 
   const switchTab = (next: Tab) => {
+    setConversation(null);
     setTab(next);
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
   };
@@ -336,6 +374,21 @@ function AppPhone({
     );
   };
   const openMission = (id: number) => setSheet({ type: "mission", id });
+  const openConversation = (id: number) => {
+    setSheet(null);
+    setConversation(id);
+    setTab("Inbox");
+  };
+  const toggleFilter = (value: string, target: "missions" | "groups") => {
+    const update = target === "missions" ? setMissionFilters : setGroupFilters;
+    update((current) =>
+      value === "All"
+        ? []
+        : current.includes(value)
+          ? current.filter((item) => item !== value)
+          : [...current, value],
+    );
+  };
   const primaryId = 0;
 
   function MissionRow({ id }: { id: number }) {
@@ -425,19 +478,15 @@ function AppPhone({
 
   const home = (
     <>
-      <div className={styles.commonsIntro}>
+      <div className={styles.homeIntro}>
         <p className={styles.eyebrow}>MONDAY, OCTOBER 12</p>
-        <h2>
-          Make room for
-          <br />
-          <em>a little more.</em>
-        </h2>
+        <h2>Let’s go explore.</h2>
       </div>
       <div className={styles.featureLabel}>
         <span>TODAY’S MISSION</span>
         <span>01 / 03</span>
       </div>
-      <div className={styles.commonsFeature}>
+      <div className={styles.homeFeature}>
         <button
           type="button"
           className={styles.featureImageButton}
@@ -455,7 +504,7 @@ function AppPhone({
             <ArrowUpRight size={19} />
           </span>
         </button>
-        <div className={styles.commonsFeatureBody}>
+        <div className={styles.homeFeatureBody}>
           <div className={styles.metaLine}>
             <span>TODAY · 5:30 PM</span>
             <span>+50 NUTS</span>
@@ -498,7 +547,7 @@ function AppPhone({
   );
 
   return (
-    <div className={styles.phone} data-concept="commons" data-device={device}>
+    <div className={styles.phone} data-concept="chambana" data-device={device}>
       <div className={styles.statusBar} aria-hidden="true">
         <span>9:41</span>
         <i />
@@ -509,9 +558,17 @@ function AppPhone({
         </span>
       </div>
       <div className={styles.signupPane} hidden={mode !== "signup"}>
-        <SignupFlow onBack={onBack} onComplete={onComplete} />
+        <SignupFlow
+          active={mode === "signup"}
+          onBack={onBack}
+          onComplete={onComplete}
+        />
       </div>
-      <div className={styles.appPane} hidden={mode !== "app"}>
+      <div
+        className={styles.appPane}
+        hidden={mode !== "app" || conversation !== null}
+        inert={hasSheet}
+      >
         <header className={styles.appHeader}>
           <button
             type="button"
@@ -544,52 +601,40 @@ function AppPhone({
           {tab === "Home" && home}
           {tab === "Missions" && (
             <div className={styles.secondaryScreen}>
-              <h2>
-                A little <em>adventure.</em>
-              </h2>
-              <div className={styles.filters} aria-label="Filter missions">
-                {["For you", "Saved", "Joined"].map((item) => (
-                  <button
-                    type="button"
-                    key={item}
-                    aria-pressed={filter === item}
-                    onClick={() => setFilter(item)}
-                  >
-                    {item}
-                    {item === "Saved" && saved.length > 0
-                      ? ` (${saved.length})`
-                      : ""}
-                  </button>
-                ))}
+              <div className={styles.filterToolbar}>
+                <button
+                  type="button"
+                  className={styles.filterTrigger}
+                  onClick={() =>
+                    setSheet({ type: "filters", target: "missions" })
+                  }
+                  aria-haspopup="dialog"
+                >
+                  <SlidersHorizontal size={16} /> Filters
+                  {missionFilters.length > 0 && (
+                    <span>{missionFilters.length}</span>
+                  )}
+                </button>
+                <span aria-live="polite">
+                  {filteredMissions.length}{" "}
+                  {filteredMissions.length === 1 ? "mission" : "missions"}
+                </span>
               </div>
               <div className={styles.missionList}>
-                {missions
-                  .filter((mission) =>
-                    filter === "Saved"
-                      ? saved.includes(mission.id)
-                      : filter === "Joined"
-                        ? joined.includes(mission.id)
-                        : true,
-                  )
-                  .map((mission) => (
-                    <MissionCard key={mission.id} id={mission.id} />
-                  ))}
+                {filteredMissions.map((mission) => (
+                  <MissionCard key={mission.id} id={mission.id} />
+                ))}
               </div>
-              {((filter === "Saved" && !saved.length) ||
-                (filter === "Joined" && !joined.length)) && (
+              {filteredMissions.length === 0 && (
                 <div className={styles.emptyState}>
                   <Compass size={35} strokeWidth={1} />
-                  <h3>
-                    {filter === "Saved"
-                      ? "No saved missions"
-                      : "No joined missions"}
-                  </h3>
+                  <h3>No matching missions</h3>
                   <button
                     type="button"
                     className={styles.primaryButton}
-                    onClick={() => setFilter("For you")}
+                    onClick={() => setMissionFilters([])}
                   >
-                    Discover missions <ArrowRight size={16} />
+                    Show all missions <ArrowRight size={16} />
                   </button>
                 </div>
               )}
@@ -597,9 +642,6 @@ function AppPhone({
           )}
           {tab === "Groups" && (
             <div className={styles.secondaryScreen}>
-              <h2>
-                Find your <em>people.</em>
-              </h2>
               <label className={styles.groupSearch}>
                 <Search size={17} aria-hidden="true" />
                 <span className={styles.srOnly}>Search groups</span>
@@ -610,33 +652,24 @@ function AppPhone({
                   onChange={(event) => setGroupSearch(event.target.value)}
                 />
               </label>
-              <div
-                className={styles.groupFilters}
-                aria-label="Filter groups by interest"
-              >
-                {["All", "Outdoors", "Social", "Arts"].map((category) => (
-                  <button
-                    type="button"
-                    key={category}
-                    aria-pressed={groupCategory === category}
-                    onClick={() => setGroupCategory(category)}
-                  >
-                    {category}
-                  </button>
-                ))}
-              </div>
-              <div className={styles.groupResults}>
+              <div className={styles.filterToolbar}>
+                <button
+                  type="button"
+                  className={styles.filterTrigger}
+                  onClick={() =>
+                    setSheet({ type: "filters", target: "groups" })
+                  }
+                  aria-haspopup="dialog"
+                >
+                  <SlidersHorizontal size={16} /> Filters
+                  {groupFilters.length > 0 && (
+                    <span>{groupFilters.length}</span>
+                  )}
+                </button>
                 <span aria-live="polite">
                   {filteredGroups.length}{" "}
                   {filteredGroups.length === 1 ? "group" : "groups"}
                 </span>
-                <button
-                  type="button"
-                  aria-pressed={onlyJoined}
-                  onClick={() => setOnlyJoined((current) => !current)}
-                >
-                  <Check size={13} /> Joined only
-                </button>
               </div>
               <div className={styles.groupList}>
                 {filteredGroups.map(({ id, ...group }) => (
@@ -687,21 +720,12 @@ function AppPhone({
           )}
           {tab === "Inbox" && (
             <div className={styles.secondaryScreen}>
-              <h2>
-                Your <em>conversations.</em>
-              </h2>
-              <div className={styles.inboxLabel}>
-                MESSAGES <span>3 CONVERSATIONS</span>
-              </div>
               {chats.map((chat, id) => (
                 <button
                   type="button"
                   key={chat.name}
                   className={styles.chatRow}
-                  onClick={() => {
-                    setMessage("");
-                    setSheet({ type: "conversation", id });
-                  }}
+                  onClick={() => openConversation(id)}
                 >
                   <span className={styles.chatAvatar}>{chat.initials}</span>
                   <span>
@@ -729,7 +753,7 @@ function AppPhone({
         )}
         <nav
           className={styles.glassNav}
-          aria-label="The Commons main navigation"
+          aria-label="Chambana main navigation"
           role="tablist"
         >
           {(
@@ -783,356 +807,387 @@ function AppPhone({
           ))}
         </nav>
       </div>
+      {mode === "app" && conversation !== null && (
+        <div className={styles.conversationPane}>
+          <IOSConversation
+            key={conversation}
+            conversation={{
+              ...chats[conversation],
+              messages: chats[conversation].messages.map((text, index) => ({
+                name:
+                  index === 0
+                    ? "Maya"
+                    : conversation === 0
+                      ? "Julia"
+                      : conversation === 2
+                        ? "Eli"
+                        : "Maya",
+                text,
+              })),
+              members: [
+                ...chats[conversation].members.map((name) => ({
+                  name,
+                  initials: name
+                    .split(" ")
+                    .map((part) => part[0])
+                    .join(""),
+                })),
+                ...(joinedGroups.includes(conversation)
+                  ? [{ name: `${profile.name} (you)`, initials }]
+                  : []),
+              ],
+            }}
+            sentMessages={sentMessages[conversation] ?? []}
+            onSend={(text) =>
+              setSentMessages((current) => ({
+                ...current,
+                [conversation]: [...(current[conversation] ?? []), text],
+              }))
+            }
+            onBack={() => {
+              setConversation(null);
+              requestAnimationFrame(() =>
+                document.getElementById(`${uid}-Inbox-tab`)?.focus(),
+              );
+            }}
+          />
+        </div>
+      )}
       <div className={styles.homeIndicator} aria-hidden="true" />
-      <dialog
-        ref={dialogRef}
-        className={styles.sheet}
-        aria-labelledby={`${uid}-sheet-title`}
-        onClose={() => {
-          setSheet(null);
-          lastTrigger.current?.focus();
-        }}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            const rect = event.currentTarget.getBoundingClientRect();
-            if (
-              event.clientX < rect.left ||
-              event.clientX > rect.right ||
-              event.clientY < rect.top ||
-              event.clientY > rect.bottom
-            )
-              setSheet(null);
-          }
-        }}
-      >
-        <div className={styles.sheetHandle} />
-        <button
-          type="button"
-          ref={closeRef}
-          className={styles.closeSheet}
-          aria-label="Close dialog"
-          onClick={() => setSheet(null)}
+      {hasSheet && (
+        <div
+          className={styles.sheetBackdrop}
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setSheet(null);
+          }}
         >
-          <X size={20} />
-        </button>
-        {sheet?.type === "profile" && (
-          <div className={styles.sheetBody}>
-            <div className={styles.largeAvatar}>{initials}</div>
-            <h2 id={`${uid}-sheet-title`}>{profile.name}</h2>
-            <p className={styles.profileMeta}>@{profile.handle}</p>
-            <div className={styles.profileStats}>
-              <span>
-                <strong>{isNewProfile ? 0 : 340}</strong>NUTS
-              </span>
-              <span>
-                <strong>{isNewProfile ? 0 : 6}</strong>MISSIONS
-              </span>
-              <span>
-                <strong>{joinedGroups.length}</strong>
-                GROUPS
-              </span>
-            </div>
-            <div className={styles.profileInterests}>
-              {profile.interests.map((interest) => (
-                <span key={interest}>{interest}</span>
-              ))}
-            </div>
+          <div
+            ref={dialogRef}
+            className={styles.sheet}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={`${uid}-sheet-title`}
+          >
+            <div className={styles.sheetHandle} />
             <button
               type="button"
-              className={styles.sheetRow}
-              onClick={() => {
-                setFilter("Saved");
-                switchTab("Missions");
-                setSheet(null);
-              }}
+              ref={closeRef}
+              className={styles.closeSheet}
+              aria-label="Close dialog"
+              onClick={() => setSheet(null)}
             >
-              <Bookmark size={18} />
-              <span>Saved missions</span>
-              <small>{saved.length}</small>
-              <ChevronRight size={16} />
+              <X size={20} />
             </button>
-            <button
-              type="button"
-              className={styles.sheetRow}
-              onClick={() => {
-                setOnlyJoined(true);
-                setGroupSearch("");
-                setGroupCategory("All");
-                switchTab("Groups");
-                setSheet(null);
-              }}
-            >
-              <Users size={18} />
-              <span>Your groups</span>
-              <small>{joinedGroups.length}</small>
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
-        {sheet?.type === "notifications" && (
-          <div className={styles.sheetBody}>
-            <h2 id={`${uid}-sheet-title`}>Notifications</h2>
-            <div className={styles.notificationSummary}>
-              <span>
-                {notificationsRead
-                  ? "You’re all caught up"
-                  : "2 unread notifications"}
-              </span>
-              <button
-                type="button"
-                disabled={notificationsRead}
-                onClick={() => setNotificationsRead(true)}
-              >
-                {notificationsRead ? (
-                  <>
-                    <Check size={14} /> All read
-                  </>
-                ) : (
-                  "Mark all read"
-                )}
-              </button>
-            </div>
-            <button
-              type="button"
-              className={styles.notificationItem}
-              onClick={() => {
-                setNotificationsRead(true);
-                openMission(primaryId);
-              }}
-            >
-              <span className={styles.notificationIcon}>
-                <Compass size={21} />
-              </span>
-              <span>
-                <strong>{missions[primaryId].title}</strong>
-                <small>10 MINUTES AGO</small>
-              </span>
-            </button>
-            <button
-              type="button"
-              className={styles.notificationItem}
-              onClick={() => {
-                setNotificationsRead(true);
-                setSheet({ type: "group", id: 0 });
-              }}
-            >
-              <span className={styles.notificationIcon}>
-                <Users size={21} />
-              </span>
-              <span>
-                <strong>Joined The in-between club</strong>
-                <small>1 HOUR AGO</small>
-              </span>
-            </button>
-          </div>
-        )}
-        {sheet?.type === "mission" &&
-          (() => {
-            const mission = missions[sheet.id];
-            const isJoined = joined.includes(sheet.id);
-            return (
-              <>
-                <div className={styles.sheetHero}>
-                  <img
-                    src={mission.image}
-                    alt={
-                      sheet.id === 1
-                        ? "Friends sharing a conversation at a cafe"
-                        : "The pond and trees in the Japan House gardens"
-                    }
-                  />
+            {sheet?.type === "profile" && (
+              <div className={styles.sheetBody}>
+                <div className={styles.largeAvatar}>{initials}</div>
+                <h2 id={`${uid}-sheet-title`}>{profile.name}</h2>
+                <p className={styles.profileMeta}>@{profile.handle}</p>
+                <div className={styles.profileStats}>
                   <span>
-                    {mission.category} / +{mission.nuts} NUTS
+                    <strong>{isNewProfile ? 0 : 340}</strong>NUTS
+                  </span>
+                  <span>
+                    <strong>{isNewProfile ? 0 : 6}</strong>MISSIONS
+                  </span>
+                  <span>
+                    <strong>{joinedGroups.length}</strong>
+                    GROUPS
                   </span>
                 </div>
-                <div className={styles.sheetBody}>
-                  <h2 id={`${uid}-sheet-title`}>{mission.title}.</h2>
-                  <div className={styles.missionFacts}>
-                    <span>
-                      <MapPin size={15} />
-                      {mission.location}
-                    </span>
-                    <span>
-                      <Clock3 size={15} />
-                      {mission.time}
-                    </span>
-                    <span>
-                      <Users size={15} />
-                      {mission.count + (isJoined ? 1 : 0)} of 6 going
-                    </span>
-                  </div>
-                  <div className={styles.missionCompany}>
-                    <AvatarStack
-                      people={mission.people}
-                      extra={isJoined ? 1 : 0}
-                    />
-                    <span>{mission.duration}</span>
-                  </div>
-                  {isJoined && (
-                    <div className={styles.joinConfirmation} role="status">
-                      <Check size={18} />
-                      <span>Joined</span>
+                <div className={styles.profileInterests}>
+                  {profile.interests.map((interest) => (
+                    <span key={interest}>{interest}</span>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className={styles.sheetRow}
+                  onClick={() => {
+                    setMissionFilters(["Saved"]);
+                    switchTab("Missions");
+                    setSheet(null);
+                  }}
+                >
+                  <Bookmark size={18} />
+                  <span>Saved missions</span>
+                  <small>{saved.length}</small>
+                  <ChevronRight size={16} />
+                </button>
+                <button
+                  type="button"
+                  className={styles.sheetRow}
+                  onClick={() => {
+                    setGroupFilters(["Joined"]);
+                    setGroupSearch("");
+                    switchTab("Groups");
+                    setSheet(null);
+                  }}
+                >
+                  <Users size={18} />
+                  <span>Your groups</span>
+                  <small>{joinedGroups.length}</small>
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            )}
+            {sheet?.type === "notifications" && (
+              <div className={styles.sheetBody}>
+                <h2 id={`${uid}-sheet-title`}>Notifications</h2>
+                <div className={styles.notificationSummary}>
+                  <span>
+                    {notificationsRead
+                      ? "You’re all caught up"
+                      : "2 unread notifications"}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={notificationsRead}
+                    onClick={() => setNotificationsRead(true)}
+                  >
+                    {notificationsRead ? (
+                      <>
+                        <Check size={14} /> All read
+                      </>
+                    ) : (
+                      "Mark all read"
+                    )}
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className={styles.notificationItem}
+                  onClick={() => {
+                    setNotificationsRead(true);
+                    openMission(primaryId);
+                  }}
+                >
+                  <span className={styles.notificationIcon}>
+                    <Compass size={21} />
+                  </span>
+                  <span>
+                    <strong>{missions[primaryId].title}</strong>
+                    <small>10 MINUTES AGO</small>
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className={styles.notificationItem}
+                  onClick={() => {
+                    setNotificationsRead(true);
+                    setSheet({ type: "group", id: 0 });
+                  }}
+                >
+                  <span className={styles.notificationIcon}>
+                    <Users size={21} />
+                  </span>
+                  <span>
+                    <strong>Joined The in-between club</strong>
+                    <small>1 HOUR AGO</small>
+                  </span>
+                </button>
+              </div>
+            )}
+            {sheet?.type === "mission" &&
+              (() => {
+                const mission = missions[sheet.id];
+                const isJoined = joined.includes(sheet.id);
+                return (
+                  <>
+                    <div className={styles.sheetHero}>
+                      <img
+                        src={mission.image}
+                        alt={
+                          sheet.id === 1
+                            ? "Friends sharing a conversation at a cafe"
+                            : "The pond and trees in the Japan House gardens"
+                        }
+                      />
+                      <span>
+                        {mission.category} / +{mission.nuts} NUTS
+                      </span>
                     </div>
-                  )}
-                  <div className={styles.missionActions}>
+                    <div className={styles.sheetBody}>
+                      <h2 id={`${uid}-sheet-title`}>{mission.title}.</h2>
+                      <div className={styles.missionFacts}>
+                        <span>
+                          <MapPin size={15} />
+                          {mission.location}
+                        </span>
+                        <span>
+                          <Clock3 size={15} />
+                          {mission.time}
+                        </span>
+                        <span>
+                          <Users size={15} />
+                          {mission.count + (isJoined ? 1 : 0)} of 6 going
+                        </span>
+                      </div>
+                      <div className={styles.missionCompany}>
+                        <AvatarStack
+                          people={mission.people}
+                          extra={isJoined ? 1 : 0}
+                        />
+                        <span>{mission.duration}</span>
+                      </div>
+                      {isJoined && (
+                        <div className={styles.joinConfirmation} role="status">
+                          <Check size={18} />
+                          <span>Joined</span>
+                        </div>
+                      )}
+                      <div className={styles.missionActions}>
+                        <button
+                          type="button"
+                          className={styles.primaryButton}
+                          onClick={() => toggleJoin(mission.id)}
+                        >
+                          {isJoined ? "Leave mission" : "Join mission"}
+                          {isJoined ? (
+                            <X size={16} />
+                          ) : (
+                            <ArrowRight size={17} />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          className={styles.saveAction}
+                          aria-pressed={saved.includes(mission.id)}
+                          aria-label={`${saved.includes(mission.id) ? "Unsave" : "Save"} ${mission.title}`}
+                          onClick={() => toggleSave(mission.id)}
+                        >
+                          <Bookmark
+                            size={19}
+                            fill={
+                              saved.includes(mission.id)
+                                ? "currentColor"
+                                : "none"
+                            }
+                          />
+                        </button>
+                      </div>
+                    </div>
+                  </>
+                );
+              })()}
+            {sheet?.type === "group" &&
+              (() => {
+                const group = groups[sheet.id];
+                const isJoined = joinedGroups.includes(sheet.id);
+                const id = sheet.id;
+                return (
+                  <div className={styles.sheetBody}>
+                    <div className={styles.largeAvatar}>{group.initials}</div>
+                    <h2 id={`${uid}-sheet-title`}>{group.name}</h2>
+                    <span className={styles.groupCategory}>
+                      {group.category}
+                    </span>
+                    <div className={styles.groupSheetMeta}>
+                      <Users size={17} />
+                      {group.members + (isJoined ? 1 : 0)} members · UIUC
+                    </div>
+                    <h3 className={styles.sheetSubheading}>Next mission</h3>
+                    <button
+                      type="button"
+                      className={styles.groupPlan}
+                      onClick={() => openMission(group.mission)}
+                    >
+                      <Compass size={21} />
+                      <span>
+                        <strong>{missions[group.mission].short}</strong>
+                        <small>
+                          {missions[group.mission].location} ·{" "}
+                          {missions[group.mission].time}
+                        </small>
+                      </span>
+                      <ArrowUpRight size={18} />
+                    </button>
                     <button
                       type="button"
                       className={styles.primaryButton}
-                      onClick={() => toggleJoin(mission.id)}
+                      onClick={() =>
+                        setJoinedGroups((current) =>
+                          current.includes(id)
+                            ? current.filter((value) => value !== id)
+                            : [...current, id],
+                        )
+                      }
                     >
-                      {isJoined ? "Leave mission" : "Join mission"}
-                      {isJoined ? <X size={16} /> : <ArrowRight size={17} />}
+                      {isJoined ? "Leave group" : "Join group"}
+                      {isJoined ? <Check size={17} /> : <Plus size={17} />}
                     </button>
+                    {isJoined && (
+                      <button
+                        type="button"
+                        className={styles.secondaryButton}
+                        onClick={() => openConversation(id)}
+                      >
+                        Open conversation <MessageCircle size={17} />
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+            {sheet?.type === "filters" &&
+              (() => {
+                const selected =
+                  sheet.target === "groups" ? groupFilters : missionFilters;
+                const options =
+                  sheet.target === "groups"
+                    ? ["All", "Outdoors", "Social", "Arts", "Joined"]
+                    : ["All", "Saved", "Joined"];
+                const count =
+                  sheet.target === "groups"
+                    ? filteredGroups.length
+                    : filteredMissions.length;
+                return (
+                  <div className={`${styles.sheetBody} ${styles.filterSheet}`}>
+                    <h2 id={`${uid}-sheet-title`}>Filters</h2>
+                    <p className={styles.filterHint}>
+                      Choose as many as you like.
+                    </p>
+                    <div className={styles.filterOptions}>
+                      {options.map((option) => {
+                        const checked =
+                          option === "All"
+                            ? selected.length === 0
+                            : selected.includes(option);
+                        return (
+                          <button
+                            type="button"
+                            key={option}
+                            aria-pressed={checked}
+                            onClick={() => toggleFilter(option, sheet.target)}
+                          >
+                            <span>{option}</span>
+                            <span className={styles.filterCheck}>
+                              {checked && <Check size={15} />}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
                     <button
                       type="button"
-                      className={styles.saveAction}
-                      aria-pressed={saved.includes(mission.id)}
-                      aria-label={`${saved.includes(mission.id) ? "Unsave" : "Save"} ${mission.title}`}
-                      onClick={() => toggleSave(mission.id)}
+                      className={styles.primaryButton}
+                      onClick={() => setSheet(null)}
                     >
-                      <Bookmark
-                        size={19}
-                        fill={
-                          saved.includes(mission.id) ? "currentColor" : "none"
-                        }
-                      />
+                      Show {count}{" "}
+                      {sheet.target === "groups"
+                        ? count === 1
+                          ? "group"
+                          : "groups"
+                        : count === 1
+                          ? "mission"
+                          : "missions"}
+                      <ArrowRight size={17} />
                     </button>
                   </div>
-                </div>
-              </>
-            );
-          })()}
-        {sheet?.type === "group" &&
-          (() => {
-            const group = groups[sheet.id];
-            const isJoined = joinedGroups.includes(sheet.id);
-            const id = sheet.id;
-            return (
-              <div className={styles.sheetBody}>
-                <div className={styles.largeAvatar}>{group.initials}</div>
-                <h2 id={`${uid}-sheet-title`}>{group.name}</h2>
-                <span className={styles.groupCategory}>{group.category}</span>
-                <div className={styles.groupSheetMeta}>
-                  <Users size={17} />
-                  {group.members + (isJoined ? 1 : 0)} members · UIUC
-                </div>
-                <h3 className={styles.sheetSubheading}>Next mission</h3>
-                <button
-                  type="button"
-                  className={styles.groupPlan}
-                  onClick={() => openMission(group.mission)}
-                >
-                  <Compass size={21} />
-                  <span>
-                    <strong>{missions[group.mission].short}</strong>
-                    <small>
-                      {missions[group.mission].location} ·{" "}
-                      {missions[group.mission].time}
-                    </small>
-                  </span>
-                  <ArrowUpRight size={18} />
-                </button>
-                <button
-                  type="button"
-                  className={styles.primaryButton}
-                  onClick={() =>
-                    setJoinedGroups((current) =>
-                      current.includes(id)
-                        ? current.filter((value) => value !== id)
-                        : [...current, id],
-                    )
-                  }
-                >
-                  {isJoined ? "Leave group" : "Join group"}
-                  {isJoined ? <Check size={17} /> : <Plus size={17} />}
-                </button>
-                {isJoined && (
-                  <button
-                    type="button"
-                    className={styles.secondaryButton}
-                    onClick={() => {
-                      setMessage("");
-                      setSheet({ type: "conversation", id: id === 1 ? 1 : id });
-                    }}
-                  >
-                    Open conversation <MessageCircle size={17} />
-                  </button>
-                )}
-              </div>
-            );
-          })()}
-        {sheet?.type === "conversation" && (
-          <div className={styles.sheetBody}>
-            <h2 id={`${uid}-sheet-title`} className={styles.chatTitle}>
-              {chats[sheet.id].name}
-            </h2>
-            <p className={styles.chatDate}>TODAY, OCTOBER 12</p>
-            <div
-              ref={messagesRef}
-              className={styles.messages}
-              role="log"
-              aria-label="Conversation messages"
-            >
-              {chats[sheet.id].messages.map((text, index) => (
-                <div className={styles.messageBubble} key={text}>
-                  <small>
-                    {index === 0
-                      ? "Maya"
-                      : sheet.id === 0
-                        ? "Julia"
-                        : sheet.id === 2
-                          ? "Eli"
-                          : "Maya"}
-                  </small>
-                  {text}
-                </div>
-              ))}
-              {(sentMessages[sheet.id] ?? []).map((text, index) => (
-                <div
-                  key={index}
-                  className={`${styles.messageBubble} ${styles.ownMessage}`}
-                >
-                  {text}
-                  <small>You · Just now</small>
-                </div>
-              ))}
-            </div>
-            <form
-              className={styles.messageForm}
-              onSubmit={(event) => {
-                event.preventDefault();
-                const trimmed = message.trim();
-                if (!trimmed) return;
-                const id = sheet.id;
-                setSentMessages((current) => ({
-                  ...current,
-                  [id]: [...(current[id] ?? []), trimmed],
-                }));
-                setMessage("");
-              }}
-            >
-              <label className={styles.srOnly} htmlFor={`${uid}-message`}>
-                Your message
-              </label>
-              <input
-                id={`${uid}-message`}
-                value={message}
-                onChange={(event) => setMessage(event.target.value)}
-                placeholder="Message"
-                maxLength={500}
-                autoComplete="off"
-              />
-              <button
-                type="submit"
-                disabled={!message.trim()}
-                aria-label="Add message to local preview"
-              >
-                <Send size={18} />
-              </button>
-            </form>
+                );
+              })()}
           </div>
-        )}
-      </dialog>
+        </div>
+      )}
     </div>
   );
 }

@@ -7,11 +7,11 @@ The owner's local repository remains `/Volumes/Crucial X10/Chambana`; `/Users/zp
 ## Review routes
 
 - `/`: waitlist.
-- `/design-preview`: The Commons app and interactive signup flow, behind a shared access-code gate.
+- `/design-preview`: Chambana app and interactive signup flow, behind a shared access-code gate.
 - `/login`: the same access-code gate, followed by the existing campus sign-in.
-- Older concept query strings now resolve to The Commons; After Hours and Field Notes have been retired.
+- Older concept query strings now resolve to Chambana; After Hours and Field Notes have been retired.
 
-The Commons keeps its editorial type and generous space, top-left profile, top-right notifications, and four floating glass tabs: Home, Missions, Groups, Inbox. Decorative taglines and card descriptions have been removed; useful labels, location, time, membership, and message content remain. Mission rewards and profile balances use nuts. Groups support search, category, and membership filters.
+Chambana keeps its editorial type and generous space, top-left profile, top-right notifications, and four floating glass tabs: Home, Missions, Groups, Inbox. Decorative taglines and card descriptions have been removed; useful labels, location, time, membership, and message content remain. Mission rewards and profile balances use nuts. Groups support search, category, and membership filters.
 
 Dialogs, notification-read state, mission save/join, group membership, conversations, and signup are local demo interactions. They reset when the preview is reloaded. Signup uses focused steps for name, campus email, demo verification, username, and interests. No emails, messages, reservations, accounts, or nuts are written to the live service. Sample activity is anchored to Monday, October 12, 2026.
 
@@ -37,9 +37,19 @@ Reviewed actual images from `/Users/zphil0/Downloads/ios-social-inspiration`: Or
 
 Photography credits are in `public/design-assets/CREDITS.md`. Review screenshots are in `design/ios-preview-2026-10-12/`.
 
-## Validation after the Commons revision
+## Validation after the iOS preview revision
 
 - 195 automated tests pass (124 application, 71 database), including invalid access codes, forged/expired cookies, safe destinations, and direct sign-in protection.
 - Production build, TypeScript, and whitespace checks pass.
 - Browser-checked gate rejection and shared unlock, all signup steps and back navigation, profile handoff with zero nuts, group search/category/membership combinations and reset, mission joining, and four-tab navigation.
 - Checked 320px and 393px responsive widths with no horizontal overflow; measured desktop iPhone 17 at 402 × 874 logical pixels with uniform scaling. Screenshots include `commons-refined-desktop.jpg`, `commons-refined-iphone.jpg`, `commons-groups-iphone.jpg`, and the two `commons-signup-*` images.
+
+## iOS interaction revision — October 13, 2026
+
+The demo now uses Chambana throughout. The home line is “Let’s go explore.”; Missions, Groups, and Inbox begin directly with their controls or content. Welcome photography starts at Japan House and cycles through State Farm Center, Busey-Evans, and Ikenberry with a 7.5-second interval and 1.8-second monochrome crossfade. The rotation pauses when the welcome is hidden, honors reduced motion, and offers a pause button. Photo provenance and licenses are linked from the welcome screen and recorded in `public/design-assets/CREDITS.md`. State Farm uses a venue exterior; Ikenberry uses its library interior.
+
+All detail and filter popups slide from the bottom and occupy two-thirds of the logical phone screen, including scaled desktop previews. The backdrop is confined to the phone, background controls become inert, and Escape, close, backdrop dismissal, focus trapping, and focus restoration work. Filters have a single entry button on Missions and Groups. Multiple specific choices can be selected; All clears every specific selection. Group interests combine with OR, with Joined restricting those results to memberships. Saved and Joined mission selections include either matching set.
+
+Conversations open as a full phone page with a fixed composer and a separate member-list page. Back returns to Inbox; locally sent messages persist between conversations until reload. Demo group counts match the named sample rosters.
+
+Validation: all 124 application tests, TypeScript, production build, and whitespace checks pass. Browser checks covered desktop and 393px/320px layouts, exact two-thirds sheet geometry, keyboard containment and return focus, filter combinations/All/reset/results, full-page chats, members, local message persistence, and welcome photo rotation. This revision is released through the existing GitHub `main` auto-deployment to `https://playchambana.com/design-preview`; the shared preview access gate remains in place.
