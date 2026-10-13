@@ -62,7 +62,7 @@ beforeAll(async () => {
   `);
   const migrations = new URL("../supabase/migrations/", import.meta.url);
   for (const file of (await readdir(migrations))
-    .filter((f) => f.endsWith(".sql"))
+    .filter((f) => f.endsWith(".sql") && !f.startsWith("._"))
     .sort())
     await db.exec(await readFile(new URL(file, migrations), "utf8"));
   for (const [id, email] of [
@@ -1433,5 +1433,66 @@ describe("membership and organizer approval", () => {
         ),
       ),
     ).toBe(1);
+  });
+});
+
+describe("private waitlist", () => {
+  it("stores one entry per email and preserves the original signup date", async () => {
+    await asService();
+    await db.query(
+      "insert into waitlist_signups(email,created_at) values($1,'2026-10-01T00:00:00Z')",
+      ["waitlist@illinois.edu"],
+    );
+    await db.query(
+      "insert into waitlist_signups(email) values($1) on conflict(email) do nothing",
+      ["waitlist@illinois.edu"],
+    );
+    expect(Number(await scalar("select count(*) from waitlist_signups"))).toBe(
+      1,
+    );
+    expect(
+      await scalar(
+        "select created_at='2026-10-01T00:00:00Z' from waitlist_signups",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects noncanonical and non-campus email addresses at the database boundary", async () => {
+    await asService();
+    for (const email of [
+      "Upper@illinois.edu",
+      "space@illinois.edu ",
+      "student@gmail.com",
+      "bad email@illinois.edu",
+    ]) {
+      await denied(
+        "insert into waitlist_signups(email) values($1)",
+        [email],
+        /check constraint/,
+      );
+    }
+  });
+
+  it("denies public access to waitlist emails and direct client signups", async () => {
+    await asService();
+    await db.query("insert into waitlist_signups(email) values($1)", [
+      "waitlist@illinois.edu",
+    ]);
+    await db.exec("reset role; set role anon");
+    await denied("select * from waitlist_signups", [], /permission denied/);
+    await denied(
+      "insert into waitlist_signups(email) values('anonymous@illinois.edu')",
+      [],
+      /permission denied/,
+    );
+    await asUser(member);
+    await denied("select * from waitlist_signups", [], /permission denied/);
+    await denied(
+      "insert into waitlist_signups(email) values('member@illinois.edu')",
+      [],
+      /permission denied/,
+    );
+    await asUser(admin);
+    await denied("select * from waitlist_signups", [], /permission denied/);
   });
 });

@@ -7,6 +7,9 @@ export async function proxy(request: NextRequest) {
   // OAuth callback must be the sole writer of Supabase's PKCE/session cookies.
   // Running a refresh here as well can mix cookie chunks behind a CDN.
   if (
+    request.nextUrl.pathname === "/" ||
+    request.nextUrl.pathname === "/design-preview" ||
+    request.nextUrl.pathname === "/login" ||
     request.nextUrl.pathname.startsWith("/api/") ||
     request.nextUrl.pathname.startsWith("/auth/")
   )

@@ -1,0 +1,359 @@
+.flow {
+  --signup-ink: #242424;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  color: var(--signup-ink);
+  background: #f8f8f8;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.flow * {
+  box-sizing: border-box;
+}
+.flow button {
+  cursor: pointer;
+}
+.flow button:focus-visible,
+.flow input:focus-visible {
+  outline: 2px solid #676767;
+  outline-offset: 4px;
+}
+.topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 66px;
+  padding: 5px 23px 9px;
+}
+.back {
+  width: 44px;
+  height: 44px;
+  border: 1px solid #d9d9d9;
+  border-radius: 50%;
+  background: transparent;
+  display: grid;
+  place-items: center;
+}
+.wordmark {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 24px;
+  letter-spacing: -1.25px;
+}
+.stepCount {
+  width: 44px;
+  font-size: 10px;
+  letter-spacing: 0.4px;
+  text-align: right;
+  color: #656565;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.form {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.content {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  flex: 1;
+  min-height: 0;
+  padding: 8px 29px 24px;
+}
+.content::-webkit-scrollbar {
+  display: none;
+}
+.progress {
+  display: flex;
+  gap: 5px;
+  padding: 7px 0 43px;
+}
+.progress span {
+  height: 2px;
+  background: #dfdfdf;
+  flex: 1;
+}
+.progress span[data-complete="true"] {
+  background: #454545;
+}
+.stage {
+  animation: arrive 340ms ease-out both;
+}
+.eyebrow {
+  display: block;
+  color: #626262;
+  font-size: 10px;
+  letter-spacing: 2px;
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+.title {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 43px;
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: -1.9px;
+  margin: 0;
+  max-width: 320px;
+  overflow-wrap: anywhere;
+  outline: none;
+}
+.welcomeImage {
+  width: 100%;
+  aspect-ratio: 1.1;
+  margin-top: 37px;
+  background: #e2e2e2 url("/design-assets/campus.jpg") 50% 50% / cover;
+  border-radius: 140px 140px 4px 4px;
+  filter: grayscale(1);
+}
+.field {
+  margin-top: 56px;
+}
+.field label,
+.interests legend {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  margin-bottom: 13px;
+}
+.field input {
+  width: 100%;
+  min-width: 0;
+  display: block;
+  border: 0;
+  border-bottom: 1px solid #a6a6a6;
+  background: transparent;
+  color: var(--signup-ink);
+  border-radius: 0;
+  padding: 12px 0 16px;
+  font-size: 21px;
+  line-height: 1.5;
+  font-family: inherit;
+  box-shadow: none;
+}
+.field input::placeholder {
+  opacity: 1;
+  color: #888;
+}
+.field input[aria-invalid="true"] {
+  border-bottom-color: #242424;
+  border-bottom-width: 2px;
+}
+.email {
+  display: block;
+  font-size: 14px;
+  color: #626262;
+  margin: -31px 0 33px;
+  overflow-wrap: anywhere;
+}
+.field input.code {
+  font-size: 31px;
+  letter-spacing: 10px;
+  font-variant-numeric: tabular-nums;
+}
+.demoCode {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  margin-top: 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font-size: 12px;
+  color: #5e5e5e;
+}
+.demoCode span {
+  color: var(--signup-ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.handleField {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border-bottom: 1px solid #a6a6a6;
+}
+.handleField > span {
+  font-family: Georgia, serif;
+  font-size: 25px;
+  color: #777;
+}
+.handleField input {
+  border-bottom: none;
+}
+.interests {
+  border: 0;
+  margin: 34px 0 0;
+  padding: 0;
+  min-width: 0;
+}
+.interests legend {
+  width: 100%;
+  margin-bottom: 17px;
+}
+.interests legend span {
+  float: right;
+  font-weight: 400;
+  color: #686868;
+}
+.interestGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 11px;
+}
+.interestGrid button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 57px;
+  padding: 0 11px;
+  border: 1px solid #d6d6d6;
+  border-radius: 10px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  color: inherit;
+  text-align: left;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+.interestGrid button svg {
+  flex-shrink: 0;
+}
+.interestGrid button svg:last-child {
+  margin-left: auto;
+  width: 12px;
+}
+.interestGrid button[aria-pressed="true"] {
+  border-color: #343434;
+  background: #e9e9e9;
+}
+.profile {
+  margin-top: 36px;
+  text-align: center;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: #e8e8e8;
+  border: 1px solid #d4d4d4;
+  margin: 0 auto 21px;
+  font-family: Georgia, serif;
+  font-size: 36px;
+  letter-spacing: -2px;
+}
+.profile h3 {
+  font-size: 19px;
+  font-weight: 500;
+  margin: 0 0 7px;
+  overflow-wrap: anywhere;
+}
+.handle {
+  font-size: 14px;
+  color: #686868;
+  overflow-wrap: anywhere;
+}
+.selectedInterests {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 28px;
+}
+.selectedInterests span {
+  padding: 8px 11px;
+  border: 1px solid #d9d9d9;
+  border-radius: 18px;
+  font-size: 11px;
+}
+.error {
+  font-size: 12px;
+  line-height: 1.6;
+  margin: 15px 0 0;
+  color: #303030;
+}
+.footer {
+  flex-shrink: 0;
+  padding: 17px 29px max(30px, env(safe-area-inset-bottom));
+}
+.primary {
+  width: 100%;
+  min-height: 55px;
+  border: 1px solid #252525;
+  border-radius: 29px;
+  background: #252525;
+  color: #fff !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 13px;
+  padding: 12px 25px;
+  font-size: 14px;
+  font-weight: 500;
+  font-family: inherit;
+}
+.primary:active {
+  background: #414141;
+}
+.demoNotice {
+  display: block;
+  text-align: center;
+  color: #6c6c6c;
+  font-size: 10px;
+  margin-top: 18px;
+  letter-spacing: 0.3px;
+}
+
+@keyframes arrive {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 350px) {
+  .content {
+    padding-right: 23px;
+    padding-left: 23px;
+  }
+  .footer {
+    padding-right: 23px;
+    padding-left: 23px;
+  }
+  .title {
+    font-size: 38px;
+  }
+  .interestGrid {
+    gap: 8px;
+  }
+  .interestGrid button {
+    gap: 7px;
+    padding-right: 9px;
+    padding-left: 9px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stage {
+    animation: none;
+  }
+  .interestGrid button {
+    transition: none;
+  }
+}
