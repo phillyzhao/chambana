@@ -31,7 +31,7 @@ export async function CommunityLayout({
       )}
       <main>{children}</main>
       <footer className="site-footer">
-        Made for the space between classes.
+        Chambana by GateMatch
         <Link href="/guidelines">Community guidelines & photo privacy</Link>
       </footer>
       <Navigation admin={me.admin} />

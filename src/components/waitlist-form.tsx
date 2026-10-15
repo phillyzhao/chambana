@@ -81,7 +81,8 @@ export function WaitlistForm() {
       )}
       <p className={styles.formNote}>JOIN THE WAITLIST</p>
       <p className={styles.visuallyHidden} id="waitlist-note">
-        We’ll use your email to let you know when Chambana opens.
+        Chambana by GateMatch will use your email to let you know when Chambana
+        opens.
       </p>
     </form>
   );

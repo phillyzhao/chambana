@@ -1,13 +1,14 @@
 import { PageIntro } from "@/components/ui";
 import { PROHIBITED } from "@/lib/rules";
+export const metadata = {
+  title: "Guidelines & privacy · Chambana by GateMatch",
+};
+
 export default function Guidelines() {
   const support = process.env.SUPPORT_EMAIL;
   return (
     <div className="narrow">
-      <PageIntro
-        eyebrow="LOOK OUT FOR EACH OTHER"
-        title="Keep it a good time."
-      />
+      <PageIntro eyebrow="Chambana by GateMatch" title="Keep it a good time." />
       <section className="panel prose">
         <h2>Campus, with care</h2>
         <p>{PROHIBITED}</p>
@@ -25,10 +26,10 @@ export default function Guidelines() {
         </p>
         <p>
           We remove photo metadata before storage. Photos are sent to Google
-          Gemini to check visible evidence and may be reviewed by Chambana
-          platform admins. AI can make mistakes; uncertain results go to admin
-          review. A photo alone cannot prove when it was taken or who performed
-          an action.
+          Gemini to check visible evidence and may be reviewed by Chambana by
+          GateMatch platform admins. AI can make mistakes; uncertain results go
+          to admin review. A photo alone cannot prove when it was taken or who
+          performed an action.
         </p>
         <h2>What is public</h2>
         <p>
@@ -41,11 +42,11 @@ export default function Guidelines() {
         <h2>Beta data</h2>
         <p>
           Accounts, proof, and scoring records are stored in the beta’s Supabase
-          project. Submitted photos and their records stay in Chambana’s private
-          archive even if the group is deleted. This beta does not yet have
-          automatic proof deletion or self-service account deletion. The
-          operator needs to publish a support contact, retention policy, and
-          final privacy terms before opening signups.
+          project. Submitted photos and their records stay in the private
+          Chambana by GateMatch archive even if the group is deleted. This beta
+          does not yet have automatic proof deletion or self-service account
+          deletion. The operator needs to publish a support contact, retention
+          policy, and final privacy terms before opening signups.
         </p>
         <h2>Something off?</h2>
         {support && (
@@ -57,8 +58,9 @@ export default function Guidelines() {
         )}
         <p>
           Signed-in members can report public profiles or groups from their
-          pages. Chambana admins review reports. This site is not affiliated
-          with or endorsed by the University of Illinois Urbana-Champaign.
+          pages. Chambana by GateMatch admins review reports. This site is not
+          affiliated with or endorsed by the University of Illinois
+          Urbana-Champaign.
         </p>
       </section>
     </div>

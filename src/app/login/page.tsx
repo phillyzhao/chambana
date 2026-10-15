@@ -81,7 +81,7 @@ export default async function Login({
         </section>
         <p className="footnote">
           Your profile name, bio, and score are public. Your email stays
-          private. Read our{" "}
+          private. Read the Chambana by GateMatch{" "}
           <Link href="/guidelines">
             community guidelines and photo privacy details
           </Link>
