@@ -16,7 +16,10 @@ export const dynamic = "force-dynamic";
 export default async function DesignPreviewPage({
   searchParams,
 }: {
-  searchParams: Promise<{ view?: string | string[] }>;
+  searchParams: Promise<{
+    view?: string | string[];
+    screen?: string | string[];
+  }>;
 }) {
   if (
     process.env.NODE_ENV !== "development" &&
@@ -25,12 +28,18 @@ export default async function DesignPreviewPage({
     notFound();
   }
 
-  const desktop = (await searchParams).view === "desktop";
+  const params = await searchParams;
+  const desktop = params.view === "desktop";
+  const missions = desktop && params.screen === "missions";
   if (!(await hasPreviewAccess())) {
     return (
       <PreviewAccessGate
         destination={
-          desktop ? "/design-preview?view=desktop" : "/design-preview"
+          missions
+            ? "/design-preview?view=desktop&screen=missions"
+            : desktop
+              ? "/design-preview?view=desktop"
+              : "/design-preview"
         }
       />
     );

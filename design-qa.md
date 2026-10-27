@@ -1,3 +1,44 @@
+# Desktop Missions design review — October 27, 2026
+
+final result: passed
+
+## Scope and reference
+
+Desktop Missions extends the approved Home design and the existing iPhone Missions page. Local review: http://localhost:3001/design-preview?view=desktop&screen=missions. Activity is sample data, with no backend writes.
+
+- Source: design/desktop-missions-2026-10-27/ios-missions-reference.png (393 × 852) and approved design/desktop-home-2026-10-27/desktop-home.png (1440 × 1000).
+- Final: design/desktop-missions-2026-10-27/desktop-missions.png (1440 × 1000), initial state, all three missions, no saved/joined activity.
+- Full comparison: comparison.png (1873 × 1000), iPhone at left and desktop at right. Focused comparison: focused-comparison.png (1060 × 480), approved Home versus Missions navigation/type and the mission row hierarchy.
+- Both boards were opened together and reviewed; the focused board was corrected and re-reviewed so the complete heading is visible. Images are unscaled crops/composites. In-app browser returns one raster pixel per CSS pixel despite reporting devicePixelRatio 2.
+
+## Fidelity assessment
+
+- Typography: shared Georgia display/brand and system sans labels; 58px desktop page heading, 32px row titles, tight tracking, small uppercase metadata.
+- Layout: the iPhone list hierarchy is preserved in wider horizontal rows. The existing desktop top navigation, header controls, content width, spacing rhythm, fine dividers, white cards, and lightly rounded corners remain consistent with Home. Search, duration, and an explicit View mission action are intentional desktop additions.
+- Color: existing neutral #f8f8f8 surface, #252525 ink, gray secondary text/borders, grayscale photos, and glass navigation. No new accent colors.
+- Assets: existing Japan House and cafe images retained. Main Library now has its own verified exterior photo, with author/source/license and crop/grayscale attribution. All three images load correctly. Lucide icons match the shared shell.
+- Copy: original mission names, categories, places, rewards, and capacities retained; relative times follow the existing desktop sample data. The preview footer and details disclose sample/local behavior. Groups and Inbox remain explicitly scoped future pages.
+- Responsive: screenshots compact-desktop.png (855 × 1000), phone-width.png (393 × 852), narrow-320.png (320 × 852), and narrow-filters.png. Measured document width equals viewport at 855, 393, and 320. Narrow cards stack with legible titles and accessible actions; no overflow or clipped filter controls.
+
+## Behavior, repairs, and validation
+
+- Case-insensitive location search and empty-search recovery verified. Search combines with selected filters; utility tests cover matching, ordering, immutability, and Saved/Joined union semantics.
+- Browser verified Saved, Joined, both selected (two distinct matching items), All clearing both, reset, count updates, and empty Saved/Joined states. Evidence: filters.png and empty-saved.png.
+- Join/leave updates occupancy and joined badge; Home reflects the same state. Saved activity persists through Home/Missions and the brand link. Browser Back restores the page without resetting local activity. Reload deliberately resets the preview.
+- Mission detail photo/title/actions work. Evidence: joined-mission.png. Library attribution links are visible and reachable.
+- Native modal background inertness, scroll lock, Escape, Close, focus restoration, and first/last keyboard wrapping verified. Removing a filtered row restores focus to search or the page heading rather than a removed control.
+- Fixed the search accessible name by separating its label from Clear search. Retest with a nonempty query confirms its name remains Search missions.
+- Independent read-only review identified a brand-link full reload that cleared local state; ordinary clicks now use the same navigation as Home. Retest confirmed saved activity survives the logo round trip; modifier clicks retain link behavior.
+- Final browser console had no warnings or errors. The unchanged default iPhone Home and Missions routes were checked at 393 × 852; ios-missions-regression.png matches the source layout.
+- 153 application tests passed, including 18 route/access cases and 11 filter cases. TypeScript and production build passed; whitespace checks passed. Production flag, signed-cookie gate, noindex, direct Missions unlock destination, and iPhone default preserved.
+- No actionable P0/P1/P2 findings remain for this preview scope. No P3 polish is required before review. Live deployment verification follows the commit/push separately.
+
+## Earlier Home review
+
+The report below records the earlier Home-only snapshot. Its future-page and missing-library-photo notes describe that historical version; the Missions review above supersedes those points.
+
+---
+
 # Desktop Home design review — October 27, 2026
 
 final result: passed

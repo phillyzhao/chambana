@@ -16,10 +16,18 @@ import {
   X,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import {
+  filterDesktopMissions,
+  toggleDesktopMissionFilter,
+  type DesktopMissionFilter,
+} from "@/lib/desktop-mission-filters";
+import { DesktopMissions } from "./desktop-missions";
 import styles from "./desktop-home-preview.module.css";
 
 const missions = [
   {
+    id: 0,
     title: "Take the long way home",
     category: "Wander",
     location: "Japan House gardens",
@@ -31,6 +39,7 @@ const missions = [
     people: ["JL", "AM", "SK", "RD"],
   },
   {
+    id: 1,
     title: "A table for six",
     category: "Connect",
     location: "Campustown",
@@ -42,14 +51,15 @@ const missions = [
     people: ["ML", "TK", "AS"],
   },
   {
+    id: 2,
     title: "Find your next favorite",
     category: "Discover",
     location: "Main Library",
     time: "Tomorrow · 4:00 PM",
     duration: "30 minutes",
     nuts: 40,
-    image: "",
-    alt: "",
+    image: "/design-assets/main-library.jpg",
+    alt: "Main Library at the University of Illinois Urbana-Champaign",
     people: ["EC", "JN"],
   },
 ];
@@ -67,6 +77,7 @@ type Panel =
   | { type: "profile" }
   | { type: "notifications" }
   | { type: "group" }
+  | { type: "filters" }
   | { type: "next"; destination: Destination }
   | null;
 
@@ -89,9 +100,17 @@ function Avatars({ people }: { people: string[] }) {
 }
 
 export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
+  const searchParams = useSearchParams();
+  const screens = searchParams.getAll("screen");
+  const screen =
+    screens.length === 1 && screens[0] === "missions" ? "Missions" : "Home";
   const [panel, setPanel] = useState<Panel>(null);
   const [saved, setSaved] = useState<number[]>([]);
   const [joined, setJoined] = useState<number[]>([]);
+  const [missionQuery, setMissionQuery] = useState("");
+  const [missionFilters, setMissionFilters] = useState<DesktopMissionFilter[]>(
+    [],
+  );
   const [notificationsRead, setNotificationsRead] = useState(false);
   const [notice, setNotice] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -99,6 +118,24 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   const triggerRef = useRef<HTMLElement | null>(null);
   const titleId = useId();
   const open = panel !== null;
+  const previousScreen = useRef(screen);
+  const filteredMissions = filterDesktopMissions(
+    missions,
+    missionQuery,
+    missionFilters,
+    saved,
+    joined,
+  );
+
+  useEffect(() => {
+    if (previousScreen.current === screen) return;
+    previousScreen.current = screen;
+    setPanel(null);
+    window.scrollTo({ top: 0, behavior: "auto" });
+    document
+      .getElementById("desktop-preview-title")
+      ?.focus({ preventScroll: true });
+  }, [screen]);
 
   useEffect(() => {
     if (!open) return;
@@ -110,7 +147,10 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
     return () => {
       dialog?.close();
       document.body.style.overflow = previousOverflow;
-      triggerRef.current?.focus({ preventScroll: true });
+      const returnTarget = triggerRef.current?.isConnected
+        ? triggerRef.current
+        : document.getElementById("desktop-preview-title");
+      returnTarget?.focus({ preventScroll: true });
     };
   }, [open]);
 
@@ -127,8 +167,17 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   }, [notice]);
 
   function navigate(destination: Destination) {
-    if (destination === "Home") {
+    if (destination === "Home" || destination === "Missions") {
       setPanel(null);
+      if (screen !== destination) {
+        window.history.pushState(
+          null,
+          "",
+          destination === "Missions"
+            ? "/design-preview?view=desktop&screen=missions"
+            : "/design-preview?view=desktop",
+        );
+      }
       window.scrollTo({ top: 0, behavior: "auto" });
       return;
     }
@@ -145,7 +194,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
     );
   }
 
-  const activeDestination = panel?.type === "next" ? panel.destination : "Home";
+  const activeDestination = panel?.type === "next" ? panel.destination : screen;
   const selectedMission = panel?.type === "mission" ? missions[panel.id] : null;
   const selectedId = panel?.type === "mission" ? panel.id : 0;
   const panelTitle =
@@ -157,13 +206,15 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
           ? "Notifications"
           : panel?.type === "group"
             ? "The in-between club"
-            : panel?.type === "next"
-              ? panel.destination
-              : "";
+            : panel?.type === "filters"
+              ? "Filter missions"
+              : panel?.type === "next"
+                ? panel.destination
+                : "";
 
   return (
     <div className={styles.preview}>
-      <a className={styles.skipLink} href="#desktop-home-title">
+      <a className={styles.skipLink} href="#desktop-preview-title">
         Skip to content
       </a>
       <header className={styles.header}>
@@ -171,6 +222,18 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
           className={styles.brand}
           href="/design-preview?view=desktop"
           aria-label="Chambana Home"
+          onClick={(event) => {
+            if (
+              event.button !== 0 ||
+              event.metaKey ||
+              event.ctrlKey ||
+              event.shiftKey ||
+              event.altKey
+            )
+              return;
+            event.preventDefault();
+            navigate("Home");
+          }}
         >
           chambana<span>.</span>
         </a>
@@ -183,7 +246,9 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
               type="button"
               key={label}
               aria-current={activeDestination === label ? "page" : undefined}
-              aria-haspopup={label === "Home" ? undefined : "dialog"}
+              aria-haspopup={
+                label === "Home" || label === "Missions" ? undefined : "dialog"
+              }
               onClick={() => navigate(label)}
             >
               <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -215,172 +280,212 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
       </header>
 
       <main className={styles.main}>
-        <div className={styles.intro}>
-          <p className={styles.eyebrow}>{dateLabel}</p>
-          <h1 id="desktop-home-title" tabIndex={-1}>
-            Let’s go explore.
-          </h1>
-        </div>
+        {screen === "Missions" ? (
+          <DesktopMissions
+            missions={filteredMissions}
+            query={missionQuery}
+            filters={missionFilters}
+            saved={saved}
+            joined={joined}
+            onQueryChange={setMissionQuery}
+            onFilters={() => setPanel({ type: "filters" })}
+            onRemoveFilter={(filter) =>
+              setMissionFilters((current) =>
+                toggleDesktopMissionFilter(current, filter),
+              )
+            }
+            onReset={() => {
+              setMissionQuery("");
+              setMissionFilters([]);
+            }}
+            onOpenMission={(id) => setPanel({ type: "mission", id })}
+            onSave={toggleSave}
+          />
+        ) : (
+          <>
+            <div className={styles.intro}>
+              <p className={styles.eyebrow}>{dateLabel}</p>
+              <h1 id="desktop-preview-title" tabIndex={-1}>
+                Let’s go explore.
+              </h1>
+            </div>
 
-        <section aria-labelledby="featured-label">
-          <div className={styles.sectionLabel}>
-            <h2 id="featured-label">Today’s mission</h2>
-            <span>01 / 03</span>
-          </div>
-          <article className={styles.feature}>
-            <button
-              type="button"
-              className={styles.featureImage}
-              aria-label="Explore Take the long way home"
-              onClick={() => setPanel({ type: "mission", id: 0 })}
-            >
-              <img
-                src={missions[0].image}
-                alt={missions[0].alt}
-                width={1200}
-                height={800}
-              />
-              <span className={styles.locationPill}>
-                <MapPin size={12} aria-hidden="true" />
-                Japan House
-              </span>
-              <span className={styles.imageArrow}>
-                <ArrowUpRight size={22} strokeWidth={1.4} aria-hidden="true" />
-              </span>
-            </button>
-            <div className={styles.featureBody}>
-              <div className={styles.featureMeta}>
-                <span>Today · 5:30 PM</span>
-                <span>+50 nuts</span>
+            <section aria-labelledby="featured-label">
+              <div className={styles.sectionLabel}>
+                <h2 id="featured-label">Today’s mission</h2>
+                <span>01 / 03</span>
               </div>
-              <button
-                type="button"
-                className={styles.featureTitle}
-                onClick={() => setPanel({ type: "mission", id: 0 })}
-              >
-                <h3>
-                  Take the long
-                  <br /> way home.
-                </h3>
-              </button>
-              <div className={styles.featureFacts}>
-                <MapPin size={14} aria-hidden="true" />
-                <span>Japan House gardens</span>
-                <i aria-hidden="true">·</i>
-                <span>45 min</span>
-              </div>
-              <div className={styles.featureActions}>
-                <div className={styles.company}>
-                  <Avatars
-                    people={[
-                      ...missions[0].people,
-                      ...(joined.includes(0) ? ["JP"] : []),
-                    ]}
+              <article className={styles.feature}>
+                <button
+                  type="button"
+                  className={styles.featureImage}
+                  aria-label="Explore Take the long way home"
+                  onClick={() => setPanel({ type: "mission", id: 0 })}
+                >
+                  <img
+                    src={missions[0].image}
+                    alt={missions[0].alt}
+                    width={1200}
+                    height={800}
                   />
-                  <span>
-                    {joined.includes(0) ? "You’re going" : "4 of 6 going"}
+                  <span className={styles.locationPill}>
+                    <MapPin size={12} aria-hidden="true" />
+                    Japan House
                   </span>
+                  <span className={styles.imageArrow}>
+                    <ArrowUpRight
+                      size={22}
+                      strokeWidth={1.4}
+                      aria-hidden="true"
+                    />
+                  </span>
+                </button>
+                <div className={styles.featureBody}>
+                  <div className={styles.featureMeta}>
+                    <span>Today · 5:30 PM</span>
+                    <span>+50 nuts</span>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.featureTitle}
+                    onClick={() => setPanel({ type: "mission", id: 0 })}
+                  >
+                    <h3>
+                      Take the long
+                      <br /> way home.
+                    </h3>
+                  </button>
+                  <div className={styles.featureFacts}>
+                    <MapPin size={14} aria-hidden="true" />
+                    <span>Japan House gardens</span>
+                    <i aria-hidden="true">·</i>
+                    <span>45 min</span>
+                  </div>
+                  <div className={styles.featureActions}>
+                    <div className={styles.company}>
+                      <Avatars
+                        people={[
+                          ...missions[0].people,
+                          ...(joined.includes(0) ? ["JP"] : []),
+                        ]}
+                      />
+                      <span>
+                        {joined.includes(0) ? "You’re going" : "4 of 6 going"}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      className={styles.iconButton}
+                      aria-label={`${saved.includes(0) ? "Unsave" : "Save"} Take the long way home`}
+                      aria-pressed={saved.includes(0)}
+                      onClick={() => toggleSave(0)}
+                    >
+                      <Bookmark
+                        size={19}
+                        strokeWidth={1.5}
+                        fill={saved.includes(0) ? "currentColor" : "none"}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => setPanel({ type: "mission", id: 0 })}
+                  >
+                    View mission{" "}
+                    <ArrowRight
+                      size={18}
+                      strokeWidth={1.5}
+                      aria-hidden="true"
+                    />
+                  </button>
+                </div>
+              </article>
+            </section>
+
+            <div className={styles.belowFeature}>
+              <section
+                className={styles.upcoming}
+                aria-labelledby="later-title"
+              >
+                <div className={styles.sectionHeading}>
+                  <h2 id="later-title">A little later</h2>
+                  <button type="button" onClick={() => navigate("Missions")}>
+                    View all <ArrowUpRight size={15} aria-hidden="true" />
+                  </button>
+                </div>
+                {[1, 2].map((id) => (
+                  <button
+                    type="button"
+                    key={id}
+                    className={styles.missionRow}
+                    onClick={() => setPanel({ type: "mission", id })}
+                  >
+                    <span className={styles.rowIcon}>
+                      {id === 1 ? (
+                        <Users size={20} strokeWidth={1.5} aria-hidden="true" />
+                      ) : (
+                        <Bookmark
+                          size={20}
+                          strokeWidth={1.5}
+                          aria-hidden="true"
+                        />
+                      )}
+                    </span>
+                    <span className={styles.rowContent}>
+                      <strong>{missions[id].title}</strong>
+                      <small>
+                        {missions[id].location}
+                        <span>·</span>
+                        {missions[id].time}
+                      </small>
+                    </span>
+                    <span className={styles.reward}>
+                      +{missions[id].nuts}
+                      <small>nuts</small>
+                    </span>
+                    <ArrowUpRight
+                      className={styles.rowArrow}
+                      size={17}
+                      aria-hidden="true"
+                    />
+                  </button>
+                ))}
+              </section>
+              <section className={styles.groups} aria-labelledby="groups-title">
+                <div className={styles.sectionHeading}>
+                  <h2 id="groups-title">Your groups</h2>
+                  <button
+                    type="button"
+                    aria-label="Explore groups"
+                    onClick={() => navigate("Groups")}
+                  >
+                    <ArrowUpRight size={17} aria-hidden="true" />
+                  </button>
                 </div>
                 <button
                   type="button"
-                  className={styles.iconButton}
-                  aria-label={`${saved.includes(0) ? "Unsave" : "Save"} Take the long way home`}
-                  aria-pressed={saved.includes(0)}
-                  onClick={() => toggleSave(0)}
+                  className={styles.groupRow}
+                  onClick={() => setPanel({ type: "group" })}
                 >
-                  <Bookmark
-                    size={19}
-                    strokeWidth={1.5}
-                    fill={saved.includes(0) ? "currentColor" : "none"}
-                    aria-hidden="true"
-                  />
+                  <span className={styles.groupAvatar}>IC</span>
+                  <span className={styles.rowContent}>
+                    <strong>The in-between club</strong>
+                    <small>Outdoors · 4 members</small>
+                  </span>
+                  <ChevronRight size={16} aria-hidden="true" />
                 </button>
-              </div>
-              <button
-                type="button"
-                className={styles.primaryButton}
-                onClick={() => setPanel({ type: "mission", id: 0 })}
-              >
-                View mission{" "}
-                <ArrowRight size={18} strokeWidth={1.5} aria-hidden="true" />
-              </button>
+                <div className={styles.groupNext}>
+                  <span>Up next</span>
+                  <p>
+                    The long way home <span>Today, 5:30 PM</span>
+                  </p>
+                </div>
+              </section>
             </div>
-          </article>
-        </section>
-
-        <div className={styles.belowFeature}>
-          <section className={styles.upcoming} aria-labelledby="later-title">
-            <div className={styles.sectionHeading}>
-              <h2 id="later-title">A little later</h2>
-              <button type="button" onClick={() => navigate("Missions")}>
-                View all <ArrowUpRight size={15} aria-hidden="true" />
-              </button>
-            </div>
-            {[1, 2].map((id) => (
-              <button
-                type="button"
-                key={id}
-                className={styles.missionRow}
-                onClick={() => setPanel({ type: "mission", id })}
-              >
-                <span className={styles.rowIcon}>
-                  {id === 1 ? (
-                    <Users size={20} strokeWidth={1.5} aria-hidden="true" />
-                  ) : (
-                    <Bookmark size={20} strokeWidth={1.5} aria-hidden="true" />
-                  )}
-                </span>
-                <span className={styles.rowContent}>
-                  <strong>{missions[id].title}</strong>
-                  <small>
-                    {missions[id].location}
-                    <span>·</span>
-                    {missions[id].time}
-                  </small>
-                </span>
-                <span className={styles.reward}>
-                  +{missions[id].nuts}
-                  <small>nuts</small>
-                </span>
-                <ArrowUpRight
-                  className={styles.rowArrow}
-                  size={17}
-                  aria-hidden="true"
-                />
-              </button>
-            ))}
-          </section>
-          <section className={styles.groups} aria-labelledby="groups-title">
-            <div className={styles.sectionHeading}>
-              <h2 id="groups-title">Your groups</h2>
-              <button
-                type="button"
-                aria-label="Explore groups"
-                onClick={() => navigate("Groups")}
-              >
-                <ArrowUpRight size={17} aria-hidden="true" />
-              </button>
-            </div>
-            <button
-              type="button"
-              className={styles.groupRow}
-              onClick={() => setPanel({ type: "group" })}
-            >
-              <span className={styles.groupAvatar}>IC</span>
-              <span className={styles.rowContent}>
-                <strong>The in-between club</strong>
-                <small>Outdoors · 4 members</small>
-              </span>
-              <ChevronRight size={16} aria-hidden="true" />
-            </button>
-            <div className={styles.groupNext}>
-              <span>Up next</span>
-              <p>
-                The long way home <span>Today, 5:30 PM</span>
-              </p>
-            </div>
-          </section>
-        </div>
+          </>
+        )}
       </main>
 
       <footer className={styles.footer}>
@@ -464,6 +569,68 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                 {selectedMission ? "." : ""}
               </h2>
 
+              {panel.type === "filters" && (
+                <>
+                  <p className={styles.muted}>Choose Saved, Joined, or both.</p>
+                  <div
+                    className={styles.filterOptions}
+                    role="group"
+                    aria-label="Mission filters"
+                  >
+                    {(["All", "Saved", "Joined"] as const).map((option) => {
+                      const selected =
+                        option === "All"
+                          ? missionFilters.length === 0
+                          : missionFilters.includes(option);
+                      return (
+                        <button
+                          type="button"
+                          key={option}
+                          aria-pressed={selected}
+                          onClick={() =>
+                            setMissionFilters((current) =>
+                              toggleDesktopMissionFilter(current, option),
+                            )
+                          }
+                        >
+                          <span>
+                            {option === "All" ? (
+                              <Compass size={19} aria-hidden="true" />
+                            ) : option === "Saved" ? (
+                              <Bookmark size={19} aria-hidden="true" />
+                            ) : (
+                              <Users size={19} aria-hidden="true" />
+                            )}
+                            {option}
+                          </span>
+                          <span className={styles.filterCheck}>
+                            {selected && <Check size={14} aria-hidden="true" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className={styles.filterSummary}>
+                    <span role="status">
+                      {filteredMissions.length} matching{" "}
+                      {filteredMissions.length === 1 ? "mission" : "missions"}
+                    </span>
+                    <button type="button" onClick={() => setMissionFilters([])}>
+                      Reset filters
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => setPanel(null)}
+                  >
+                    Show {filteredMissions.length}{" "}
+                    {filteredMissions.length === 1 ? "mission" : "missions"}
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </button>
+                </>
+              )}
+
               {selectedMission && (
                 <>
                   <div className={styles.missionFacts}>
@@ -529,6 +696,27 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     Sample mission. Joining and saving are local to this
                     preview.
                   </p>
+                  {selectedId === 2 && (
+                    <p className={styles.photoCredit}>
+                      Photo:{" "}
+                      <a
+                        href="https://commons.wikimedia.org/wiki/File:Main_Library-University_of_Illinois_at_Urbana-Champaign_01.jpg"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Killivalavan Solai / Wikimedia Commons
+                      </a>
+                      .{" "}
+                      <a
+                        href="https://creativecommons.org/licenses/by-sa/4.0/"
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        CC BY-SA 4.0
+                      </a>
+                      . Cropped and shown in grayscale under the same license.
+                    </p>
+                  )}
                 </>
               )}
 
@@ -654,7 +842,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
               {panel.type === "next" && (
                 <>
                   <p className={styles.muted}>
-                    This review covers the desktop Home page and navigation. The{" "}
+                    This review includes desktop Home and Missions. The{" "}
                     {panel.destination} page will be designed in a later pass.
                   </p>
                   <button
@@ -662,7 +850,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     className={styles.primaryButton}
                     onClick={() => setPanel(null)}
                   >
-                    Back to Home <ArrowRight size={17} aria-hidden="true" />
+                    Back to {screen} <ArrowRight size={17} aria-hidden="true" />
                   </button>
                   <a className={styles.previewLink} href="/design-preview">
                     Explore the iPhone preview{" "}

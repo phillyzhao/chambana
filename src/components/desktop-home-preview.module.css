@@ -956,3 +956,68 @@
     scroll-behavior: auto !important;
   }
 }
+
+.filterOptions {
+  display: grid;
+  border-top: 1px solid var(--border);
+  margin-top: 24px;
+}
+.filterOptions button {
+  min-height: 63px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 0;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  color: var(--ink);
+  cursor: pointer;
+}
+.filterOptions button > span:first-child {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.filterCheck {
+  width: 21px;
+  height: 21px;
+  border: 1px solid #ccc;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+}
+.filterOptions button[aria-pressed="true"] .filterCheck {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: white;
+}
+.filterSummary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin: 18px 0;
+  font-size: 11px;
+  color: var(--secondary);
+}
+.filterSummary button {
+  min-height: 40px;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--ink);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.photoCredit {
+  font-size: 9px;
+  line-height: 1.7;
+  margin: 18px 0 0;
+  color: var(--secondary);
+}
+.photoCredit a {
+  text-decoration: underline;
+}

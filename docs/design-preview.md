@@ -9,14 +9,23 @@ The owner's local repository remains `/Volumes/Crucial X10/Chambana`; `/Users/zp
 - `/`: waitlist.
 - `/design-preview`: Chambana app and interactive signup flow, behind a shared access-code gate.
 - `/design-preview?view=desktop`: desktop Home and navigation review using the same access gate. The iPhone preview remains the default.
+- `/design-preview?view=desktop&screen=missions`: desktop Missions review, with the same access gate and shared local activity as Home.
 - `/login`: the same access-code gate, followed by the existing campus sign-in.
 - Older concept query strings now resolve to Chambana; After Hours and Field Notes have been retired.
 
 ## Desktop Home review — October 27, 2026
 
-The desktop preview adapts the iPhone typography, grayscale campus photography, and floating glass navigation into a wider Home layout. It includes the featured mission, upcoming activity, a compact group summary, profile and notification panels, and local join/save controls. Missions, Groups, and Inbox navigation explicitly identifies those desktop pages as future design work. All activity is sample data and resets on reload; the existing member backend and public homepage are unchanged by this design pass. The review date uses America/Chicago. Desktop and iPhone previews link to each other on desktop.
+The desktop preview adapts the iPhone typography, grayscale campus photography, and floating glass navigation into a wider Home layout. It includes the featured mission, upcoming activity, a compact group summary, profile and notification panels, and local join/save controls. Home and Missions are now reviewable; Groups and Inbox identify those desktop pages as future design work. All activity is sample data and resets on reload; the existing member backend and public homepage are unchanged by this design pass. The review date uses America/Chicago. Desktop and iPhone previews link to each other on desktop.
 
 Implementation is isolated in `desktop-home-preview.tsx` and its CSS module. See `design-qa.md` for the completed local browser comparisons, responsive checks, interactions, and validation. The owner authorized release through the existing `main` auto-deployment. The hosted review URL is `https://playchambana.com/design-preview?view=desktop`; confirm the desktop Home content after deployment propagation before reporting the release live.
+
+## Desktop Missions review — October 27, 2026
+
+Missions uses a searchable list of the same three sample activities, with grayscale photography, serif titles, location, time, duration, occupancy, rewards, bookmarks, and mission detail panels. Search matches title, category, or place without case sensitivity. Saved and Joined can be selected together and include either matching set; All clears those selections. Search further narrows the selected set. Empty results explain how to recover.
+
+Home and Missions share saved/joined activity during the current visit. Navigation, the brand link, and browser Back preserve that activity; reload resets it. Removing the last visible saved/joined item keeps keyboard focus on a stable page control. The Main Library card uses a verified exterior photograph with attribution and license links in the detail panel and asset credits.
+
+The direct review URL is `https://playchambana.com/design-preview?view=desktop&screen=missions`, retained after the access gate. Unknown or repeated screen parameters fall back to Home. The default iPhone route, production flag, noindex metadata, and signed-cookie gate are retained. Implementation lives in `desktop-missions.tsx`, its CSS module, and the shared desktop shell. Local validation passed 153 application tests, TypeScript, production build, responsive/browser interaction checks, and independent code review. Screenshots and comparisons are in `design/desktop-missions-2026-10-27/`; the latest report is at the top of `design-qa.md`.
 
 ## iPhone preview
 

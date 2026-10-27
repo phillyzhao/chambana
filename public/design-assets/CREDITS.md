@@ -18,3 +18,7 @@ The welcome sequence pairs each greeting with a photograph of that location. The
 - `ikenberry.jpg` — Ikenberry library, University of Illinois Library; photograph by C. E. Crane, December 18, 2013 (the file metadata records December 17). [Original and attribution](<https://commons.wikimedia.org/wiki/File:Ike_Library_Stacks_(11440740143).jpg>), [CC BY 2.0](https://creativecommons.org/licenses/by/2.0/). Resized to 1280px; cropped and displayed in grayscale. The photo shows the library interior at Ikenberry, not a generic campus library.
 
 Research note: [State Farm Center's event page](https://www.statefarmcenter.com/events/detail/summit) confirms John Summit's October 1, 2026 show. A reusable photograph from that specific show was not verified, so the welcome sequence uses the credited venue exterior. An early Ikenberry construction photo was inspected and excluded in favor of the completed library interior.
+
+## Desktop Missions photo
+
+- `main-library.jpg` — Main Library, University of Illinois Urbana-Champaign, Killivalavan Solai, September 29, 2016. [Original and attribution](https://commons.wikimedia.org/wiki/File:Main_Library-University_of_Illinois_at_Urbana-Champaign_01.jpg), [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/). Downloaded as a 1280 × 720 Wikimedia Commons thumbnail on October 27, 2026. The preview crops its display and applies grayscale in CSS; the cropped, grayscale display is available under the same license.

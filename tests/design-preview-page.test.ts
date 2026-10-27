@@ -26,9 +26,9 @@ vi.mock("../src/components/preview-access-gate", () => ({
 
 import DesignPreviewPage from "../src/app/design-preview/page";
 
-function page(view?: string | string[]) {
+function page(view?: string | string[], screen?: string | string[]) {
   return DesignPreviewPage({
-    searchParams: Promise.resolve(view === undefined ? {} : { view }),
+    searchParams: Promise.resolve({ view, screen }),
   });
 }
 
@@ -70,6 +70,53 @@ describe("design preview access and view selection", () => {
     expect(mocks.hasPreviewAccess).toHaveBeenCalledOnce();
     expect(result.type).toBe(mocks.DesktopHomePreview);
   });
+
+  it("preserves the supported Missions deep link through the access gate", async () => {
+    const result = await page("desktop", "missions");
+
+    expect(result.type).toBe(mocks.PreviewAccessGate);
+    expect(result.props.destination).toBe(
+      "/design-preview?view=desktop&screen=missions",
+    );
+  });
+
+  it("renders the desktop client for an unlocked Missions deep link", async () => {
+    mocks.hasPreviewAccess.mockResolvedValue(true);
+
+    const result = await page("desktop", "missions");
+
+    expect(result.type).toBe(mocks.DesktopHomePreview);
+    expect(mocks.hasPreviewAccess).toHaveBeenCalledOnce();
+  });
+
+  it.each([
+    "unknown",
+    "Missions",
+    "//evil.example",
+    ["missions", "home"],
+    ["missions", "missions"],
+  ])(
+    "sanitizes unsupported desktop screen %j to Home at unlock",
+    async (screen) => {
+      const result = await page("desktop", screen);
+
+      expect(result.type).toBe(mocks.PreviewAccessGate);
+      expect(result.props.destination).toBe("/design-preview?view=desktop");
+    },
+  );
+
+  it.each([undefined, "iphone", ["desktop", "iphone"]])(
+    "does not apply a Missions screen to non-desktop view %j",
+    async (view) => {
+      const locked = await page(view, "missions");
+      expect(locked.type).toBe(mocks.PreviewAccessGate);
+      expect(locked.props.destination).toBe("/design-preview");
+
+      mocks.hasPreviewAccess.mockResolvedValue(true);
+      const unlocked = await page(view, "missions");
+      expect(unlocked.type).toBe(mocks.IOSConcepts);
+    },
+  );
 
   it.each([
     { view: undefined },
