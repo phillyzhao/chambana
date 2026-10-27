@@ -27,6 +27,23 @@
   align-items: center;
   border-bottom: 1px solid #d0d0d0;
 }
+.previewLinks {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+.previewLinks > a {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  color: #686868;
+  min-height: 44px;
+}
+.previewLinks > a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 .previewBrand {
   font-size: 24px;
   font-weight: 650;

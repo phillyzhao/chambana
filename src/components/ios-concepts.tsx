@@ -182,7 +182,10 @@ export function IOSConcepts() {
           chambana.
         </a>
 
-        <span className={styles.privateLabel}>LOCAL DEMO</span>
+        <div className={styles.previewLinks}>
+          <a href="/design-preview?view=desktop">Desktop preview <ArrowUpRight size={13} aria-hidden="true" /></a>
+          <span className={styles.privateLabel}>LOCAL DEMO</span>
+        </div>
       </header>
       <div className={styles.previewControls}>
         <div className={styles.modeSwitch} aria-label="Preview screen">

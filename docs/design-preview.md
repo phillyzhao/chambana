@@ -8,8 +8,17 @@ The owner's local repository remains `/Volumes/Crucial X10/Chambana`; `/Users/zp
 
 - `/`: waitlist.
 - `/design-preview`: Chambana app and interactive signup flow, behind a shared access-code gate.
+- `/design-preview?view=desktop`: desktop Home and navigation review using the same access gate. The iPhone preview remains the default.
 - `/login`: the same access-code gate, followed by the existing campus sign-in.
 - Older concept query strings now resolve to Chambana; After Hours and Field Notes have been retired.
+
+## Desktop Home review — October 27, 2026
+
+The desktop preview adapts the iPhone typography, grayscale campus photography, and floating glass navigation into a wider Home layout. It includes the featured mission, upcoming activity, a compact group summary, profile and notification panels, and local join/save controls. Missions, Groups, and Inbox navigation explicitly identifies those desktop pages as future design work. All activity is sample data and resets on reload; the existing member backend and public homepage are unchanged by this design pass. The review date uses America/Chicago. Desktop and iPhone previews link to each other on desktop.
+
+Implementation is isolated in `desktop-home-preview.tsx` and its CSS module. See `design-qa.md` for the completed local browser comparisons, responsive checks, interactions, and validation. The owner authorized release through the existing `main` auto-deployment. The hosted review URL is `https://playchambana.com/design-preview?view=desktop`; confirm the desktop Home content after deployment propagation before reporting the release live.
+
+## iPhone preview
 
 Chambana keeps its editorial type and generous space, top-left profile, top-right notifications, and four floating glass tabs: Home, Missions, Groups, Inbox. Decorative taglines and card descriptions have been removed; useful labels, location, time, membership, and message content remain. Mission rewards and profile balances use nuts. Groups support search, category, and membership filters.
 
