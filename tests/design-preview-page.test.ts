@@ -54,6 +54,18 @@ describe("design preview access and view selection", () => {
     },
   );
 
+  it.each([undefined, "false"])(
+    "hides the Groups deep link when the production flag is %s",
+    async (flag) => {
+      vi.stubEnv("CHAMBANA_DESIGN_PREVIEW", flag);
+      mocks.hasPreviewAccess.mockResolvedValue(true);
+
+      await expect(page("desktop", "groups")).rejects.toThrow("not-found");
+      expect(mocks.notFound).toHaveBeenCalledOnce();
+      expect(mocks.hasPreviewAccess).not.toHaveBeenCalled();
+    },
+  );
+
   it("requires preview access and preserves the desktop unlock destination", async () => {
     const result = await page("desktop");
 
@@ -71,33 +83,43 @@ describe("design preview access and view selection", () => {
     expect(result.type).toBe(mocks.DesktopHomePreview);
   });
 
-  it("preserves the supported Missions deep link through the access gate", async () => {
-    const result = await page("desktop", "missions");
+  it.each(["missions", "groups"])(
+    "preserves the supported %s deep link through the access gate",
+    async (screen) => {
+      const result = await page("desktop", screen);
 
-    expect(result.type).toBe(mocks.PreviewAccessGate);
-    expect(result.props.destination).toBe(
-      "/design-preview?view=desktop&screen=missions",
-    );
-  });
+      expect(result.type).toBe(mocks.PreviewAccessGate);
+      expect(result.props.destination).toBe(
+        `/design-preview?view=desktop&screen=${screen}`,
+      );
+    },
+  );
 
-  it("renders the desktop client for an unlocked Missions deep link", async () => {
-    mocks.hasPreviewAccess.mockResolvedValue(true);
+  it.each(["missions", "groups"])(
+    "renders the desktop client for an unlocked %s deep link",
+    async (screen) => {
+      mocks.hasPreviewAccess.mockResolvedValue(true);
 
-    const result = await page("desktop", "missions");
+      const result = await page("desktop", screen);
 
-    expect(result.type).toBe(mocks.DesktopHomePreview);
-    expect(mocks.hasPreviewAccess).toHaveBeenCalledOnce();
-  });
+      expect(result.type).toBe(mocks.DesktopHomePreview);
+      expect(mocks.hasPreviewAccess).toHaveBeenCalledOnce();
+    },
+  );
 
   it.each([
-    "unknown",
-    "Missions",
-    "//evil.example",
-    ["missions", "home"],
-    ["missions", "missions"],
+    { screen: "unknown" },
+    { screen: "Missions" },
+    { screen: "Groups" },
+    { screen: "//evil.example" },
+    { screen: ["missions", "home"] },
+    { screen: ["missions", "missions"] },
+    { screen: ["groups", "home"] },
+    { screen: ["groups", "groups"] },
+    { screen: ["groups", "missions"] },
   ])(
-    "sanitizes unsupported desktop screen %j to Home at unlock",
-    async (screen) => {
+    "sanitizes unsupported desktop screen $screen to Home at unlock",
+    async ({ screen }) => {
       const result = await page("desktop", screen);
 
       expect(result.type).toBe(mocks.PreviewAccessGate);
@@ -105,15 +127,22 @@ describe("design preview access and view selection", () => {
     },
   );
 
-  it.each([undefined, "iphone", ["desktop", "iphone"]])(
-    "does not apply a Missions screen to non-desktop view %j",
-    async (view) => {
-      const locked = await page(view, "missions");
+  it.each([
+    { view: undefined, screen: "missions" },
+    { view: "iphone", screen: "missions" },
+    { view: ["desktop", "iphone"], screen: "missions" },
+    { view: undefined, screen: "groups" },
+    { view: "iphone", screen: "groups" },
+    { view: ["desktop", "iphone"], screen: "groups" },
+  ])(
+    "does not apply the $screen screen to non-desktop view $view",
+    async ({ view, screen }) => {
+      const locked = await page(view, screen);
       expect(locked.type).toBe(mocks.PreviewAccessGate);
       expect(locked.props.destination).toBe("/design-preview");
 
       mocks.hasPreviewAccess.mockResolvedValue(true);
-      const unlocked = await page(view, "missions");
+      const unlocked = await page(view, screen);
       expect(unlocked.type).toBe(mocks.IOSConcepts);
     },
   );

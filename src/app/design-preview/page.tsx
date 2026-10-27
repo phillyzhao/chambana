@@ -30,13 +30,16 @@ export default async function DesignPreviewPage({
 
   const params = await searchParams;
   const desktop = params.view === "desktop";
-  const missions = desktop && params.screen === "missions";
+  const desktopScreen =
+    desktop && (params.screen === "missions" || params.screen === "groups")
+      ? params.screen
+      : null;
   if (!(await hasPreviewAccess())) {
     return (
       <PreviewAccessGate
         destination={
-          missions
-            ? "/design-preview?view=desktop&screen=missions"
+          desktopScreen
+            ? `/design-preview?view=desktop&screen=${desktopScreen}`
             : desktop
               ? "/design-preview?view=desktop"
               : "/design-preview"

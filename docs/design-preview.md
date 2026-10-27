@@ -10,12 +10,13 @@ The owner's local repository remains `/Volumes/Crucial X10/Chambana`; `/Users/zp
 - `/design-preview`: Chambana app and interactive signup flow, behind a shared access-code gate.
 - `/design-preview?view=desktop`: desktop Home and navigation review using the same access gate. The iPhone preview remains the default.
 - `/design-preview?view=desktop&screen=missions`: desktop Missions review, with the same access gate and shared local activity as Home.
+- `/design-preview?view=desktop&screen=groups`: desktop Groups review, with search, category/membership filters, and shared local group membership.
 - `/login`: the same access-code gate, followed by the existing campus sign-in.
 - Older concept query strings now resolve to Chambana; After Hours and Field Notes have been retired.
 
 ## Desktop Home review — October 27, 2026
 
-The desktop preview adapts the iPhone typography, grayscale campus photography, and floating glass navigation into a wider Home layout. It includes the featured mission, upcoming activity, a compact group summary, profile and notification panels, and local join/save controls. Home and Missions are now reviewable; Groups and Inbox identify those desktop pages as future design work. All activity is sample data and resets on reload; the existing member backend and public homepage are unchanged by this design pass. The review date uses America/Chicago. Desktop and iPhone previews link to each other on desktop.
+The desktop preview adapts the iPhone typography, grayscale campus photography, and floating glass navigation into a wider Home layout. It includes the featured mission, upcoming activity, a compact group summary, profile and notification panels, and local join/save controls. Home, Missions, and Groups are now reviewable; Inbox identifies that desktop page as future design work. All activity is sample data and resets on reload; the existing member backend and public homepage are unchanged by this design pass. The review date uses America/Chicago. Desktop and iPhone previews link to each other on desktop.
 
 Implementation is isolated in `desktop-home-preview.tsx` and its CSS module. See `design-qa.md` for the completed local browser comparisons, responsive checks, interactions, and validation. The owner authorized release through the existing `main` auto-deployment. The hosted review URL is `https://playchambana.com/design-preview?view=desktop`; confirm the desktop Home content after deployment propagation before reporting the release live.
 
@@ -26,6 +27,14 @@ Missions uses a searchable list of the same three sample activities, with graysc
 Home and Missions share saved/joined activity during the current visit. Navigation, the brand link, and browser Back preserve that activity; reload resets it. Removing the last visible saved/joined item keeps keyboard focus on a stable page control. The Main Library card uses a verified exterior photograph with attribution and license links in the detail panel and asset credits.
 
 The direct review URL is `https://playchambana.com/design-preview?view=desktop&screen=missions`, retained after the access gate. Unknown or repeated screen parameters fall back to Home. The default iPhone route, production flag, noindex metadata, and signed-cookie gate are retained. Implementation lives in `desktop-missions.tsx`, its CSS module, and the shared desktop shell. Local validation passed 153 application tests, TypeScript, production build, responsive/browser interaction checks, and independent code review. Screenshots and comparisons are in `design/desktop-missions-2026-10-27/`; the latest report is at the top of `design-qa.md`.
+
+## Desktop Groups review — October 27, 2026
+
+Groups adapts the iPhone group cards into a three-column desktop grid, two columns on compact screens, and one column at narrow widths. It retains the same group names, interests, initials tiles, Joined status, and next-mission hierarchy. Search matches name/category without case sensitivity. Outdoors, Social, and Arts combine with OR; Joined additionally restricts those results to current memberships. All clears the selections.
+
+Each card opens a group detail panel with a live member count, named roster, linked next mission, and local join/leave control. Base rosters exclude Julian Park; joining adds him once. Initial membership is The in-between club. Home's Your groups list and the profile count/list share this state; browser navigation preserves it, while reload resets the preview. No membership or messages are written to the backend. Next-mission labels use the same desktop mission records so list and detail stay consistent.
+
+The review URL is `https://playchambana.com/design-preview?view=desktop&screen=groups`, preserved through unlock. The iPhone route, production flag, noindex, and cookie gate remain intact. Local validation passed 176 app tests (including 29 route cases and 12 group-filter cases), TypeScript, production build, independent review, and browser checks at 1440/855/393/320px. The iPhone Groups screenshot is byte-identical before/after this work. Evidence is in `design/desktop-groups-2026-10-27/`; the latest QA report is at the top of `design-qa.md`.
 
 ## iPhone preview
 

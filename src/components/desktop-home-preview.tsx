@@ -23,6 +23,12 @@ import {
   type DesktopMissionFilter,
 } from "@/lib/desktop-mission-filters";
 import { DesktopMissions } from "./desktop-missions";
+import { DesktopGroups } from "./desktop-groups";
+import {
+  filterDesktopGroups,
+  toggleDesktopGroupFilter,
+  type DesktopGroupFilter,
+} from "@/lib/desktop-group-filters";
 import styles from "./desktop-home-preview.module.css";
 
 const missions = [
@@ -64,6 +70,33 @@ const missions = [
   },
 ];
 
+const groups = [
+  {
+    id: 0,
+    name: "The in-between club",
+    initials: "IC",
+    category: "Outdoors",
+    members: ["Maya Chen", "Julia Lee", "Alex Morgan", "Sam Kim"],
+    mission: 0,
+  },
+  {
+    id: 1,
+    name: "Good company",
+    initials: "GC",
+    category: "Social",
+    members: ["Maya Chen", "Theo Kim", "Avery Shah"],
+    mission: 1,
+  },
+  {
+    id: 2,
+    name: "Outside the syllabus",
+    initials: "OS",
+    category: "Arts",
+    members: ["Maya Chen", "Eli Carter", "Jamie Nguyen", "Nora Patel"],
+    mission: 2,
+  },
+].map((group) => ({ ...group, nextMission: missions[group.mission] }));
+
 const destinations = [
   { label: "Home", icon: Home },
   { label: "Missions", icon: Compass },
@@ -76,7 +109,9 @@ type Panel =
   | { type: "mission"; id: number }
   | { type: "profile" }
   | { type: "notifications" }
-  | { type: "group" }
+  | { type: "group"; id: number }
+  | { type: "group-members"; id: number }
+  | { type: "group-filters" }
   | { type: "filters" }
   | { type: "next"; destination: Destination }
   | null;
@@ -103,11 +138,25 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   const searchParams = useSearchParams();
   const screens = searchParams.getAll("screen");
   const screen =
-    screens.length === 1 && screens[0] === "missions" ? "Missions" : "Home";
+    screens.length === 1 && screens[0] === "missions"
+      ? "Missions"
+      : screens.length === 1 && screens[0] === "groups"
+        ? "Groups"
+        : "Home";
   const [panel, setPanel] = useState<Panel>(null);
   const [saved, setSaved] = useState<number[]>([]);
   const [joined, setJoined] = useState<number[]>([]);
   const [missionQuery, setMissionQuery] = useState("");
+  const [groupQuery, setGroupQuery] = useState("");
+  const [groupFilters, setGroupFilters] = useState<DesktopGroupFilter[]>([]);
+  const [joinedGroups, setJoinedGroups] = useState<number[]>([0]);
+  const filteredGroups = filterDesktopGroups(
+    groups,
+    groupQuery,
+    groupFilters,
+    joinedGroups,
+  );
+  const myGroups = groups.filter((group) => joinedGroups.includes(group.id));
   const [missionFilters, setMissionFilters] = useState<DesktopMissionFilter[]>(
     [],
   );
@@ -167,15 +216,15 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   }, [notice]);
 
   function navigate(destination: Destination) {
-    if (destination === "Home" || destination === "Missions") {
+    if (destination !== "Inbox") {
       setPanel(null);
       if (screen !== destination) {
         window.history.pushState(
           null,
           "",
-          destination === "Missions"
-            ? "/design-preview?view=desktop&screen=missions"
-            : "/design-preview?view=desktop",
+          destination === "Home"
+            ? "/design-preview?view=desktop"
+            : `/design-preview?view=desktop&screen=${destination.toLowerCase()}`,
         );
       }
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -197,6 +246,10 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   const activeDestination = panel?.type === "next" ? panel.destination : screen;
   const selectedMission = panel?.type === "mission" ? missions[panel.id] : null;
   const selectedId = panel?.type === "mission" ? panel.id : 0;
+  const selectedGroup =
+    panel?.type === "group" || panel?.type === "group-members"
+      ? groups[panel.id]
+      : null;
   const panelTitle =
     panel?.type === "mission"
       ? selectedMission?.title
@@ -205,12 +258,16 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
         : panel?.type === "notifications"
           ? "Notifications"
           : panel?.type === "group"
-            ? "The in-between club"
-            : panel?.type === "filters"
-              ? "Filter missions"
-              : panel?.type === "next"
-                ? panel.destination
-                : "";
+            ? selectedGroup?.name
+            : panel?.type === "group-members"
+              ? "Members"
+              : panel?.type === "group-filters"
+                ? "Filter groups"
+                : panel?.type === "filters"
+                  ? "Filter missions"
+                  : panel?.type === "next"
+                    ? panel.destination
+                    : "";
 
   return (
     <div className={styles.preview}>
@@ -246,9 +303,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
               type="button"
               key={label}
               aria-current={activeDestination === label ? "page" : undefined}
-              aria-haspopup={
-                label === "Home" || label === "Missions" ? undefined : "dialog"
-              }
+              aria-haspopup={label === "Inbox" ? "dialog" : undefined}
               onClick={() => navigate(label)}
             >
               <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -300,6 +355,25 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
             }}
             onOpenMission={(id) => setPanel({ type: "mission", id })}
             onSave={toggleSave}
+          />
+        ) : screen === "Groups" ? (
+          <DesktopGroups
+            groups={filteredGroups}
+            query={groupQuery}
+            filters={groupFilters}
+            joined={joinedGroups}
+            onQueryChange={setGroupQuery}
+            onFilters={() => setPanel({ type: "group-filters" })}
+            onRemoveFilter={(filter) =>
+              setGroupFilters((current) =>
+                toggleDesktopGroupFilter(current, filter),
+              )
+            }
+            onReset={() => {
+              setGroupQuery("");
+              setGroupFilters([]);
+            }}
+            onOpenGroup={(id) => setPanel({ type: "group", id })}
           />
         ) : (
           <>
@@ -464,24 +538,36 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     <ArrowUpRight size={17} aria-hidden="true" />
                   </button>
                 </div>
-                <button
-                  type="button"
-                  className={styles.groupRow}
-                  onClick={() => setPanel({ type: "group" })}
-                >
-                  <span className={styles.groupAvatar}>IC</span>
-                  <span className={styles.rowContent}>
-                    <strong>The in-between club</strong>
-                    <small>Outdoors · 4 members</small>
-                  </span>
-                  <ChevronRight size={16} aria-hidden="true" />
-                </button>
-                <div className={styles.groupNext}>
-                  <span>Up next</span>
-                  <p>
-                    The long way home <span>Today, 5:30 PM</span>
+                {myGroups.map((group) => (
+                  <button
+                    type="button"
+                    className={styles.groupRow}
+                    key={group.id}
+                    onClick={() => setPanel({ type: "group", id: group.id })}
+                  >
+                    <span className={styles.groupAvatar}>{group.initials}</span>
+                    <span className={styles.rowContent}>
+                      <strong>{group.name}</strong>
+                      <small>
+                        {group.category} · {group.members.length + 1} members
+                      </small>
+                    </span>
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </button>
+                ))}
+                {myGroups.length ? (
+                  <div className={styles.groupNext}>
+                    <span>Up next</span>
+                    <p>
+                      {myGroups[0].nextMission.title}
+                      <span>{myGroups[0].nextMission.time}</span>
+                    </p>
+                  </div>
+                ) : (
+                  <p className={styles.muted}>
+                    Join a group to find your people here.
                   </p>
-                </div>
+                )}
               </section>
             </div>
           </>
@@ -562,7 +648,9 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                 <div className={styles.largeAvatar}>JP</div>
               )}
               {panel.type === "group" && (
-                <div className={styles.largeAvatar}>IC</div>
+                <div className={styles.largeAvatar}>
+                  {selectedGroup?.initials}
+                </div>
               )}
               <h2 id={titleId}>
                 {panelTitle}
@@ -731,7 +819,8 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                       <strong>6</strong>Missions
                     </span>
                     <span>
-                      <strong>1</strong>Group
+                      <strong>{joinedGroups.length}</strong>
+                      {joinedGroups.length === 1 ? "Group" : "Groups"}
                     </span>
                   </div>
                   <div className={styles.interests}>
@@ -739,6 +828,27 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     <span>Books</span>
                     <span>Coffee</span>
                   </div>
+                  <h3 className={styles.smallHeading}>
+                    Your groups <span>{myGroups.length}</span>
+                  </h3>
+                  {myGroups.length ? (
+                    myGroups.map((group) => (
+                      <button
+                        className={styles.panelRow}
+                        type="button"
+                        key={group.id}
+                        onClick={() =>
+                          setPanel({ type: "group", id: group.id })
+                        }
+                      >
+                        <Users size={17} aria-hidden="true" />
+                        <span>{group.name}</span>
+                        <ChevronRight size={16} aria-hidden="true" />
+                      </button>
+                    ))
+                  ) : (
+                    <p className={styles.muted}>Join a group to see it here.</p>
+                  )}
                   <h3 className={styles.smallHeading}>
                     Saved missions <span>{saved.length}</span>
                   </h3>
@@ -804,7 +914,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     type="button"
                     onClick={() => {
                       setNotificationsRead(true);
-                      setPanel({ type: "group" });
+                      setPanel({ type: "group", id: 0 });
                     }}
                   >
                     <Users size={20} aria-hidden="true" />
@@ -817,32 +927,169 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                 </>
               )}
 
-              {panel.type === "group" && (
+              {panel.type === "group" && selectedGroup && (
                 <>
-                  <p className={styles.muted}>Outdoors · 4 members</p>
+                  <p className={styles.muted}>
+                    {selectedGroup.category} · UIUC
+                  </p>
+                  <button
+                    className={styles.memberSummary}
+                    type="button"
+                    onClick={() =>
+                      setPanel({ type: "group-members", id: selectedGroup.id })
+                    }
+                  >
+                    <Users size={17} aria-hidden="true" />
+                    <span>
+                      {selectedGroup.members.length +
+                        (joinedGroups.includes(selectedGroup.id) ? 1 : 0)}{" "}
+                      members
+                    </span>
+                    <span>View members</span>
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </button>
                   <h3 className={styles.smallHeading}>Up next</h3>
                   <button
                     className={styles.panelRow}
                     type="button"
-                    onClick={() => setPanel({ type: "mission", id: 0 })}
+                    onClick={() =>
+                      setPanel({ type: "mission", id: selectedGroup.mission })
+                    }
                   >
                     <Compass size={20} aria-hidden="true" />
                     <span>
-                      <strong>Take the long way home</strong>
-                      <small>Today · 5:30 PM · Japan House</small>
+                      <strong>{selectedGroup.nextMission.title}</strong>
+                      <small>
+                        {selectedGroup.nextMission.time} ·{" "}
+                        {selectedGroup.nextMission.location}
+                      </small>
                     </span>
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
+                  <button
+                    className={`${styles.primaryButton} ${styles.groupAction}`}
+                    type="button"
+                    onClick={() =>
+                      setJoinedGroups((current) =>
+                        current.includes(selectedGroup.id)
+                          ? current.filter((id) => id !== selectedGroup.id)
+                          : [...current, selectedGroup.id],
+                      )
+                    }
+                  >
+                    {joinedGroups.includes(selectedGroup.id)
+                      ? "Leave group"
+                      : "Join group"}
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </button>
+                  {joinedGroups.includes(selectedGroup.id) && (
+                    <p className={styles.joinedNote} role="status">
+                      <Check size={15} aria-hidden="true" />
+                      You’re a member.
+                    </p>
+                  )}
                   <p className={styles.demoNote}>
-                    Sample group for the design preview.
+                    Sample group. Membership changes are local to this preview.
                   </p>
+                </>
+              )}
+
+              {panel.type === "group-members" && selectedGroup && (
+                <>
+                  <p className={styles.muted}>{selectedGroup.name}</p>
+                  <ul className={styles.memberList}>
+                    {[
+                      ...selectedGroup.members,
+                      ...(joinedGroups.includes(selectedGroup.id)
+                        ? ["Julian Park"]
+                        : []),
+                    ].map((name) => (
+                      <li key={name}>
+                        <span className={styles.groupAvatar} aria-hidden="true">
+                          {name
+                            .split(" ")
+                            .map((part) => part[0])
+                            .join("")}
+                        </span>
+                        <span>{name}</span>
+                        {name === "Julian Park" && <small>You</small>}
+                      </li>
+                    ))}
+                  </ul>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() =>
+                      setPanel({ type: "group", id: selectedGroup.id })
+                    }
+                  >
+                    Back to group
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </button>
+                </>
+              )}
+
+              {panel.type === "group-filters" && (
+                <>
+                  <p className={styles.muted}>
+                    Choose categories. Add Joined to see only your groups.
+                  </p>
+                  <div
+                    className={styles.filterOptions}
+                    role="group"
+                    aria-label="Group filters"
+                  >
+                    {(
+                      ["All", "Outdoors", "Social", "Arts", "Joined"] as const
+                    ).map((option) => {
+                      const selected =
+                        option === "All"
+                          ? groupFilters.length === 0
+                          : groupFilters.includes(option);
+                      return (
+                        <button
+                          type="button"
+                          key={option}
+                          aria-pressed={selected}
+                          onClick={() =>
+                            setGroupFilters((current) =>
+                              toggleDesktopGroupFilter(current, option),
+                            )
+                          }
+                        >
+                          <span>{option}</span>
+                          <span className={styles.filterCheck}>
+                            {selected && <Check size={14} aria-hidden="true" />}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className={styles.filterSummary}>
+                    <span role="status">
+                      {filteredGroups.length} matching{" "}
+                      {filteredGroups.length === 1 ? "group" : "groups"}
+                    </span>
+                    <button type="button" onClick={() => setGroupFilters([])}>
+                      Reset filters
+                    </button>
+                  </div>
+                  <button
+                    type="button"
+                    className={styles.primaryButton}
+                    onClick={() => setPanel(null)}
+                  >
+                    Show {filteredGroups.length}{" "}
+                    {filteredGroups.length === 1 ? "group" : "groups"}
+                    <ArrowRight size={17} aria-hidden="true" />
+                  </button>
                 </>
               )}
 
               {panel.type === "next" && (
                 <>
                   <p className={styles.muted}>
-                    This review includes desktop Home and Missions. The{" "}
+                    This review includes desktop Home, Missions, and Groups. The{" "}
                     {panel.destination} page will be designed in a later pass.
                   </p>
                   <button

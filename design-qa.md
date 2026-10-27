@@ -1,3 +1,39 @@
+# Desktop Groups design review — October 27, 2026
+
+final result: passed
+
+## Source and final comparison
+
+Groups extends the approved desktop Home/Missions style and current iPhone group cards. Review: http://localhost:3001/design-preview?view=desktop&screen=groups. All membership changes are sample interactions local to the preview.
+
+- Source: design/desktop-groups-2026-10-27/ios-groups-reference.png (393 × 852), plus approved desktop Home and Missions captures in their dated design folders.
+- Final: design/desktop-groups-2026-10-27/desktop-groups.png (1440 × 1000), all groups visible, initial membership in The in-between club, no open panel.
+- Full comparison: comparison.png (1873 × 1000), source iPhone left and desktop right. Focused comparison: focused-comparison.png (759 × 320), unscaled first-card crops. Both boards were opened together and reviewed.
+- The browser reports devicePixelRatio 2; captured images are normalized to one pixel per CSS pixel. Comparison boards use original pixels without resampling.
+
+## Fidelity and intentional desktop changes
+
+- Georgia page/card headings, system sans controls, #f8f8f8 background, #252525 ink, light borders, white cards, and the existing glass navigation remain consistent with Home/Missions.
+- The original group name/category/status/next-activity hierarchy is retained. Initials use the iPhone rounded-square tiles. Category labels and member/status text remain quiet; no new imagery or accent colors.
+- Three columns replace the phone stack. The heading and pill-shaped search match the approved desktop Missions page. Timing and location occupy separate rows for readability. Next-mission titles now use the same desktop mission record as the linked detail, avoiding inconsistent labels.
+- Captured 855px two-column, 393px one-column, and 320px layouts: compact-desktop.png, phone-width.png, narrow-320.png. Document scrollWidth equals innerWidth at all three widths. narrow-filters.png confirms all five choices and the submit action fit at 320 × 852.
+
+## Interaction and verification
+
+- Cards open details; join/leave updates badges, counts, named rosters, Home group list, and profile count/list. Initial counts are 5/3/4 including the viewer only in the first group. Evidence: joined-group.png and members.png.
+- Group → members → Back to group and group → next mission work. Panel transitions focus Close; Escape restores the original card. Shift+Tab wraps from Close to the last control; card Tab order follows the grid.
+- Outdoors + Arts returns two groups; adding Joined narrows to one; All clears every specific filter. Query search trims whitespace and ignores case. Empty search recovery and last-membership removal under Joined filtering were checked. Evidence: filters.png and empty-joined.png.
+- Leaving the final matching group removes the card and restores focus to the page heading on close. Home and browser Back preserve membership state; reload resets to sample defaults.
+- Independent code review found no blocking issues. No outstanding P0/P1/P2 findings or required P3 polish remain for this review scope.
+- 176 application tests passed, including 29 access/route cases and 12 group-filter cases. TypeScript, production build, and whitespace checks passed. Fresh-tab console had no warnings/errors; transient missing-module messages during parallel implementation were resolved before final QA.
+- Production flag, noindex, signed-cookie gate, supported scalar Groups/Missions deep links, and iPhone defaults are retained. The final iPhone Groups capture (ios-groups-regression.png) is byte-identical to the source capture.
+
+## Prior review snapshots
+
+Earlier reports below describe their versions at the time. Groups is now implemented; Inbox remains future desktop work. Deployment verification follows commit/push separately.
+
+---
+
 # Desktop Missions design review — October 27, 2026
 
 final result: passed
