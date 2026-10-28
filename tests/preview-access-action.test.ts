@@ -52,7 +52,7 @@ describe("access code action", () => {
     expect(mocks.set).not.toHaveBeenCalled();
   });
 
-  it.each(["groups", "inbox"])(
+  it.each(["groups", "inbox", "profile"])(
     "issues one secure shared cookie and keeps the %s destination",
     async (screen) => {
       vi.stubEnv("NODE_ENV", "production");
@@ -85,6 +85,10 @@ describe("access code action", () => {
     "/design-preview?view=desktop&screen=inbox&screen=inbox",
     "/design-preview?view=desktop&screen=inbox&screen=groups",
     "/design-preview?view=desktop&screen=inbox&next=%2Flogin",
+    "/design-preview?view=desktop&screen=profile&screen=profile",
+    "/design-preview?view=desktop&screen=profile&screen=inbox",
+    "/design-preview?view=desktop&screen=profile&next=https%3A%2F%2Fevil.example",
+    "/design-preview?view=desktop&screen=profile&code=private-code",
     "/design-preview?view=desktop&token=private-code",
   ])(
     "sends retired or invalid destination %s to desktop Home",

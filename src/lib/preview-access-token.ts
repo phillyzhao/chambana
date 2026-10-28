@@ -43,7 +43,12 @@ export function previewDestination(input: unknown) {
     if (view === null && screen === null) return "/design-preview";
     if (view !== "desktop") return desktopHome;
     if (screen === null) return desktopHome;
-    if (screen === "missions" || screen === "groups" || screen === "inbox")
+    if (
+      screen === "missions" ||
+      screen === "groups" ||
+      screen === "inbox" ||
+      screen === "profile"
+    )
       return `${desktopHome}&screen=${screen}`;
     return desktopHome;
   } catch {

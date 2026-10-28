@@ -34,7 +34,8 @@ export default async function DesignPreviewPage({
     desktop &&
     (params.screen === "missions" ||
       params.screen === "groups" ||
-      params.screen === "inbox")
+      params.screen === "inbox" ||
+      params.screen === "profile")
       ? params.screen
       : null;
   if (!(await hasPreviewAccess())) {

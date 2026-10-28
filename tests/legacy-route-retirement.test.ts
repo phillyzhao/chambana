@@ -37,7 +37,7 @@ const retiredRoutes = [
   ["/join", `${DESKTOP_HOME}&screen=groups`],
   ["/missions", `${DESKTOP_HOME}&screen=missions`],
   ["/groups", `${DESKTOP_HOME}&screen=groups`],
-  ["/profile", DESKTOP_HOME],
+  ["/profile", `${DESKTOP_HOME}&screen=profile`],
   ["/people", DESKTOP_HOME],
   ["/leaderboard", DESKTOP_HOME],
   ["/admin", DESKTOP_HOME],
@@ -112,6 +112,21 @@ describe("retired beta route map", () => {
 });
 
 describe("retirement proxy", () => {
+  it("drops member IDs and query data from an old profile bookmark", () => {
+    const response = proxy(
+      new NextRequest(
+        "https://playchambana.com/profile/legacy-member/details?code=private-code&next=%2Fadmin&screen=inbox",
+      ),
+    );
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get("location")).toBe(
+      "https://playchambana.com/design-preview?view=desktop&screen=profile",
+    );
+    expect(response.headers.get("set-cookie")).toBeNull();
+    expect(mocks.createServerClient).not.toHaveBeenCalled();
+  });
+
   it.each(retiredRoutes)(
     "redirects GET and POST %s without forwarding beta input",
     async (path, destination) => {

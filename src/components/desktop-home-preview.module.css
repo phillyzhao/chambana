@@ -111,6 +111,11 @@
   box-shadow: inset 0 0 0 4px var(--screen);
   border-color: #ccc;
 }
+.profileButton[aria-current="page"] {
+  background: #292929;
+  color: #fff;
+  border-color: #292929;
+}
 .notificationButton {
   position: relative;
 }

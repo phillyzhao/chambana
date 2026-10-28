@@ -1,3 +1,31 @@
+# Desktop Profile design review — October 28, 2026
+
+final result: passed
+
+## Scope and design
+
+Profile extends the approved desktop shell and iPhone profile. Review URL: `https://playchambana.com/design-preview?view=desktop&screen=profile`. The header avatar opens this full page and indicates the current destination; the four main navigation tabs stay in place.
+
+- Retains Georgia headings, monochrome initials, white cards, quiet borders, and the iOS identity, nuts, completed missions, and interests. The identity is explicitly a sample profile. Joining a mission changes Joined activity, not the six completed missions or 340 nuts.
+- Desktop places identity beside current groups and Saved/Joined mission tabs. The layout stacks at narrow widths. Group cards include member count and next mission; mission rows link to details and have independent bookmark controls.
+- Inspected production-build captures at 1440px, 855px, 393px, and 320px. Document scrollWidth equals viewport width at each tested size. Stat baselines align; each empty section has one discovery action.
+- Evidence: `design/desktop-profile-2026-10-28/desktop-profile.png`, `desktop-profile-activity.png`, `compact-desktop-855.png`, `phone-width-393.png`, `narrow-320.png`, and development capture `empty-activity.png`. Reference: `ios-profile-reference.png`.
+
+## Interaction and verification
+
+- Browser checked Profile entry, group details and roster, linked mission details, joining/saving, Saved/Joined tabs, and activity retained through Home and browser Back. The viewer appears once in the group roster.
+- Removing the last saved mission restores focus to the active tab. Leaving the last group updates the count and empty state; closing the removed group's panel focuses the page heading. Explore actions open the corresponding discovery page, and shared Missions/Groups reflect the changes.
+- Arrow-key tab selection and focus were browser checked; Home/End support was code-reviewed. Fresh production load restores the sample defaults. The production browser had no console warnings or errors.
+- Anonymous production HTML retains the Profile unlock destination and noindex. `/profile/settings?next=/admin` returns a 303 to the fixed desktop Profile URL. Route tests cover Profile unlock, invalid/repeated values, flag behavior, and the unchanged iOS default.
+- 297 application tests and 71 isolated database tests passed (368 total), along with TypeScript, production build, whitespace checks, and independent code and visual review.
+- iOS component sources and the waitlist have no changes. Profile identity editing, account persistence, and backend activity are outside this design preview.
+
+## Prior review snapshots
+
+Reports below describe earlier releases. Desktop Home, Missions, Groups, Inbox, and Profile are now implemented. Hosted verification follows commit and push.
+
+---
+
 # Desktop Inbox design review — October 28, 2026
 
 final result: passed

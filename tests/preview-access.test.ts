@@ -79,6 +79,9 @@ describe("preview return destinations", () => {
     expect(
       previewDestination("/design-preview?screen=inbox&view=desktop#ignored"),
     ).toBe("/design-preview?view=desktop&screen=inbox");
+    expect(
+      previewDestination("/design-preview?screen=profile&view=desktop#ignored"),
+    ).toBe("/design-preview?view=desktop&screen=profile");
     expect(previewDestination("/design-preview#ignored")).toBe(
       "/design-preview",
     );
@@ -104,6 +107,12 @@ describe("preview return destinations", () => {
     "/design-preview?view=desktop&screen=inbox&screen=inbox",
     "/design-preview?view=desktop&screen=inbox&screen=groups",
     "/design-preview?view=desktop&screen=inbox&code=private-code",
+    "/design-preview?view=desktop&screen=Profile",
+    "/design-preview?screen=profile",
+    "/design-preview?view=desktop&screen=profile&screen=profile",
+    "/design-preview?view=desktop&screen=profile&screen=inbox",
+    "/design-preview?view=desktop&screen=profile&next=https%3A%2F%2Fevil.example",
+    "/design-preview?view=desktop&screen=profile&code=private-code",
     "/design-preview?screen=groups",
     "/design-preview?view=desktop&view=desktop",
     "/design-preview?view=desktop&screen=groups&screen=groups",

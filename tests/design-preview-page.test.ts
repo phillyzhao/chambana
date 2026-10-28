@@ -86,6 +86,18 @@ describe("design preview access and view selection", () => {
     expect(result.props.destination).toBe("/design-preview?view=desktop");
   });
 
+  it.each([undefined, "false"])(
+    "hides the Profile deep link when the production flag is %s",
+    async (flag) => {
+      vi.stubEnv("CHAMBANA_DESIGN_PREVIEW", flag);
+      mocks.hasPreviewAccess.mockResolvedValue(true);
+
+      await expect(page("desktop", "profile")).rejects.toThrow("not-found");
+      expect(mocks.notFound).toHaveBeenCalledOnce();
+      expect(mocks.hasPreviewAccess).not.toHaveBeenCalled();
+    },
+  );
+
   it("selects the desktop Home after preview access is granted", async () => {
     mocks.hasPreviewAccess.mockResolvedValue(true);
 
@@ -95,7 +107,7 @@ describe("design preview access and view selection", () => {
     expect(result.type).toBe(mocks.DesktopHomePreview);
   });
 
-  it.each(["missions", "groups", "inbox"])(
+  it.each(["missions", "groups", "inbox", "profile"])(
     "preserves the supported %s deep link through the access gate",
     async (screen) => {
       const result = await page("desktop", screen);
@@ -107,7 +119,7 @@ describe("design preview access and view selection", () => {
     },
   );
 
-  it.each(["missions", "groups", "inbox"])(
+  it.each(["missions", "groups", "inbox", "profile"])(
     "renders the desktop client for an unlocked %s deep link",
     async (screen) => {
       mocks.hasPreviewAccess.mockResolvedValue(true);
@@ -124,6 +136,7 @@ describe("design preview access and view selection", () => {
     { screen: "Missions" },
     { screen: "Groups" },
     { screen: "Inbox" },
+    { screen: "Profile" },
     { screen: "//evil.example" },
     { screen: ["missions", "home"] },
     { screen: ["missions", "missions"] },
@@ -133,6 +146,9 @@ describe("design preview access and view selection", () => {
     { screen: ["inbox", "inbox"] },
     { screen: ["inbox", "groups"] },
     { screen: ["groups", "inbox"] },
+    { screen: ["profile", "profile"] },
+    { screen: ["profile", "inbox"] },
+    { screen: ["inbox", "profile"] },
   ])(
     "sanitizes unsupported desktop screen $screen to Home at unlock",
     async ({ screen }) => {
@@ -153,6 +169,9 @@ describe("design preview access and view selection", () => {
     { view: undefined, screen: "inbox" },
     { view: "iphone", screen: "inbox" },
     { view: ["desktop", "iphone"], screen: "inbox" },
+    { view: undefined, screen: "profile" },
+    { view: "iphone", screen: "profile" },
+    { view: ["desktop", "iphone"], screen: "profile" },
   ])(
     "does not apply the $screen screen to non-desktop view $view",
     async ({ view, screen }) => {

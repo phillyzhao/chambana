@@ -18,8 +18,9 @@ The owner's local repository remains `/Volumes/Crucial X10/Chambana`; `/Users/zp
 - `/design-preview?view=desktop&screen=missions`: desktop Missions review, with the same access gate and shared local activity as Home.
 - `/design-preview?view=desktop&screen=groups`: desktop Groups review, with search, category/membership filters, and shared local group membership.
 - `/design-preview?view=desktop&screen=inbox`: desktop Inbox, with searchable conversations, unread filtering, member lists, and local drafts/messages.
+- `/design-preview?view=desktop&screen=profile`: desktop Profile, with the sample identity, current joined groups, and Saved/Joined missions.
 - `/login`: redirects to desktop Home; no campus sign-in page remains.
-- Old `/missions` and `/groups` URLs redirect to their desktop views. Other former beta pages redirect to desktop Home.
+- Old `/missions`, `/groups`, and `/profile` URLs, including descendants, redirect to their corresponding desktop views and discard old query parameters. Other former beta pages redirect to desktop Home.
 - Older concept query strings now resolve to Chambana; After Hours and Field Notes have been retired.
 
 ## Desktop Home review — October 27, 2026
@@ -52,6 +53,14 @@ The three conversations use the same sample groups and messages as iOS. Member l
 
 The direct review URL is `https://playchambana.com/design-preview?view=desktop&screen=inbox`, preserved through the signed access gate. Duplicate or invalid screen values still fall back to Home. The iPhone source and the retired beta entry points are unchanged. Implementation is in `desktop-inbox.tsx`, its CSS module, the shared desktop shell, and `desktop-inbox.ts`. Evidence is in `design/desktop-inbox-2026-10-28/`; see the latest entry in `design-qa.md`.
 
+## Desktop Profile review — October 28, 2026
+
+The header avatar opens a full Profile page using the same monochrome typography, initials tiles, and quiet spacing as the other desktop pages. Home, Missions, Groups, and Inbox remain the four main navigation tabs. The sample identity is read-only: Julian Park, `@julianpark`, 340 nuts, six completed missions, and Outdoors, Books, and Coffee interests.
+
+Your groups reflects current local memberships and opens the shared group detail panel. Saved and Joined mission views show the same mission activity used by Home and Missions, with counts, detail links, and empty states that lead back to browsing. Changes to memberships and saved/joined missions persist across desktop navigation and browser Back, then reset on reload. The nuts balance and completed-mission count are sample identity values, not calculated rewards or a live account history.
+
+The direct review URL is `https://playchambana.com/design-preview?view=desktop&screen=profile`, preserved through the existing signed access gate. Invalid or repeated screen values still fall back to Home. Retired `/profile` URLs and descendants now redirect with `303` to this fixed desktop Profile destination, discarding old path identifiers and query parameters. The former profile backend remains retired; this page does not edit an account or write member activity. Implementation is in `desktop-profile.tsx`, its CSS module, and the shared desktop shell.
+
 ## iPhone preview
 
 Chambana keeps its editorial type and generous space, top-left profile, top-right notifications, and four floating glass tabs: Home, Missions, Groups, Inbox. Decorative taglines and card descriptions have been removed; useful labels, location, time, membership, and message content remain. Mission rewards and profile balances use nuts. Groups support search, category, and membership filters.
@@ -62,7 +71,7 @@ Desktop review uses fixed logical phone screens: iPhone 15/16 at 393 × 852, iPh
 
 The preview route is noindex and unavailable in production unless `CHAMBANA_DESIGN_PREVIEW=true`. The waitlist's iOS preview link appears in development or when that flag is enabled. The former community routes have been retired; no active page renders `CommunityLayout`.
 
-The desktop and iPhone previews share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). Unlock destinations are limited to the iPhone preview and desktop Home, Missions, Groups, and Inbox. This is a preview entry gate; it does not create or authenticate member accounts. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. The private secret is configured in Hostinger and the ignored SSD `.env.local` file; its value is never committed.
+The desktop and iPhone previews share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). Unlock destinations are limited to the iPhone preview and desktop Home, Missions, Groups, Inbox, and Profile. This is a preview entry gate; it does not create or authenticate member accounts. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. The private secret is configured in Hostinger and the ignored SSD `.env.local` file; its value is never committed.
 
 ## Production configuration — October 13, 2026
 

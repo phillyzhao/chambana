@@ -18,15 +18,16 @@ For inspection, use `git show archive/legacy-beta-2026-10-28:src/app/login/page.
 
 ## Website retirement
 
-| Old entry point | Current behavior |
-| --- | --- |
-| `/login`, `/profile`, `/people/*`, `/leaderboard`, `/admin`, `/about`, `/guidelines` | Desktop Home |
-| `/missions/*` | Desktop Missions |
-| `/groups/*`, `/join/*` | Desktop Groups |
-| `/auth/callback` | Fixed desktop redirect; no code exchange or new session |
-| Legacy `signIn`, `signOut`, `mutate` server actions | Fixed desktop redirect; no backend call |
-| `/api/avatars/*`, `/api/cron/verify` | Inert `410 Gone`; no data/storage/verification/email operation |
-| `/api/health` | Current application liveness |
+| Old entry point                                                          | Current behavior                                                |
+| ------------------------------------------------------------------------ | --------------------------------------------------------------- |
+| `/login`, `/people/*`, `/leaderboard`, `/admin`, `/about`, `/guidelines` | Desktop Home                                                    |
+| `/missions/*`                                                            | Desktop Missions                                                |
+| `/groups/*`, `/join/*`                                                   | Desktop Groups                                                  |
+| `/profile`, `/profile/*`                                                 | Desktop Profile (`/design-preview?view=desktop&screen=profile`) |
+| `/auth/callback`                                                         | Fixed desktop redirect; no code exchange or new session         |
+| Legacy `signIn`, `signOut`, `mutate` server actions                      | Fixed desktop redirect; no backend call                         |
+| `/api/avatars/*`, `/api/cron/verify`                                     | Inert `410 Gone`; no data/storage/verification/email operation  |
+| `/api/health`                                                            | Current application liveness                                    |
 
 Retired links discard query values such as auth codes, invitations, errors, user IDs, and return destinations. POST redirects use `303` so a previous beta form body is not replayed to the preview. The shared preview gate, signed cookie, and production flag remain required. The active route tree contains no beta page/layout implementations; the fallback only redirects known legacy paths and returns not-found for unknown ones.
 

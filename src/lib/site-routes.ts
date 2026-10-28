@@ -6,7 +6,7 @@ const retiredPages: Record<string, string> = {
   join: `${DESKTOP_HOME}&screen=groups`,
   missions: `${DESKTOP_HOME}&screen=missions`,
   groups: `${DESKTOP_HOME}&screen=groups`,
-  profile: DESKTOP_HOME,
+  profile: `${DESKTOP_HOME}&screen=profile`,
   people: DESKTOP_HOME,
   leaderboard: DESKTOP_HOME,
   admin: DESKTOP_HOME,

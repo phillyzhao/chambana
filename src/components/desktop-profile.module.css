@@ -1,0 +1,708 @@
+.page {
+  padding-top: 2px;
+}
+.page :is(button, [tabindex]):focus-visible {
+  outline: 2px solid #555;
+  outline-offset: 4px;
+}
+.intro {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  margin-bottom: 30px;
+}
+.intro h1 {
+  margin: 0;
+  font:
+    400 clamp(40px, 4.2vw, 58px)/1.1 Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -2.4px;
+  scroll-margin-top: 24px;
+}
+.intro h1:focus {
+  outline: none;
+}
+.location {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--secondary);
+}
+.location svg {
+  flex-shrink: 0;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(270px, 30%) minmax(0, 1fr);
+  gap: 34px;
+  align-items: start;
+}
+.identity {
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 5px 5px 16px 16px;
+  padding: 32px 28px 24px;
+}
+.avatar {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  background: #dedede;
+  border: 1px solid #ccc;
+  box-shadow: inset 0 0 0 6px #f8f8f8;
+  border-radius: 50%;
+  font:
+    29px Georgia,
+    serif;
+  letter-spacing: -0.8px;
+  margin-bottom: 26px;
+}
+.identity h2 {
+  font:
+    400 36px/1.12 Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -1.2px;
+  margin: 0 0 9px;
+  overflow-wrap: anywhere;
+}
+.handle {
+  margin: 0;
+  font-size: 12px;
+  color: var(--secondary);
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 30px 0 27px;
+  padding: 23px 0;
+  border-block: 1px solid #e8e8e8;
+}
+.stats > div {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  min-width: 0;
+}
+.stats dt {
+  min-height: 2.8em;
+  line-height: 1.4;
+  font-size: 8px;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--secondary);
+}
+.stats dd {
+  margin: 0;
+  font:
+    400 30px/1 Georgia,
+    serif;
+  letter-spacing: -0.6px;
+}
+.smallHeading {
+  font-size: 9px;
+  font-weight: 400;
+  letter-spacing: 1.3px;
+  text-transform: uppercase;
+  color: var(--secondary);
+  margin: 0 0 14px;
+}
+.interests {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.interests li {
+  background: #f3f3f3;
+  border: 1px solid #e4e4e4;
+  border-radius: 20px;
+  padding: 8px 12px;
+  font-size: 11px;
+}
+.previewNote {
+  margin: 32px 0 0;
+  font-size: 10px;
+  color: var(--secondary);
+}
+.activity {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 33px;
+}
+.sectionHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 17px;
+}
+.sectionHeading h2 {
+  margin: 0;
+  font:
+    400 28px/1.2 Georgia,
+    "Times New Roman",
+    serif;
+  letter-spacing: -0.7px;
+}
+.sectionHeading h2 > span {
+  margin-left: 7px;
+  font:
+    400 12px/1.2 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: var(--secondary);
+  letter-spacing: 0;
+}
+.sectionHeading > button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 7px;
+  background: transparent;
+  min-height: 32px;
+  padding: 3px 0;
+  font-size: 10px;
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+.sectionHeading > button:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.groupList {
+  display: grid;
+  gap: 13px;
+}
+.groupCard {
+  width: 100%;
+  min-width: 0;
+  text-align: left;
+  padding: 22px 24px;
+  border: 1px solid var(--border);
+  background: #fff;
+  border-radius: 5px 5px 13px 13px;
+  transition:
+    border-color 160ms ease,
+    box-shadow 160ms ease;
+}
+.groupCard:hover {
+  border-color: #b7b7b7;
+  box-shadow: 0 4px 18px #29292906;
+}
+.groupTop {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+.groupInitials {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #f7f7f7;
+  font:
+    17px Georgia,
+    serif;
+  letter-spacing: -0.3px;
+}
+.groupIdentity {
+  flex: 1;
+  min-width: 0;
+}
+.groupIdentity > strong {
+  display: block;
+  font:
+    400 25px/1.2 Georgia,
+    serif;
+  letter-spacing: -0.6px;
+  overflow-wrap: anywhere;
+  margin-bottom: 6px;
+}
+.groupIdentity > span {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--secondary);
+}
+.groupIdentity i,
+.missionDetails i {
+  font-style: normal;
+}
+.groupArrow {
+  flex-shrink: 0;
+  color: #555;
+}
+.nextMission {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px 20px;
+  border-top: 1px solid #eaeaea;
+  padding-top: 18px;
+  margin-top: 20px;
+}
+.nextLabel {
+  grid-column: 1 / -1;
+  color: var(--secondary);
+  font-size: 8px;
+  letter-spacing: 1.15px;
+  text-transform: uppercase;
+}
+.nextMission > strong {
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 1.5;
+}
+.nextFacts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--secondary);
+  font-size: 9px;
+  line-height: 1.4;
+}
+.nextFacts > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.nextFacts svg {
+  flex-shrink: 0;
+}
+.emptyGroups {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 17px;
+  padding: 24px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #fff;
+}
+.emptyGroups > svg {
+  color: var(--secondary);
+  flex-shrink: 0;
+}
+.emptyGroups > div {
+  flex: 1;
+  min-width: 180px;
+}
+.emptyGroups h3 {
+  margin: 0 0 7px;
+  font:
+    400 23px/1.2 Georgia,
+    serif;
+  letter-spacing: -0.4px;
+}
+.emptyGroups p {
+  color: var(--secondary);
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 0;
+}
+.emptyGroups button {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: transparent;
+  padding: 8px 0;
+  min-height: 36px;
+  font-size: 10px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.missionTabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+  padding-bottom: 14px;
+}
+.missionTabs button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 1px solid transparent;
+  border-radius: 23px;
+  background: transparent;
+  color: var(--secondary);
+  font-size: 11px;
+}
+.missionTabs button[aria-selected="true"] {
+  background: #e8e8e8;
+  color: var(--ink);
+}
+.missionTabs button:hover {
+  background: #eee;
+}
+.missionTabs button span {
+  color: var(--secondary);
+  font-size: 10px;
+  margin-left: 2px;
+}
+.missionPanel {
+  min-width: 0;
+}
+.missionList {
+  display: grid;
+  gap: 12px;
+}
+.missionRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 5px 5px 13px 13px;
+  background: #fff;
+  min-width: 0;
+}
+.openMission {
+  display: flex;
+  flex: 1;
+  gap: 20px;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  border-radius: 4px;
+}
+.openMission img {
+  width: 104px;
+  height: 110px;
+  object-fit: cover;
+  filter: grayscale(1);
+  flex-shrink: 0;
+  border-radius: 4px;
+}
+.missionInfo {
+  min-width: 0;
+}
+.missionTime {
+  display: block;
+  font-size: 8px;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: var(--secondary);
+  margin-bottom: 8px;
+}
+.missionInfo > strong {
+  display: block;
+  font:
+    400 25px/1.1 Georgia,
+    serif;
+  letter-spacing: -0.6px;
+  margin-bottom: 11px;
+  overflow-wrap: anywhere;
+}
+.missionFacts {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--secondary);
+  font-size: 10px;
+  line-height: 1.4;
+}
+.missionFacts svg {
+  flex-shrink: 0;
+}
+.missionDetails {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  font-size: 9px;
+  color: var(--secondary);
+  margin-top: 6px;
+}
+.saveButton {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  padding: 0;
+  flex-shrink: 0;
+}
+.saveButton:hover {
+  background: #eee;
+}
+.emptyMissions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  min-height: 224px;
+  border: 1px solid var(--border);
+  border-radius: 5px 5px 14px 14px;
+  background: #fff;
+  padding: 29px 24px;
+  text-align: center;
+}
+.emptyMissions > svg {
+  color: var(--secondary);
+  margin-bottom: 18px;
+}
+.emptyMissions h3 {
+  margin: 0 0 10px;
+  font:
+    400 27px/1.15 Georgia,
+    serif;
+  letter-spacing: -0.6px;
+}
+.emptyMissions p {
+  margin: 0 0 20px;
+  color: var(--secondary);
+  font-size: 11px;
+  line-height: 1.5;
+}
+.emptyMissions button {
+  display: flex;
+  align-items: center;
+  gap: 29px;
+  min-height: 39px;
+  border-radius: 5px;
+  background: #292929;
+  color: #fff !important;
+  padding: 9px 14px;
+  font-size: 11px;
+}
+.emptyMissions button:hover {
+  background: #444;
+}
+@media (max-width: 1050px) {
+  .layout {
+    grid-template-columns: minmax(235px, 31%) minmax(0, 1fr);
+    gap: 24px;
+  }
+  .identity {
+    padding: 27px 22px 24px;
+  }
+  .identity h2 {
+    font-size: 33px;
+  }
+  .stats {
+    gap: 5px;
+  }
+  .stats dt {
+    letter-spacing: 0.4px;
+    font-size: 8px;
+  }
+  .sectionHeading h2 {
+    font-size: 26px;
+  }
+  .groupCard {
+    padding: 20px;
+  }
+  .groupIdentity > strong {
+    font-size: 23px;
+  }
+  .nextMission {
+    grid-template-columns: 1fr;
+  }
+  .nextFacts {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 8px 14px;
+  }
+  .missionRow {
+    gap: 10px;
+    padding: 14px;
+  }
+  .openMission {
+    gap: 14px;
+  }
+  .openMission img {
+    width: 84px;
+    height: 100px;
+  }
+  .missionInfo > strong {
+    font-size: 22px;
+  }
+}
+@media (max-width: 760px) {
+  .intro {
+    margin-bottom: 25px;
+  }
+  .intro h1 {
+    font-size: 44px;
+    letter-spacing: -1.7px;
+  }
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 30px;
+  }
+  .identity {
+    padding: 27px;
+  }
+  .avatar {
+    width: 72px;
+    height: 72px;
+    font-size: 26px;
+    margin-bottom: 21px;
+  }
+  .identity h2 {
+    font-size: 36px;
+  }
+  .stats {
+    margin-top: 25px;
+    max-width: 350px;
+  }
+  .stats dt {
+    letter-spacing: 0.8px;
+    font-size: 9px;
+  }
+  .previewNote {
+    margin-top: 23px;
+  }
+  .sectionHeading h2 {
+    font-size: 28px;
+  }
+  .groupIdentity > strong {
+    font-size: 25px;
+  }
+  .nextMission {
+    grid-template-columns: 1fr auto;
+  }
+  .nextFacts {
+    flex-direction: column;
+  }
+  .missionInfo > strong {
+    font-size: 25px;
+  }
+  .openMission img {
+    width: 104px;
+    height: 110px;
+  }
+}
+@media (max-width: 520px) {
+  .intro {
+    align-items: flex-end;
+    gap: 15px;
+  }
+  .intro h1 {
+    font-size: 40px;
+  }
+  .location {
+    max-width: 105px;
+    font-size: 9px;
+    gap: 4px;
+  }
+  .identity {
+    padding: 25px 23px 23px;
+  }
+  .sectionHeading {
+    gap: 11px;
+  }
+  .sectionHeading h2 {
+    font-size: 27px;
+  }
+  .sectionHeading > button {
+    gap: 3px;
+    font-size: 9px;
+  }
+  .groupCard {
+    padding: 20px 18px;
+  }
+  .groupTop {
+    gap: 11px;
+  }
+  .groupInitials {
+    width: 41px;
+    height: 43px;
+    font-size: 15px;
+  }
+  .groupIdentity > strong {
+    font-size: 24px;
+  }
+  .groupArrow {
+    width: 16px;
+  }
+  .nextMission {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .nextFacts {
+    gap: 7px;
+  }
+  .missionRow {
+    padding: 13px;
+    gap: 9px;
+    align-items: flex-start;
+  }
+  .openMission {
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .openMission img {
+    width: 67px;
+    height: 89px;
+  }
+  .missionInfo > strong {
+    font-size: 22px;
+  }
+  .saveButton {
+    width: 31px;
+    height: 33px;
+  }
+  .saveButton svg {
+    width: 15px;
+  }
+  .missionTime {
+    font-size: 7px;
+    letter-spacing: 0.3px;
+    line-height: 1.5;
+  }
+  .missionFacts {
+    font-size: 9px;
+    align-items: flex-start;
+  }
+  .missionFacts svg {
+    width: 10px;
+    height: 12px;
+  }
+  .missionDetails {
+    font-size: 8px;
+    gap: 4px;
+  }
+  .emptyMissions {
+    min-height: 225px;
+    padding-inline: 20px;
+  }
+  .emptyMissions h3 {
+    font-size: 26px;
+  }
+  .emptyGroups {
+    padding: 22px 18px;
+  }
+  .emptyGroups > div {
+    min-width: 160px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .page * {
+    transition: none !important;
+  }
+}

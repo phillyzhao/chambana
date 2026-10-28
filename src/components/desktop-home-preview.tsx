@@ -25,6 +25,7 @@ import {
 import { DesktopMissions } from "./desktop-missions";
 import { DesktopGroups } from "./desktop-groups";
 import { DesktopInbox } from "./desktop-inbox";
+import { DesktopProfile } from "./desktop-profile";
 import {
   filterDesktopGroups,
   toggleDesktopGroupFilter,
@@ -105,10 +106,9 @@ const destinations = [
   { label: "Inbox", icon: MessageCircle },
 ] as const;
 
-type Destination = (typeof destinations)[number]["label"];
+type Destination = (typeof destinations)[number]["label"] | "Profile";
 type Panel =
   | { type: "mission"; id: number }
-  | { type: "profile" }
   | { type: "notifications" }
   | { type: "group"; id: number }
   | { type: "group-members"; id: number }
@@ -144,9 +144,12 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
         ? "Groups"
         : screens.length === 1 && screens[0] === "inbox"
           ? "Inbox"
-          : "Home";
+          : screens.length === 1 && screens[0] === "profile"
+            ? "Profile"
+            : "Home";
   const [panel, setPanel] = useState<Panel>(null);
   const [saved, setSaved] = useState<number[]>([]);
+  const [profileTab, setProfileTab] = useState<"saved" | "joined">("saved");
   const [joined, setJoined] = useState<number[]>([]);
   const [missionQuery, setMissionQuery] = useState("");
   const [groupQuery, setGroupQuery] = useState("");
@@ -285,19 +288,17 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   const panelTitle =
     panel?.type === "mission"
       ? selectedMission?.title
-      : panel?.type === "profile"
-        ? "Julian Park"
-        : panel?.type === "notifications"
-          ? "Notifications"
-          : panel?.type === "group"
-            ? selectedGroup?.name
-            : panel?.type === "group-members"
-              ? "Members"
-              : panel?.type === "group-filters"
-                ? "Filter groups"
-                : panel?.type === "filters"
-                  ? "Filter missions"
-                  : "";
+      : panel?.type === "notifications"
+        ? "Notifications"
+        : panel?.type === "group"
+          ? selectedGroup?.name
+          : panel?.type === "group-members"
+            ? "Members"
+            : panel?.type === "group-filters"
+              ? "Filter groups"
+              : panel?.type === "filters"
+                ? "Filter missions"
+                : "";
 
   return (
     <div className={styles.preview}>
@@ -355,8 +356,8 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
             type="button"
             className={styles.profileButton}
             aria-label="Open your profile"
-            aria-haspopup="dialog"
-            onClick={() => setPanel({ type: "profile" })}
+            aria-current={screen === "Profile" ? "page" : undefined}
+            onClick={() => navigate("Profile")}
           >
             JP
           </button>
@@ -364,7 +365,32 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
       </header>
 
       <main className={styles.main}>
-        {screen === "Missions" ? (
+        {screen === "Profile" ? (
+          <DesktopProfile
+            groups={myGroups.map((group) => ({
+              ...group,
+              members: [...group.members, "Julian Park (you)"],
+            }))}
+            missions={missions}
+            saved={saved}
+            joined={joined}
+            activeTab={profileTab}
+            onTabChange={setProfileTab}
+            onOpenGroup={(id) => setPanel({ type: "group", id })}
+            onOpenMission={(id) => setPanel({ type: "mission", id })}
+            onBrowseGroups={() => {
+              setGroupQuery("");
+              setGroupFilters([]);
+              navigate("Groups");
+            }}
+            onBrowseMissions={() => {
+              setMissionQuery("");
+              setMissionFilters([]);
+              navigate("Missions");
+            }}
+            onSave={toggleSave}
+          />
+        ) : screen === "Missions" ? (
           <DesktopMissions
             missions={filteredMissions}
             query={missionQuery}
@@ -703,9 +729,6 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                   {selectedMission.category} / +{selectedMission.nuts} nuts
                 </p>
               )}
-              {panel.type === "profile" && (
-                <div className={styles.largeAvatar}>JP</div>
-              )}
               {panel.type === "group" && (
                 <div className={styles.largeAvatar}>
                   {selectedGroup?.initials}
@@ -864,74 +887,6 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                       . Cropped and shown in grayscale under the same license.
                     </p>
                   )}
-                </>
-              )}
-
-              {panel.type === "profile" && (
-                <>
-                  <p className={styles.handle}>@julianpark</p>
-                  <div className={styles.stats}>
-                    <span>
-                      <strong>340</strong>Nuts
-                    </span>
-                    <span>
-                      <strong>6</strong>Missions
-                    </span>
-                    <span>
-                      <strong>{joinedGroups.length}</strong>
-                      {joinedGroups.length === 1 ? "Group" : "Groups"}
-                    </span>
-                  </div>
-                  <div className={styles.interests}>
-                    <span>Outdoors</span>
-                    <span>Books</span>
-                    <span>Coffee</span>
-                  </div>
-                  <h3 className={styles.smallHeading}>
-                    Your groups <span>{myGroups.length}</span>
-                  </h3>
-                  {myGroups.length ? (
-                    myGroups.map((group) => (
-                      <button
-                        className={styles.panelRow}
-                        type="button"
-                        key={group.id}
-                        onClick={() =>
-                          setPanel({ type: "group", id: group.id })
-                        }
-                      >
-                        <Users size={17} aria-hidden="true" />
-                        <span>{group.name}</span>
-                        <ChevronRight size={16} aria-hidden="true" />
-                      </button>
-                    ))
-                  ) : (
-                    <p className={styles.muted}>Join a group to see it here.</p>
-                  )}
-                  <h3 className={styles.smallHeading}>
-                    Saved missions <span>{saved.length}</span>
-                  </h3>
-                  {saved.length ? (
-                    saved.map((id) => (
-                      <button
-                        className={styles.panelRow}
-                        type="button"
-                        key={id}
-                        onClick={() => setPanel({ type: "mission", id })}
-                      >
-                        <Bookmark size={17} aria-hidden="true" />
-                        <span>{missions[id].title}</span>
-                        <ChevronRight size={16} aria-hidden="true" />
-                      </button>
-                    ))
-                  ) : (
-                    <p className={styles.muted}>
-                      Save a mission to come back to it here.
-                    </p>
-                  )}
-                  <p className={styles.demoNote}>
-                    Sample profile for the design preview.
-                  </p>
                 </>
               )}
 
