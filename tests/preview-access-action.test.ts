@@ -2,8 +2,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const mocks = vi.hoisted(() => ({
   get: vi.fn(),
   set: vi.fn(),
-  database: vi.fn(),
-  configured: vi.fn(),
 }));
 vi.mock("next/headers", () => ({
   cookies: async () => ({ get: mocks.get, set: mocks.set }),
@@ -13,13 +11,7 @@ vi.mock("next/navigation", () => ({
     throw new Error(`redirect:${url}`);
   },
 }));
-vi.mock("../src/lib/supabase", () => ({
-  database: mocks.database,
-  serviceDatabase: vi.fn(),
-  isConfigured: mocks.configured,
-}));
 import { unlockPreview } from "../src/app/preview-access-actions";
-import { signIn } from "../src/app/actions";
 import { hasPreviewAccess } from "../src/lib/preview-access";
 import {
   createPreviewToken,
@@ -41,7 +33,6 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("PREVIEW_ACCESS_SECRET", secret);
   mocks.get.mockReturnValue(undefined);
-  mocks.configured.mockReturnValue(false);
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -64,8 +55,12 @@ describe("access code action", () => {
   it("issues one secure shared cookie and keeps an allowed destination", async () => {
     vi.stubEnv("NODE_ENV", "production");
     await expect(
-      unlockPreview(initial, form("0010110", "/login?next=%2Fgroups")),
-    ).rejects.toThrow("redirect:/login?next=%2Fgroups");
+      unlockPreview(
+        initial,
+        form("0010110", "/design-preview?view=desktop&screen=groups"),
+      ),
+    ).rejects.toThrow("redirect:/design-preview?view=desktop&screen=groups");
+    expect(mocks.set).toHaveBeenCalledOnce();
     const [name, token, options] = mocks.set.mock.calls[0];
     expect(name).toBe(PREVIEW_ACCESS_COOKIE);
     expect(verifyPreviewToken(token, secret)).toBe(true);
@@ -78,14 +73,28 @@ describe("access code action", () => {
     });
   });
 
-  it("never redirects to a submitted external destination", async () => {
-    await expect(
-      unlockPreview(initial, form("0010110", "//evil.example")),
-    ).rejects.toThrow("redirect:/design-preview");
+  it.each([
+    "//evil.example",
+    "/login?next=%2Fgroups",
+    "/design-preview?view=desktop&screen=groups&screen=missions",
+    "/design-preview?view=desktop&token=private-code",
+  ])(
+    "sends retired or invalid destination %s to desktop Home",
+    async (destination) => {
+      await expect(
+        unlockPreview(initial, form("0010110", destination)),
+      ).rejects.toThrow(/^redirect:\/design-preview\?view=desktop$/);
+    },
+  );
+
+  it("keeps the default iPhone preview destination", async () => {
+    await expect(unlockPreview(initial, form())).rejects.toThrow(
+      /^redirect:\/design-preview$/,
+    );
   });
 });
 
-describe("page and direct sign-in protection", () => {
+describe("preview page protection", () => {
   it("checks the signature when reading the request cookie", async () => {
     expect(await hasPreviewAccess()).toBe(false);
     mocks.get.mockReturnValue({ value: "0010110" });
@@ -93,20 +102,5 @@ describe("page and direct sign-in protection", () => {
     mocks.get.mockReturnValue({ value: createPreviewToken(secret) });
     expect(await hasPreviewAccess()).toBe(true);
     expect(mocks.get).toHaveBeenCalledWith(PREVIEW_ACCESS_COOKIE);
-  });
-
-  it("blocks a direct sign-in action before contacting authentication", async () => {
-    mocks.configured.mockReturnValue(true);
-    await expect(signIn(new FormData())).rejects.toThrow(/^redirect:\/login$/);
-    expect(mocks.database).not.toHaveBeenCalled();
-    expect(mocks.configured).not.toHaveBeenCalled();
-  });
-
-  it("allows the regular sign-in path after access is granted", async () => {
-    mocks.get.mockReturnValue({ value: createPreviewToken(secret) });
-    await expect(signIn(new FormData())).rejects.toThrow(
-      "The+beta+is+not+connected+yet",
-    );
-    expect(mocks.configured).toHaveBeenCalledOnce();
   });
 });

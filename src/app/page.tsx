@@ -5,6 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { WaitlistIntro } from "@/components/waitlist-intro";
 import styles from "@/components/waitlist.module.css";
+import { DESKTOP_HOME, IOS_PREVIEW } from "@/lib/site-routes";
 
 export const metadata: Metadata = {
   title: "Chambana · Bringing Chambana together.",
@@ -45,14 +46,14 @@ export default function Home() {
       </main>
       <footer className={styles.footer}>
         <span>CHAMPAIGN–URBANA</span>
-        <Link href="/login">
+        <Link href={DESKTOP_HOME}>
           Member sign in <ArrowUpRight size={12} />
         </Link>
       </footer>
       {(process.env.NODE_ENV === "development" ||
         process.env.CHAMBANA_DESIGN_PREVIEW === "true") && (
-        <Link className={styles.previewLink} href="/design-preview">
-          iOS concepts <ArrowUpRight size={12} />
+        <Link className={styles.previewLink} href={IOS_PREVIEW}>
+          iOS preview <ArrowUpRight size={12} />
         </Link>
       )}
     </div>

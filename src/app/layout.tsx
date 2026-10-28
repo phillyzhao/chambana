@@ -3,11 +3,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Chambana Missions · Go make a memory",
+    default: "Chambana · Bringing Chambana together.",
     template: "%s · Chambana",
   },
   description:
-    "Small adventures. Shared missions. Connected, together. The UIUC-only mobile web beta.",
+    "Bringing Chambana together. Explore Chambana’s desktop experience and iOS preview.",
 };
 export const viewport: Viewport = {
   width: "device-width",

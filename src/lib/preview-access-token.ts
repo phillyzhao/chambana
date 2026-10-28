@@ -17,23 +17,37 @@ export function validPreviewCode(input: unknown) {
 }
 
 export function previewDestination(input: unknown) {
+  const desktopHome = "/design-preview?view=desktop";
   if (
     typeof input !== "string" ||
     input.length > 2048 ||
-    !input.startsWith("/") ||
+    !/^\/design-preview(?:[?#]|$)/.test(input) ||
     /[\\\u0000-\u001f\u007f]/.test(input)
   )
-    return "/design-preview";
+    return desktopHome;
   try {
     const url = new URL(input, "https://preview.invalid");
     if (
       url.origin !== "https://preview.invalid" ||
-      !["/design-preview", "/login"].includes(url.pathname)
+      url.pathname !== "/design-preview" ||
+      [...url.searchParams.keys()].some(
+        (key) => !["view", "screen"].includes(key),
+      ) ||
+      url.searchParams.getAll("view").length > 1 ||
+      url.searchParams.getAll("screen").length > 1
     )
-      return "/design-preview";
-    return `${url.pathname}${url.search}`;
+      return desktopHome;
+
+    const view = url.searchParams.get("view");
+    const screen = url.searchParams.get("screen");
+    if (view === null && screen === null) return "/design-preview";
+    if (view !== "desktop") return desktopHome;
+    if (screen === null) return desktopHome;
+    if (screen === "missions" || screen === "groups")
+      return `${desktopHome}&screen=${screen}`;
+    return desktopHome;
   } catch {
-    return "/design-preview";
+    return desktopHome;
   }
 }
 

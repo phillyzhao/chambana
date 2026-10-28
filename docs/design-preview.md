@@ -1,4 +1,10 @@
-# Waitlist and iPhone design review — October 12, 2026
+# Waitlist, desktop, and iPhone design review
+
+## Current website — October 28, 2026
+
+The waitlist remains the public homepage. **Member sign in** now opens desktop Home through the existing preview access gate; **iOS preview** opens the iPhone concept. The former campus-auth beta is retired. Old page URLs redirect to the corresponding desktop view, and its authentication, avatar, and scheduled verification handlers no longer perform backend work. The desktop and iPhone experiences remain interactive previews with sample data, not a completed account-backed MVP.
+
+The beta source is preserved in a verified SSD archive and the Git tag `archive/legacy-beta-2026-10-28`. See [the archive and recovery record](legacy-beta-archive.md). The historical design-validation sections below describe their releases at the dates shown.
 
 The homepage is a minimal monochrome waitlist with an ambient photographic backdrop, a letter-by-letter cascade reading **Bringing Chambana together.**, and an inline email form. Motion is CSS-only and respects reduced-motion preferences; screen readers get one complete heading. Email validation is server-side, and submissions use a separate private table rather than creating auth accounts.
 
@@ -11,7 +17,8 @@ The owner's local repository remains `/Volumes/Crucial X10/Chambana`; `/Users/zp
 - `/design-preview?view=desktop`: desktop Home and navigation review using the same access gate. The iPhone preview remains the default.
 - `/design-preview?view=desktop&screen=missions`: desktop Missions review, with the same access gate and shared local activity as Home.
 - `/design-preview?view=desktop&screen=groups`: desktop Groups review, with search, category/membership filters, and shared local group membership.
-- `/login`: the same access-code gate, followed by the existing campus sign-in.
+- `/login`: redirects to desktop Home; no campus sign-in page remains.
+- Old `/missions` and `/groups` URLs redirect to their desktop views. Other former beta pages redirect to desktop Home.
 - Older concept query strings now resolve to Chambana; After Hours and Field Notes have been retired.
 
 ## Desktop Home review — October 27, 2026
@@ -44,9 +51,9 @@ Dialogs, notification-read state, mission save/join, group membership, conversat
 
 Desktop review uses fixed logical phone screens: iPhone 15/16 at 393 × 852, iPhone 17 at 402 × 874. The narrow layout fits the current browser viewport instead of stretching a narrow frame to an unrelated fixed height. These are browser prototypes, not native-device screenshots or a claim of physical-size calibration on the reviewer's monitor.
 
-The preview route is noindex and unavailable in production unless `CHAMBANA_DESIGN_PREVIEW=true`. The waitlist's concept-preview link appears in development or when that flag is enabled. Existing community routes retain their prior header, navigation, and authentication through `CommunityLayout`.
+The preview route is noindex and unavailable in production unless `CHAMBANA_DESIGN_PREVIEW=true`. The waitlist's iOS preview link appears in development or when that flag is enabled. The former community routes have been retired; no active page renders `CommunityLayout`.
 
-The preview and member sign-in share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). The campus sign-in action also verifies that cookie. This is a preview entry gate; it does not replace account authentication. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. The private secret is configured in Hostinger and the ignored SSD `.env.local` file; its value is never committed.
+The desktop and iPhone previews share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). Unlock destinations are limited to the iPhone preview and desktop Home, Missions, and Groups. This is a preview entry gate; it does not create or authenticate member accounts. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. The private secret is configured in Hostinger and the ignored SSD `.env.local` file; its value is never committed.
 
 ## Production configuration — October 13, 2026
 

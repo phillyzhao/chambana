@@ -65,30 +65,51 @@ describe("shared preview access", () => {
 });
 
 describe("preview return destinations", () => {
-  it("preserves query strings on the exact permitted pages", () => {
-    expect(
-      previewDestination("/design-preview?screen=signup&device=iphone-16"),
-    ).toBe("/design-preview?screen=signup&device=iphone-16");
-    expect(previewDestination("/login?next=%2Fgroups%3Fmode%3Dmine")).toBe(
-      "/login?next=%2Fgroups%3Fmode%3Dmine",
+  it("keeps the current desktop screens and the default iPhone preview", () => {
+    expect(previewDestination("/design-preview")).toBe("/design-preview");
+    expect(previewDestination("/design-preview?view=desktop")).toBe(
+      "/design-preview?view=desktop",
     );
+    expect(
+      previewDestination("/design-preview?view=desktop&screen=missions"),
+    ).toBe("/design-preview?view=desktop&screen=missions");
+    expect(
+      previewDestination("/design-preview?screen=groups&view=desktop#ignored"),
+    ).toBe("/design-preview?view=desktop&screen=groups");
     expect(previewDestination("/design-preview#ignored")).toBe(
       "/design-preview",
     );
   });
 
-  it("rejects external URLs, confusing paths, and unrelated routes", () => {
-    for (const value of [
-      "https://evil.example/login",
-      "//evil.example/login",
-      "/\\evil.example/login",
-      "/login/other",
-      "/login\n",
-      "/%2flogin",
-      "/missions",
-      "javascript:alert(1)",
-      null,
-    ])
-      expect(previewDestination(value)).toBe("/design-preview");
+  it.each([
+    "https://evil.example/login",
+    "//evil.example/login",
+    "/\\evil.example/login",
+    "/login",
+    "/login?next=%2Fgroups%3Fmode%3Dmine",
+    "/login/other",
+    "/login\n",
+    "/%2flogin",
+    "/missions",
+    "/groups/../design-preview",
+    "/design-preview/../login",
+    "/design-preview?screen=signup&device=iphone-16",
+    "/design-preview?view=iphone",
+    "/design-preview?view=Desktop",
+    "/design-preview?view=desktop&screen=inbox",
+    "/design-preview?screen=groups",
+    "/design-preview?view=desktop&view=desktop",
+    "/design-preview?view=desktop&screen=groups&screen=groups",
+    "/design-preview?view=desktop&screen=groups&screen=missions",
+    "/design-preview?view=desktop&next=https%3A%2F%2Fevil.example",
+    "/design-preview?view=desktop&code=private-code",
+    "/design-preview?view=desktop&%63ode=private-code",
+    "/design-preview?view=desktop&screen=",
+    "/design-preview?view=desktop%0a",
+    "/design-preview?" + "x".repeat(2050),
+    "javascript:alert(1)",
+    null,
+  ])("rejects retired, hostile, or ambiguous destination %s", (value) => {
+    expect(previewDestination(value)).toBe("/design-preview?view=desktop");
   });
 });
