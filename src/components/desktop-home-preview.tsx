@@ -24,6 +24,7 @@ import {
 } from "@/lib/desktop-mission-filters";
 import { DesktopMissions } from "./desktop-missions";
 import { DesktopGroups } from "./desktop-groups";
+import { DesktopInbox } from "./desktop-inbox";
 import {
   filterDesktopGroups,
   toggleDesktopGroupFilter,
@@ -113,7 +114,6 @@ type Panel =
   | { type: "group-members"; id: number }
   | { type: "group-filters" }
   | { type: "filters" }
-  | { type: "next"; destination: Destination }
   | null;
 
 function Avatars({ people }: { people: string[] }) {
@@ -142,7 +142,9 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
       ? "Missions"
       : screens.length === 1 && screens[0] === "groups"
         ? "Groups"
-        : "Home";
+        : screens.length === 1 && screens[0] === "inbox"
+          ? "Inbox"
+          : "Home";
   const [panel, setPanel] = useState<Panel>(null);
   const [saved, setSaved] = useState<number[]>([]);
   const [joined, setJoined] = useState<number[]>([]);
@@ -150,6 +152,18 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   const [groupQuery, setGroupQuery] = useState("");
   const [groupFilters, setGroupFilters] = useState<DesktopGroupFilter[]>([]);
   const [joinedGroups, setJoinedGroups] = useState<number[]>([0]);
+  const [selectedConversation, setSelectedConversation] = useState<
+    number | null
+  >(null);
+  const [inboxQuery, setInboxQuery] = useState("");
+  const [unreadOnly, setUnreadOnly] = useState(false);
+  const [unreadConversations, setUnreadConversations] = useState<number[]>([
+    0, 2,
+  ]);
+  const [sentMessages, setSentMessages] = useState<Record<number, string[]>>(
+    {},
+  );
+  const [drafts, setDrafts] = useState<Record<number, string>>({});
   const filteredGroups = filterDesktopGroups(
     groups,
     groupQuery,
@@ -216,21 +230,39 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
   }, [notice]);
 
   function navigate(destination: Destination) {
-    if (destination !== "Inbox") {
-      setPanel(null);
-      if (screen !== destination) {
-        window.history.pushState(
-          null,
-          "",
-          destination === "Home"
-            ? "/design-preview?view=desktop"
-            : `/design-preview?view=desktop&screen=${destination.toLowerCase()}`,
-        );
-      }
-      window.scrollTo({ top: 0, behavior: "auto" });
-      return;
+    setPanel(null);
+    if (screen !== destination) {
+      window.history.pushState(
+        null,
+        "",
+        destination === "Home"
+          ? "/design-preview?view=desktop"
+          : `/design-preview?view=desktop&screen=${destination.toLowerCase()}`,
+      );
     }
-    setPanel({ type: "next", destination });
+    window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
+  function selectConversation(id: number | null) {
+    setSelectedConversation(id);
+    if (id !== null) {
+      setUnreadConversations((current) =>
+        current.filter((value) => value !== id),
+      );
+    }
+  }
+
+  function sendMessage(id: number, text: string) {
+    const message = text.trim();
+    if (!message || message.length > 1000 || !joinedGroups.includes(id)) return;
+    setSentMessages((current) => ({
+      ...current,
+      [id]: [...(current[id] ?? []), message],
+    }));
+    setDrafts((current) => ({ ...current, [id]: "" }));
+    setUnreadConversations((current) =>
+      current.filter((value) => value !== id),
+    );
   }
 
   function toggleSave(id: number) {
@@ -243,7 +275,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
     );
   }
 
-  const activeDestination = panel?.type === "next" ? panel.destination : screen;
+  const activeDestination = screen;
   const selectedMission = panel?.type === "mission" ? missions[panel.id] : null;
   const selectedId = panel?.type === "mission" ? panel.id : 0;
   const selectedGroup =
@@ -265,9 +297,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                 ? "Filter groups"
                 : panel?.type === "filters"
                   ? "Filter missions"
-                  : panel?.type === "next"
-                    ? panel.destination
-                    : "";
+                  : "";
 
   return (
     <div className={styles.preview}>
@@ -303,7 +333,6 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
               type="button"
               key={label}
               aria-current={activeDestination === label ? "page" : undefined}
-              aria-haspopup={label === "Inbox" ? "dialog" : undefined}
               onClick={() => navigate(label)}
             >
               <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
@@ -374,6 +403,36 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
               setGroupFilters([]);
             }}
             onOpenGroup={(id) => setPanel({ type: "group", id })}
+          />
+        ) : screen === "Inbox" ? (
+          <DesktopInbox
+            groups={groups.map((group) => ({
+              ...group,
+              members: [
+                ...group.members,
+                ...(joinedGroups.includes(group.id)
+                  ? ["Julian Park (you)"]
+                  : []),
+              ],
+            }))}
+            selectedId={selectedConversation}
+            query={inboxQuery}
+            unreadOnly={unreadOnly}
+            unreadIds={unreadConversations}
+            sentMessages={sentMessages}
+            drafts={drafts}
+            onQueryChange={setInboxQuery}
+            onUnreadOnlyChange={setUnreadOnly}
+            onSelect={selectConversation}
+            onDraftChange={(id, text) =>
+              setDrafts((current) => ({ ...current, [id]: text }))
+            }
+            onSend={sendMessage}
+            onJoinGroup={(id) =>
+              setJoinedGroups((current) =>
+                current.includes(id) ? current : [...current, id],
+              )
+            }
           />
         ) : (
           <>
@@ -948,6 +1007,18 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     <span>View members</span>
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
+                  <button
+                    className={styles.panelRow}
+                    type="button"
+                    onClick={() => {
+                      selectConversation(selectedGroup.id);
+                      navigate("Inbox");
+                    }}
+                  >
+                    <MessageCircle size={20} aria-hidden="true" />
+                    <span>Open conversation</span>
+                    <ChevronRight size={16} aria-hidden="true" />
+                  </button>
                   <h3 className={styles.smallHeading}>Up next</h3>
                   <button
                     className={styles.panelRow}
@@ -1083,26 +1154,6 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     {filteredGroups.length === 1 ? "group" : "groups"}
                     <ArrowRight size={17} aria-hidden="true" />
                   </button>
-                </>
-              )}
-
-              {panel.type === "next" && (
-                <>
-                  <p className={styles.muted}>
-                    This review includes desktop Home, Missions, and Groups. The{" "}
-                    {panel.destination} page will be designed in a later pass.
-                  </p>
-                  <button
-                    type="button"
-                    className={styles.primaryButton}
-                    onClick={() => setPanel(null)}
-                  >
-                    Back to {screen} <ArrowRight size={17} aria-hidden="true" />
-                  </button>
-                  <a className={styles.previewLink} href="/design-preview">
-                    Explore the iPhone preview{" "}
-                    <ArrowUpRight size={15} aria-hidden="true" />
-                  </a>
                 </>
               )}
             </div>

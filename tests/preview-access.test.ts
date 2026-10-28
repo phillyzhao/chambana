@@ -76,6 +76,9 @@ describe("preview return destinations", () => {
     expect(
       previewDestination("/design-preview?screen=groups&view=desktop#ignored"),
     ).toBe("/design-preview?view=desktop&screen=groups");
+    expect(
+      previewDestination("/design-preview?screen=inbox&view=desktop#ignored"),
+    ).toBe("/design-preview?view=desktop&screen=inbox");
     expect(previewDestination("/design-preview#ignored")).toBe(
       "/design-preview",
     );
@@ -96,7 +99,11 @@ describe("preview return destinations", () => {
     "/design-preview?screen=signup&device=iphone-16",
     "/design-preview?view=iphone",
     "/design-preview?view=Desktop",
-    "/design-preview?view=desktop&screen=inbox",
+    "/design-preview?view=desktop&screen=Inbox",
+    "/design-preview?screen=inbox",
+    "/design-preview?view=desktop&screen=inbox&screen=inbox",
+    "/design-preview?view=desktop&screen=inbox&screen=groups",
+    "/design-preview?view=desktop&screen=inbox&code=private-code",
     "/design-preview?screen=groups",
     "/design-preview?view=desktop&view=desktop",
     "/design-preview?view=desktop&screen=groups&screen=groups",

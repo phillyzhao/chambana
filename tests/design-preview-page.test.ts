@@ -66,6 +66,18 @@ describe("design preview access and view selection", () => {
     },
   );
 
+  it.each([undefined, "false"])(
+    "hides the Inbox deep link when the production flag is %s",
+    async (flag) => {
+      vi.stubEnv("CHAMBANA_DESIGN_PREVIEW", flag);
+      mocks.hasPreviewAccess.mockResolvedValue(true);
+
+      await expect(page("desktop", "inbox")).rejects.toThrow("not-found");
+      expect(mocks.notFound).toHaveBeenCalledOnce();
+      expect(mocks.hasPreviewAccess).not.toHaveBeenCalled();
+    },
+  );
+
   it("requires preview access and preserves the desktop unlock destination", async () => {
     const result = await page("desktop");
 
@@ -83,7 +95,7 @@ describe("design preview access and view selection", () => {
     expect(result.type).toBe(mocks.DesktopHomePreview);
   });
 
-  it.each(["missions", "groups"])(
+  it.each(["missions", "groups", "inbox"])(
     "preserves the supported %s deep link through the access gate",
     async (screen) => {
       const result = await page("desktop", screen);
@@ -95,7 +107,7 @@ describe("design preview access and view selection", () => {
     },
   );
 
-  it.each(["missions", "groups"])(
+  it.each(["missions", "groups", "inbox"])(
     "renders the desktop client for an unlocked %s deep link",
     async (screen) => {
       mocks.hasPreviewAccess.mockResolvedValue(true);
@@ -111,12 +123,16 @@ describe("design preview access and view selection", () => {
     { screen: "unknown" },
     { screen: "Missions" },
     { screen: "Groups" },
+    { screen: "Inbox" },
     { screen: "//evil.example" },
     { screen: ["missions", "home"] },
     { screen: ["missions", "missions"] },
     { screen: ["groups", "home"] },
     { screen: ["groups", "groups"] },
     { screen: ["groups", "missions"] },
+    { screen: ["inbox", "inbox"] },
+    { screen: ["inbox", "groups"] },
+    { screen: ["groups", "inbox"] },
   ])(
     "sanitizes unsupported desktop screen $screen to Home at unlock",
     async ({ screen }) => {
@@ -134,6 +150,9 @@ describe("design preview access and view selection", () => {
     { view: undefined, screen: "groups" },
     { view: "iphone", screen: "groups" },
     { view: ["desktop", "iphone"], screen: "groups" },
+    { view: undefined, screen: "inbox" },
+    { view: "iphone", screen: "inbox" },
+    { view: ["desktop", "iphone"], screen: "inbox" },
   ])(
     "does not apply the $screen screen to non-desktop view $view",
     async ({ view, screen }) => {

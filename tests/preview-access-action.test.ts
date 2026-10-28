@@ -52,31 +52,39 @@ describe("access code action", () => {
     expect(mocks.set).not.toHaveBeenCalled();
   });
 
-  it("issues one secure shared cookie and keeps an allowed destination", async () => {
-    vi.stubEnv("NODE_ENV", "production");
-    await expect(
-      unlockPreview(
-        initial,
-        form("0010110", "/design-preview?view=desktop&screen=groups"),
-      ),
-    ).rejects.toThrow("redirect:/design-preview?view=desktop&screen=groups");
-    expect(mocks.set).toHaveBeenCalledOnce();
-    const [name, token, options] = mocks.set.mock.calls[0];
-    expect(name).toBe(PREVIEW_ACCESS_COOKIE);
-    expect(verifyPreviewToken(token, secret)).toBe(true);
-    expect(options).toEqual({
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      path: "/",
-      maxAge: PREVIEW_ACCESS_MAX_AGE,
-    });
-  });
+  it.each(["groups", "inbox"])(
+    "issues one secure shared cookie and keeps the %s destination",
+    async (screen) => {
+      vi.stubEnv("NODE_ENV", "production");
+      await expect(
+        unlockPreview(
+          initial,
+          form("0010110", `/design-preview?view=desktop&screen=${screen}`),
+        ),
+      ).rejects.toThrow(
+        `redirect:/design-preview?view=desktop&screen=${screen}`,
+      );
+      expect(mocks.set).toHaveBeenCalledOnce();
+      const [name, token, options] = mocks.set.mock.calls[0];
+      expect(name).toBe(PREVIEW_ACCESS_COOKIE);
+      expect(verifyPreviewToken(token, secret)).toBe(true);
+      expect(options).toEqual({
+        httpOnly: true,
+        secure: true,
+        sameSite: "lax",
+        path: "/",
+        maxAge: PREVIEW_ACCESS_MAX_AGE,
+      });
+    },
+  );
 
   it.each([
     "//evil.example",
     "/login?next=%2Fgroups",
     "/design-preview?view=desktop&screen=groups&screen=missions",
+    "/design-preview?view=desktop&screen=inbox&screen=inbox",
+    "/design-preview?view=desktop&screen=inbox&screen=groups",
+    "/design-preview?view=desktop&screen=inbox&next=%2Flogin",
     "/design-preview?view=desktop&token=private-code",
   ])(
     "sends retired or invalid destination %s to desktop Home",

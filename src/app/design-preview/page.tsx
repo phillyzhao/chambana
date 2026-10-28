@@ -31,7 +31,10 @@ export default async function DesignPreviewPage({
   const params = await searchParams;
   const desktop = params.view === "desktop";
   const desktopScreen =
-    desktop && (params.screen === "missions" || params.screen === "groups")
+    desktop &&
+    (params.screen === "missions" ||
+      params.screen === "groups" ||
+      params.screen === "inbox")
       ? params.screen
       : null;
   if (!(await hasPreviewAccess())) {

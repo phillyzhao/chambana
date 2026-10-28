@@ -17,6 +17,7 @@ The owner's local repository remains `/Volumes/Crucial X10/Chambana`; `/Users/zp
 - `/design-preview?view=desktop`: desktop Home and navigation review using the same access gate. The iPhone preview remains the default.
 - `/design-preview?view=desktop&screen=missions`: desktop Missions review, with the same access gate and shared local activity as Home.
 - `/design-preview?view=desktop&screen=groups`: desktop Groups review, with search, category/membership filters, and shared local group membership.
+- `/design-preview?view=desktop&screen=inbox`: desktop Inbox, with searchable conversations, unread filtering, member lists, and local drafts/messages.
 - `/login`: redirects to desktop Home; no campus sign-in page remains.
 - Old `/missions` and `/groups` URLs redirect to their desktop views. Other former beta pages redirect to desktop Home.
 - Older concept query strings now resolve to Chambana; After Hours and Field Notes have been retired.
@@ -43,6 +44,14 @@ Each card opens a group detail panel with a live member count, named roster, lin
 
 The review URL is `https://playchambana.com/design-preview?view=desktop&screen=groups`, preserved through unlock. The iPhone route, production flag, noindex, and cookie gate remain intact. Local validation passed 176 app tests (including 29 route cases and 12 group-filter cases), TypeScript, production build, independent review, and browser checks at 1440/855/393/320px. The iPhone Groups screenshot is byte-identical before/after this work. Evidence is in `design/desktop-groups-2026-10-27/`; the latest QA report is at the top of `design-qa.md`.
 
+## Desktop Inbox review — October 28, 2026
+
+Inbox keeps the monochrome type, initials tiles, and quiet navigation of the iPhone concept. Desktop uses a conversation list beside the selected thread; at 760px and below, the list and thread become separate views with Back controls. All and Unread are mutually exclusive. Search matches group names, current member names, or the latest message, and combines with Unread. Opening a thread marks it read while keeping that thread visible even if its row leaves the filtered list. Empty states provide a direct reset.
+
+The three conversations use the same sample groups and messages as iOS. Member lists derive from the desktop's current group memberships. Joining from Inbox updates Groups and the profile; leaving a group removes the composer until rejoining. Drafts and sent messages are stored per conversation in the shared desktop shell, survive page navigation and browser Back, and reset on reload. Enter sends, Shift+Enter inserts a line break, and IME composition does not submit. Blank messages are blocked; messages are limited to 1,000 characters and wrap without horizontal overflow. The interface identifies messages as local preview activity.
+
+The direct review URL is `https://playchambana.com/design-preview?view=desktop&screen=inbox`, preserved through the signed access gate. Duplicate or invalid screen values still fall back to Home. The iPhone source and the retired beta entry points are unchanged. Implementation is in `desktop-inbox.tsx`, its CSS module, the shared desktop shell, and `desktop-inbox.ts`. Evidence is in `design/desktop-inbox-2026-10-28/`; see the latest entry in `design-qa.md`.
+
 ## iPhone preview
 
 Chambana keeps its editorial type and generous space, top-left profile, top-right notifications, and four floating glass tabs: Home, Missions, Groups, Inbox. Decorative taglines and card descriptions have been removed; useful labels, location, time, membership, and message content remain. Mission rewards and profile balances use nuts. Groups support search, category, and membership filters.
@@ -53,7 +62,7 @@ Desktop review uses fixed logical phone screens: iPhone 15/16 at 393 × 852, iPh
 
 The preview route is noindex and unavailable in production unless `CHAMBANA_DESIGN_PREVIEW=true`. The waitlist's iOS preview link appears in development or when that flag is enabled. The former community routes have been retired; no active page renders `CommunityLayout`.
 
-The desktop and iPhone previews share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). Unlock destinations are limited to the iPhone preview and desktop Home, Missions, and Groups. This is a preview entry gate; it does not create or authenticate member accounts. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. The private secret is configured in Hostinger and the ignored SSD `.env.local` file; its value is never committed.
+The desktop and iPhone previews share server-validated access code `0010110`. Unlocking stores a signed, HttpOnly, SameSite=Lax cookie for seven days (Secure in production). Unlock destinations are limited to the iPhone preview and desktop Home, Missions, Groups, and Inbox. This is a preview entry gate; it does not create or authenticate member accounts. `PREVIEW_ACCESS_SECRET` must be at least 32 characters in the deployment environment; missing configuration fails closed. The private secret is configured in Hostinger and the ignored SSD `.env.local` file; its value is never committed.
 
 ## Production configuration — October 13, 2026
 

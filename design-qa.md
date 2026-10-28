@@ -1,3 +1,35 @@
+# Desktop Inbox design review — October 28, 2026
+
+final result: passed
+
+## Scope and reference
+
+Inbox extends the approved desktop shell and existing iPhone conversation list. The current member entry and waitlist remain in place. Review URL: `https://playchambana.com/design-preview?view=desktop&screen=inbox`. All messages and membership changes remain sample interactions local to the preview.
+
+## Design and responsive behavior
+
+- Retains Georgia headings, monochrome initials tiles, #f8f8f8 page background, white surfaces, quiet borders, and the existing floating navigation. No new image assets or color accents.
+- Desktop shows searchable conversations beside a thread; at 760px and below, Back controls switch between the list and conversation. Members use a separate view within the conversation pane.
+- Captured the final production build at 1440px, 855px, 393px, and 320px. Document scrollWidth matched viewport width. A 1,000-character unbroken message also wrapped within the 320px thread without horizontal overflow.
+- Active secondary text uses #6d6d6d for improved contrast; disabled send styling stays muted.
+- Evidence: `design/desktop-inbox-2026-10-28/desktop-inbox.png`, `compact-desktop-855.png`, `phone-thread-393.png`, `phone-list-320.png`; source reference: `ios-inbox-reference.png`.
+
+## Interaction and verification
+
+- Checked search, clear/reset, All/Unread, no-match and all-read states. Opening the last unread thread removes its row while preserving the thread and moving focus into it; narrow Back restores focus to a row or search.
+- Checked thread switching, member rosters, joining from Inbox, shared Groups counts, leaving from Groups, and Groups → Open conversation. Leaving disables replies while retaining the local message history.
+- Checked per-thread draft retention, Enter sending, Shift+Enter newline, blank-message rejection, character limit, message wrapping, and state preservation across desktop Home/Inbox and browser Back. IME guards were code-reviewed. Reload restores the sample state.
+- The fresh production-build browser had no console errors or warnings. A transient development hot-refresh warning while an effect dependency list changed was resolved before final verification.
+- A fresh browser origin unlocked directly into Inbox through the access-code form. Anonymous HTML retained the Inbox destination and noindex; retired `/login` still redirected to desktop Home. Default iOS and production-flag behavior remain covered by route tests.
+- 274 application tests and 71 isolated database tests passed (345 total), along with TypeScript, production build, whitespace checks, and independent code review. The final contrast-only revision was rebuilt successfully.
+- iOS components, waitlist, proxy, and retired beta handlers have no source changes in this release. No backend messaging or account integration is claimed.
+
+## Prior review snapshots
+
+Reports below describe earlier releases. Desktop Home, Missions, Groups, and Inbox are now implemented. Hosted deployment verification follows the commit and push.
+
+---
+
 # Desktop Groups design review — October 27, 2026
 
 final result: passed
