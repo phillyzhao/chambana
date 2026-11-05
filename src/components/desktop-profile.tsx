@@ -22,8 +22,10 @@ type Group = {
   nextMission: { title: string; time: string; location: string };
 };
 
+type MissionId = string | number;
+
 type Mission = {
-  id: number;
+  id: MissionId;
   title: string;
   location: string;
   time: string;
@@ -38,15 +40,15 @@ type MissionTab = "saved" | "joined";
 type Props = {
   groups: Group[];
   missions: Mission[];
-  saved: number[];
-  joined: number[];
+  saved: MissionId[];
+  joined: MissionId[];
   activeTab: MissionTab;
   onTabChange: (value: MissionTab) => void;
   onOpenGroup: (id: number) => void;
-  onOpenMission: (id: number) => void;
+  onOpenMission: (id: MissionId) => void;
   onBrowseGroups: () => void;
   onBrowseMissions: () => void;
-  onSave: (id: number) => void;
+  onSave: (id: MissionId) => void;
 };
 
 const tabs: MissionTab[] = ["saved", "joined"];

@@ -26,11 +26,16 @@ import { DesktopMissions } from "./desktop-missions";
 import { DesktopGroups } from "./desktop-groups";
 import { DesktopInbox } from "./desktop-inbox";
 import { DesktopProfile } from "./desktop-profile";
+import { isPublishedMission } from "@/lib/mission-library";
 import {
   filterDesktopGroups,
   toggleDesktopGroupFilter,
   type DesktopGroupFilter,
 } from "@/lib/desktop-group-filters";
+import {
+  MissionLibraryFeed,
+  type MissionLibraryFeedData,
+} from "./mission-library-feed";
 import styles from "./desktop-home-preview.module.css";
 
 const missions = [
@@ -72,7 +77,7 @@ const missions = [
   },
 ];
 
-const groups = [
+const demoGroups = [
   {
     id: 0,
     name: "The in-between club",
@@ -134,7 +139,24 @@ function Avatars({ people }: { people: string[] }) {
   );
 }
 
-export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
+export function DesktopHomePreview({
+  dateLabel,
+  missionLibrary,
+}: {
+  dateLabel: string;
+  missionLibrary?: MissionLibraryFeedData;
+}) {
+  const groups = missionLibrary
+    ? demoGroups.map((group) => ({
+        ...group,
+        nextMission: {
+          ...group.nextMission,
+          title: "Choose a local mission",
+          time: "Browse the mission library",
+          location: "Urbana–Champaign",
+        },
+      }))
+    : demoGroups;
   const searchParams = useSearchParams();
   const screens = searchParams.getAll("screen");
   const screen =
@@ -149,6 +171,9 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
             : "Home";
   const [panel, setPanel] = useState<Panel>(null);
   const [saved, setSaved] = useState<number[]>([]);
+  const [librarySaved, setLibrarySaved] = useState<string[]>([]);
+  const [librarySelected, setLibrarySelected] = useState<string | null>(null);
+  const [librarySavedOnly, setLibrarySavedOnly] = useState(false);
   const [profileTab, setProfileTab] = useState<"saved" | "joined">("saved");
   const [joined, setJoined] = useState<number[]>([]);
   const [missionQuery, setMissionQuery] = useState("");
@@ -234,6 +259,7 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
 
   function navigate(destination: Destination) {
     setPanel(null);
+    setLibrarySelected(null);
     if (screen !== destination) {
       window.history.pushState(
         null,
@@ -277,6 +303,41 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
       wasSaved ? "Removed from saved missions" : "Mission saved for later",
     );
   }
+
+  function toggleLibrarySave(id: string) {
+    const wasSaved = librarySaved.includes(id);
+    setLibrarySaved((current) =>
+      current.includes(id)
+        ? current.filter((value) => value !== id)
+        : [...current, id],
+    );
+    setNotice(
+      wasSaved ? "Removed from saved missions" : "Mission saved for later",
+    );
+  }
+
+  const libraryProfileMissions = missionLibrary?.error
+    ? []
+    : (missionLibrary?.missions ?? [])
+        .filter((mission) => isPublishedMission(mission))
+        .map((mission) => ({
+          id: mission.id,
+          title: mission.title,
+          location: `${mission.location_name}, ${mission.city}`,
+          time: mission.ends_at
+            ? `Available until ${new Intl.DateTimeFormat("en-US", {
+                timeZone: "America/Chicago",
+                month: "short",
+                day: "numeric",
+                hour: "numeric",
+                minute: "2-digit",
+              }).format(new Date(mission.ends_at))} CT`
+            : "Available now",
+          duration: `${mission.duration_minutes} minutes · ${mission.cost_label}`,
+          nuts: mission.nuts,
+          image: "/design-assets/social.jpg",
+          alt: "Illustrative campus social scene",
+        }));
 
   const activeDestination = screen;
   const selectedMission = panel?.type === "mission" ? missions[panel.id] : null;
@@ -365,19 +426,37 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
       </header>
 
       <main className={styles.main}>
-        {screen === "Profile" ? (
+        {missionLibrary && (screen === "Home" || screen === "Missions") ? (
+          <MissionLibraryFeed
+            data={missionLibrary}
+            home={screen === "Home"}
+            saved={librarySaved}
+            onToggleSave={toggleLibrarySave}
+            selectedId={librarySelected}
+            onSelectMission={setLibrarySelected}
+            savedOnly={librarySavedOnly}
+            onSavedOnlyChange={setLibrarySavedOnly}
+          />
+        ) : screen === "Profile" ? (
           <DesktopProfile
             groups={myGroups.map((group) => ({
               ...group,
               members: [...group.members, "Julian Park (you)"],
             }))}
-            missions={missions}
-            saved={saved}
-            joined={joined}
+            missions={missionLibrary ? libraryProfileMissions : missions}
+            saved={missionLibrary ? librarySaved : saved}
+            joined={missionLibrary ? [] : joined}
             activeTab={profileTab}
             onTabChange={setProfileTab}
             onOpenGroup={(id) => setPanel({ type: "group", id })}
-            onOpenMission={(id) => setPanel({ type: "mission", id })}
+            onOpenMission={(id) => {
+              if (missionLibrary && typeof id === "string") {
+                navigate("Missions");
+                setLibrarySelected(id);
+              } else if (typeof id === "number") {
+                setPanel({ type: "mission", id });
+              }
+            }}
             onBrowseGroups={() => {
               setGroupQuery("");
               setGroupFilters([]);
@@ -388,7 +467,11 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
               setMissionFilters([]);
               navigate("Missions");
             }}
-            onSave={toggleSave}
+            onSave={(id) => {
+              if (missionLibrary && typeof id === "string")
+                toggleLibrarySave(id);
+              else if (typeof id === "number") toggleSave(id);
+            }}
           />
         ) : screen === "Missions" ? (
           <DesktopMissions
@@ -913,12 +996,19 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     type="button"
                     onClick={() => {
                       setNotificationsRead(true);
-                      setPanel({ type: "mission", id: 0 });
+                      if (missionLibrary) {
+                        setPanel(null);
+                        navigate("Missions");
+                      } else setPanel({ type: "mission", id: 0 });
                     }}
                   >
                     <Compass size={20} aria-hidden="true" />
                     <span>
-                      <strong>Take the long way home</strong>
+                      <strong>
+                        {missionLibrary
+                          ? "Explore local missions"
+                          : "Take the long way home"}
+                      </strong>
                       <small>10 minutes ago</small>
                     </span>
                     <ChevronRight size={16} aria-hidden="true" />
@@ -979,15 +1069,25 @@ export function DesktopHomePreview({ dateLabel }: { dateLabel: string }) {
                     className={styles.panelRow}
                     type="button"
                     onClick={() =>
-                      setPanel({ type: "mission", id: selectedGroup.mission })
+                      missionLibrary
+                        ? (setPanel(null), navigate("Missions"))
+                        : setPanel({
+                            type: "mission",
+                            id: selectedGroup.mission,
+                          })
                     }
                   >
                     <Compass size={20} aria-hidden="true" />
                     <span>
-                      <strong>{selectedGroup.nextMission.title}</strong>
+                      <strong>
+                        {missionLibrary
+                          ? "Explore local missions"
+                          : selectedGroup.nextMission.title}
+                      </strong>
                       <small>
-                        {selectedGroup.nextMission.time} ·{" "}
-                        {selectedGroup.nextMission.location}
+                        {missionLibrary
+                          ? "Choose an adventure for your group"
+                          : `${selectedGroup.nextMission.time} · ${selectedGroup.nextMission.location}`}
                       </small>
                     </span>
                     <ChevronRight size={16} aria-hidden="true" />

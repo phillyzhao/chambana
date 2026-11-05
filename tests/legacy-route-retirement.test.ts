@@ -54,6 +54,7 @@ const currentAndUnknownRoutes = [
   "/api/cron/verify",
   "/_next/static/app.js",
   "/design-assets/lounge.jpg",
+  "/mission-admin",
   "/groups-new",
   "/missions-extra",
   "/login-other",
@@ -207,14 +208,19 @@ describe("legacy page fallback", () => {
     },
   );
 
-  it("ships only the waitlist, preview, and retirement fallback pages with no beta layouts", () => {
+  it("ships the waitlist, preview, new mission editor, and retirement fallback without beta layouts", () => {
     const files = readdirSync(new URL("../src/app", import.meta.url), {
       recursive: true,
       encoding: "utf8",
     });
     expect(
       files.filter((path) => /(^|\/)page\.tsx$/.test(path)).sort(),
-    ).toEqual(["[...legacy]/page.tsx", "design-preview/page.tsx", "page.tsx"]);
+    ).toEqual([
+      "[...legacy]/page.tsx",
+      "design-preview/page.tsx",
+      "mission-admin/page.tsx",
+      "page.tsx",
+    ]);
     expect(files.filter((path) => /(^|\/)layout\.tsx$/.test(path))).toEqual([
       "layout.tsx",
     ]);

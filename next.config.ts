@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  outputFileTracingIncludes: {
+    "/mission-admin": ["./data/mission-library-seed.json"],
+  },
   experimental: {
     serverActions: { bodySizeLimit: "10mb" },
     // ExFAT/macOS metadata can make persisted Turbopack caches unreadable.

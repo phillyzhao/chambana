@@ -38,3 +38,9 @@ GitHub `main` auto-deploys to [playchambana.com](https://playchambana.com). Veri
 - [Legacy beta archive and restore reference](docs/legacy-beta-archive.md)
 
 The source archive contains no private environment files, user uploads, or database backup. Existing backend libraries, migrations, and isolated tests remain available for future product work; they do not restore the retired routes or actions.
+
+## Shared mission library
+
+The `/mission-admin` page adds, edits, schedules, and explicitly approves a shared Supabase catalog for both previews. It uses a separate private owner key, never the public preview code. Delivery requires `CHAMBANA_MISSION_LIBRARY_ENABLED=true`; only approved, unarchived missions in their saved availability window appear. The 25 Urbana–Champaign starter missions are stored in the separate `mission_library` table. They do not change legacy missions or assignments. The owner approved releasing the current 25 on November 4, 2026.
+
+See [setup, approval, and scheduling](docs/mission-library.md) and [the 25 missions for review](docs/mission-library-seed-review.md). Apply only the new mission-library migration when setting up this feature; the retirement warning above still applies to historical setup and import scripts.

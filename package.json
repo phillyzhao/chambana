@@ -12,6 +12,7 @@
     "test:app": "vitest run --exclude tests/database.test.ts",
     "test:database": "vitest run tests/database.test.ts",
     "missions:import": "node --env-file-if-exists=.env.local scripts/import-missions.mjs",
+    "missions:seed-drafts": "node --env-file-if-exists=.env.local scripts/seed-mission-library.mjs",
     "missions:replace": "node --env-file-if-exists=.env.local scripts/replace-catalog.mjs",
     "preflight": "node --env-file-if-exists=.env.local scripts/preflight.mjs",
     "cron:verify": "node --env-file-if-exists=.env.local scripts/cron-verify.mjs",

@@ -24,6 +24,11 @@ import {
 import { useEffect, useId, useRef, useState } from "react";
 import { IOSConversation } from "./ios-conversation";
 import { SignupFlow } from "./ios-signup";
+import { isPublishedMission } from "@/lib/mission-library";
+import {
+  MissionLibraryFeed,
+  type MissionLibraryFeedData,
+} from "./mission-library-feed";
 import styles from "./ios-concepts.module.css";
 
 type PreviewMode = "app" | "signup";
@@ -78,7 +83,7 @@ const missions = [
   },
 ];
 
-const groups = [
+const demoGroups = [
   {
     name: "The in-between club",
     initials: "IC",
@@ -165,7 +170,11 @@ function AvatarStack({
   );
 }
 
-export function IOSConcepts() {
+export function IOSConcepts({
+  missionLibrary,
+}: {
+  missionLibrary?: MissionLibraryFeedData;
+}) {
   const [mode, setMode] = useState<PreviewMode>("app");
   const [device, setDevice] = useState("16");
   const [signupCount, setSignupCount] = useState(0);
@@ -183,7 +192,9 @@ export function IOSConcepts() {
         </a>
 
         <div className={styles.previewLinks}>
-          <a href="/design-preview?view=desktop">Desktop preview <ArrowUpRight size={13} aria-hidden="true" /></a>
+          <a href="/design-preview?view=desktop">
+            Desktop preview <ArrowUpRight size={13} aria-hidden="true" />
+          </a>
           <span className={styles.privateLabel}>LOCAL DEMO</span>
         </div>
       </header>
@@ -220,6 +231,7 @@ export function IOSConcepts() {
       </div>
       <AppPhone
         key={signupCount}
+        missionLibrary={missionLibrary}
         mode={mode}
         device={device}
         profile={profile}
@@ -239,6 +251,7 @@ export function IOSConcepts() {
 }
 
 function AppPhone({
+  missionLibrary,
   mode,
   device,
   profile,
@@ -246,6 +259,7 @@ function AppPhone({
   onBack,
   onComplete,
 }: {
+  missionLibrary?: MissionLibraryFeedData;
   mode: PreviewMode;
   device: string;
   profile: PreviewProfile;
@@ -253,9 +267,18 @@ function AppPhone({
   onBack: () => void;
   onComplete: (profile: PreviewProfile) => void;
 }) {
+  const groups = missionLibrary
+    ? demoGroups.map((group) => ({
+        ...group,
+        next: "Choose a local mission in Urbana–Champaign",
+      }))
+    : demoGroups;
   const [tab, setTab] = useState<Tab>("Home");
   const [sheet, setSheet] = useState<Sheet | null>(null);
   const [saved, setSaved] = useState<number[]>([]);
+  const [librarySaved, setLibrarySaved] = useState<string[]>([]);
+  const [librarySelected, setLibrarySelected] = useState<string | null>(null);
+  const [librarySavedOnly, setLibrarySavedOnly] = useState(false);
   const [joined, setJoined] = useState<number[]>([]);
   const [joinedGroups, setJoinedGroups] = useState<number[]>(
     isNewProfile ? [] : [0],
@@ -357,6 +380,7 @@ function AppPhone({
 
   const switchTab = (next: Tab) => {
     setConversation(null);
+    setLibrarySelected(null);
     setTab(next);
     scrollRef.current?.scrollTo({ top: 0, behavior: "instant" });
   };
@@ -369,6 +393,23 @@ function AppPhone({
       isSaved ? "Removed from saved missions" : "Added to your saved missions",
     );
   };
+  const toggleLibrarySave = (id: string) => {
+    const wasSaved = librarySaved.includes(id);
+    setLibrarySaved((current) =>
+      current.includes(id)
+        ? current.filter((value) => value !== id)
+        : [...current, id],
+    );
+    setToast(
+      wasSaved ? "Removed from saved missions" : "Added to your saved missions",
+    );
+  };
+  const librarySavedCount = missionLibrary?.error
+    ? 0
+    : (missionLibrary?.missions ?? []).filter(
+        (mission) =>
+          librarySaved.includes(mission.id) && isPublishedMission(mission),
+      ).length;
   const toggleJoin = (id: number) => {
     setJoined((current) =>
       current.includes(id)
@@ -601,8 +642,21 @@ function AppPhone({
           id={`${uid}-panel`}
           aria-labelledby={`${uid}-${tab}-tab`}
         >
-          {tab === "Home" && home}
-          {tab === "Missions" && (
+          {missionLibrary && (tab === "Home" || tab === "Missions") && (
+            <MissionLibraryFeed
+              data={missionLibrary}
+              compact
+              home={tab === "Home"}
+              saved={librarySaved}
+              onToggleSave={toggleLibrarySave}
+              selectedId={librarySelected}
+              onSelectMission={setLibrarySelected}
+              savedOnly={librarySavedOnly}
+              onSavedOnlyChange={setLibrarySavedOnly}
+            />
+          )}
+          {!missionLibrary && tab === "Home" && home}
+          {!missionLibrary && tab === "Missions" && (
             <div className={styles.secondaryScreen}>
               <div className={styles.filterToolbar}>
                 <button
@@ -907,14 +961,17 @@ function AppPhone({
                   type="button"
                   className={styles.sheetRow}
                   onClick={() => {
-                    setMissionFilters(["Saved"]);
+                    if (missionLibrary) setLibrarySavedOnly(true);
+                    else setMissionFilters(["Saved"]);
                     switchTab("Missions");
                     setSheet(null);
                   }}
                 >
                   <Bookmark size={18} />
                   <span>Saved missions</span>
-                  <small>{saved.length}</small>
+                  <small>
+                    {missionLibrary ? librarySavedCount : saved.length}
+                  </small>
                   <ChevronRight size={16} />
                 </button>
                 <button
@@ -962,14 +1019,21 @@ function AppPhone({
                   className={styles.notificationItem}
                   onClick={() => {
                     setNotificationsRead(true);
-                    openMission(primaryId);
+                    if (missionLibrary) {
+                      setSheet(null);
+                      switchTab("Missions");
+                    } else openMission(primaryId);
                   }}
                 >
                   <span className={styles.notificationIcon}>
                     <Compass size={21} />
                   </span>
                   <span>
-                    <strong>{missions[primaryId].title}</strong>
+                    <strong>
+                      {missionLibrary
+                        ? "Explore local missions"
+                        : missions[primaryId].title}
+                    </strong>
                     <small>10 MINUTES AGO</small>
                   </span>
                 </button>
@@ -1093,14 +1157,24 @@ function AppPhone({
                     <button
                       type="button"
                       className={styles.groupPlan}
-                      onClick={() => openMission(group.mission)}
+                      onClick={() => {
+                        if (missionLibrary) {
+                          setSheet(null);
+                          switchTab("Missions");
+                        } else openMission(group.mission);
+                      }}
                     >
                       <Compass size={21} />
                       <span>
-                        <strong>{missions[group.mission].short}</strong>
+                        <strong>
+                          {missionLibrary
+                            ? "Explore local missions"
+                            : missions[group.mission].short}
+                        </strong>
                         <small>
-                          {missions[group.mission].location} ·{" "}
-                          {missions[group.mission].time}
+                          {missionLibrary
+                            ? "Choose an adventure for your group"
+                            : `${missions[group.mission].location} · ${missions[group.mission].time}`}
                         </small>
                       </span>
                       <ArrowUpRight size={18} />

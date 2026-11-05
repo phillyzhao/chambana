@@ -4,6 +4,7 @@ import { IOSConcepts } from "@/components/ios-concepts";
 import { DesktopHomePreview } from "@/components/desktop-home-preview";
 import { PreviewAccessGate } from "@/components/preview-access-gate";
 import { hasPreviewAccess } from "@/lib/preview-access";
+import { listPublishedMissions } from "@/lib/mission-library-store";
 
 export const metadata: Metadata = {
   title: "Chambana · design preview",
@@ -51,6 +52,12 @@ export default async function DesignPreviewPage({
       />
     );
   }
+  // Drafts never reach either client. Delivery is opt-in and the store also
+  // enforces approval, archive state, and the availability window.
+  const missionLibrary =
+    process.env.CHAMBANA_MISSION_LIBRARY_ENABLED === "true"
+      ? await listPublishedMissions()
+      : undefined;
   if (desktop) {
     const dateLabel = new Intl.DateTimeFormat("en-US", {
       timeZone: "America/Chicago",
@@ -58,7 +65,12 @@ export default async function DesignPreviewPage({
       month: "long",
       day: "numeric",
     }).format(new Date());
-    return <DesktopHomePreview dateLabel={dateLabel} />;
+    return (
+      <DesktopHomePreview
+        dateLabel={dateLabel}
+        missionLibrary={missionLibrary}
+      />
+    );
   }
-  return <IOSConcepts />;
+  return <IOSConcepts missionLibrary={missionLibrary} />;
 }

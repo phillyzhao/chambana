@@ -2,12 +2,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const mocks = vi.hoisted(() => ({
   hasPreviewAccess: vi.fn(),
+  listPublishedMissions: vi.fn(),
   notFound: vi.fn(() => {
     throw new Error("not-found");
   }),
   DesktopHomePreview: vi.fn(() => null),
   IOSConcepts: vi.fn(() => null),
   PreviewAccessGate: vi.fn(() => null),
+}));
+
+vi.mock("../src/lib/mission-library-store", () => ({
+  listPublishedMissions: mocks.listPublishedMissions,
 }));
 
 vi.mock("next/navigation", () => ({ notFound: mocks.notFound }));
@@ -36,6 +41,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("NODE_ENV", "production");
   vi.stubEnv("CHAMBANA_DESIGN_PREVIEW", "true");
+  vi.stubEnv("CHAMBANA_MISSION_LIBRARY_ENABLED", "false");
+  mocks.listPublishedMissions.mockResolvedValue({ missions: [] });
   mocks.hasPreviewAccess.mockResolvedValue(false);
 });
 
@@ -205,5 +212,48 @@ describe("design preview access and view selection", () => {
 
     expect(result.type).toBe(mocks.PreviewAccessGate);
     expect(result.props.destination).toBe("/design-preview");
+  });
+});
+
+describe("shared mission catalog delivery", () => {
+  it("does not read or serialize the library before preview authentication", async () => {
+    vi.stubEnv("CHAMBANA_MISSION_LIBRARY_ENABLED", "true");
+    const result = await page("desktop");
+    expect(result.type).toBe(mocks.PreviewAccessGate);
+    expect(mocks.listPublishedMissions).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, "false", "TRUE", "1"])(
+    "keeps MVP delivery off for flag %s",
+    async (flag) => {
+      vi.stubEnv("CHAMBANA_MISSION_LIBRARY_ENABLED", flag);
+      mocks.hasPreviewAccess.mockResolvedValue(true);
+      const result = await page("desktop");
+      expect(result.props.missionLibrary).toBeUndefined();
+      expect(mocks.listPublishedMissions).not.toHaveBeenCalled();
+    },
+  );
+
+  it("passes the same shared catalog to iPhone and desktop", async () => {
+    vi.stubEnv("CHAMBANA_MISSION_LIBRARY_ENABLED", "true");
+    mocks.hasPreviewAccess.mockResolvedValue(true);
+    const catalog = {
+      missions: [
+        { id: "approved-mission", title: "An approved local adventure" },
+      ],
+    };
+    mocks.listPublishedMissions.mockResolvedValue(catalog);
+    const desktop = await page("desktop");
+    const iphone = await page();
+    expect(desktop.props.missionLibrary).toEqual(catalog);
+    expect(iphone.props.missionLibrary).toEqual(catalog);
+  });
+
+  it("preserves an empty or unavailable catalog without falling back to drafts", async () => {
+    vi.stubEnv("CHAMBANA_MISSION_LIBRARY_ENABLED", "true");
+    mocks.hasPreviewAccess.mockResolvedValue(true);
+    const unavailable = { missions: [], error: "unavailable" };
+    mocks.listPublishedMissions.mockResolvedValue(unavailable);
+    expect((await page()).props.missionLibrary).toEqual(unavailable);
   });
 });
