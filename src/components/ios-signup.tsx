@@ -41,7 +41,7 @@ const titles = [
   "What should we call you?",
   "Your Illinois email.",
   "Confirm your email.",
-  "Make it yours.",
+  "Pick your @name.",
   "What brings you out?",
 ];
 
@@ -457,7 +457,7 @@ export function SignupFlow({
               {step === 0
                 ? "Get started"
                 : step === 6
-                  ? "Enter Chambana"
+                  ? "Find something to do"
                   : step === 5 && !selected.length
                     ? "Skip for now"
                     : "Continue"}

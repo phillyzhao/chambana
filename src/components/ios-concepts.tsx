@@ -389,9 +389,7 @@ function AppPhone({
     setSaved((current) =>
       isSaved ? current.filter((value) => value !== id) : [...current, id],
     );
-    setToast(
-      isSaved ? "Removed from saved missions" : "Added to your saved missions",
-    );
+    setToast(isSaved ? "Removed from saved missions" : "Saved for later.");
   };
   const toggleLibrarySave = (id: string) => {
     const wasSaved = librarySaved.includes(id);
@@ -400,9 +398,7 @@ function AppPhone({
         ? current.filter((value) => value !== id)
         : [...current, id],
     );
-    setToast(
-      wasSaved ? "Removed from saved missions" : "Added to your saved missions",
-    );
+    setToast(wasSaved ? "Removed from saved missions" : "Saved for later.");
   };
   const librarySavedCount = missionLibrary?.error
     ? 0
@@ -685,7 +681,7 @@ function AppPhone({
               {filteredMissions.length === 0 && (
                 <div className={styles.emptyState}>
                   <Compass size={35} strokeWidth={1} />
-                  <h3>No matching missions</h3>
+                  <h3>Nothing matches that.</h3>
                   <button
                     type="button"
                     className={styles.primaryButton}
@@ -755,7 +751,7 @@ function AppPhone({
                       {group.category}
                     </span>
                     <span className={styles.groupNext}>
-                      NEXT UP <ArrowUpRight size={14} />
+                      Pick a challenge <ArrowUpRight size={14} />
                       <span>{group.next}</span>
                     </span>
                   </button>
@@ -1153,7 +1149,7 @@ function AppPhone({
                       <Users size={17} />
                       {group.members + (isJoined ? 1 : 0)} members · UIUC
                     </div>
-                    <h3 className={styles.sheetSubheading}>Next mission</h3>
+                    <h3 className={styles.sheetSubheading}>Pick a challenge</h3>
                     <button
                       type="button"
                       className={styles.groupPlan}
@@ -1173,7 +1169,7 @@ function AppPhone({
                         </strong>
                         <small>
                           {missionLibrary
-                            ? "Choose an adventure for your group"
+                            ? "Find something to do together."
                             : `${missions[group.mission].location} · ${missions[group.mission].time}`}
                         </small>
                       </span>
@@ -1199,7 +1195,7 @@ function AppPhone({
                         className={styles.secondaryButton}
                         onClick={() => openConversation(id)}
                       >
-                        Open conversation <MessageCircle size={17} />
+                        Open group chat <MessageCircle size={17} />
                       </button>
                     )}
                   </div>

@@ -84,7 +84,7 @@ export function DesktopMissions({
             id="desktop-mission-search"
             ref={searchRef}
             type="search"
-            placeholder="Search missions or places"
+            placeholder="Search by challenge or place"
             value={query}
             onChange={(event) => onQueryChange(event.target.value)}
           />
@@ -255,7 +255,7 @@ export function DesktopMissions({
       {missions.length === 0 && (
         <div className={styles.empty}>
           <Compass size={35} strokeWidth={1} aria-hidden="true" />
-          <h2>No matching missions.</h2>
+          <h2>Nothing matches that.</h2>
           <p>
             {query.trim()
               ? "Try another title or place, or clear your filters."

@@ -168,7 +168,7 @@ export function DesktopProfile({
                       />
                     </span>
                     <span className={styles.nextMission}>
-                      <span className={styles.nextLabel}>Next mission</span>
+                      <span className={styles.nextLabel}>Pick a challenge</span>
                       <strong>{group.nextMission.title}</strong>
                       <span className={styles.nextFacts}>
                         <span>
@@ -334,9 +334,15 @@ export function DesktopProfile({
                       : "No missions joined yet."}
                   </h3>
                   <p>
-                    {activeTab === "saved"
-                      ? "Save a mission to find it here."
-                      : "Join a mission and it will appear here."}
+                    {activeTab === "saved" ? (
+                      <>
+                        See something you’d try?
+                        <br />
+                        Tap its bookmark.
+                      </>
+                    ) : (
+                      "Join a mission and it will appear here."
+                    )}
                   </p>
                   <button type="button" onClick={onBrowseMissions}>
                     Explore missions <ArrowRight size={16} aria-hidden="true" />

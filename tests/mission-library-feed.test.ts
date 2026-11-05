@@ -80,7 +80,7 @@ describe("shared library saved mission contract", () => {
 
   it("opens the selected UUID's real details when requested from Profile", () => {
     const html = feed({ selectedId: id });
-    expect(html).toContain("Your finish line");
+    expect(html).toContain("Get it on camera.");
     expect(html).toContain(mission.proof_prompt);
     expect(html).toContain("Saved for later");
   });

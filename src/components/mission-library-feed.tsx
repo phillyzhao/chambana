@@ -102,9 +102,13 @@ export function MissionLibraryFeed({
       <header className={styles.intro}>
         <p>URBANA–CHAMPAIGN</p>
         <h1 id="desktop-preview-title" tabIndex={-1}>
-          {home ? "Make a little story." : "Find your next mission."}
+          {home ? "Got a little time?" : "Pick something fun."}
         </h1>
-        <span>Small adventures. Good company. Right here.</span>
+        <span>
+          Quick challenges around Urbana–Champaign.
+          <br />
+          Try one solo or bring a friend.
+        </span>
       </header>
       {!home && (
         <div className={styles.tools}>
@@ -113,7 +117,7 @@ export function MissionLibraryFeed({
             <span className={styles.srOnly}>Search missions</span>
             <input
               type="search"
-              placeholder="Search missions or places"
+              placeholder="Search by challenge or place"
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -194,7 +198,7 @@ export function MissionLibraryFeed({
         <div className={styles.empty}>
           <h2>
             {published.length
-              ? "No matching missions."
+              ? "Nothing matches that."
               : "New missions are on the way."}
           </h2>
           <p>
@@ -252,7 +256,7 @@ export function MissionLibraryFeed({
               </span>
             </div>
             <p className={styles.instructions}>{mission.instructions}</p>
-            <h3>Your finish line</h3>
+            <h3>Get it on camera.</h3>
             <p>{mission.proof_prompt}</p>
             {mission.ends_at && (
               <p>
@@ -282,7 +286,7 @@ export function MissionLibraryFeed({
             >
               {saved.includes(mission.id)
                 ? "Saved for later"
-                : "Save this mission"}
+                : "Save for later"}
               <Bookmark size={18} aria-hidden="true" />
             </button>
             <small className={styles.note}>

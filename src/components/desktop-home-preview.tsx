@@ -300,7 +300,7 @@ export function DesktopHomePreview({
       wasSaved ? current.filter((value) => value !== id) : [...current, id],
     );
     setNotice(
-      wasSaved ? "Removed from saved missions" : "Mission saved for later",
+      wasSaved ? "Removed from saved missions" : "Saved for later.",
     );
   }
 
@@ -312,7 +312,7 @@ export function DesktopHomePreview({
         : [...current, id],
     );
     setNotice(
-      wasSaved ? "Removed from saved missions" : "Mission saved for later",
+      wasSaved ? "Removed from saved missions" : "Saved for later.",
     );
   }
 
@@ -1061,10 +1061,10 @@ export function DesktopHomePreview({
                     }}
                   >
                     <MessageCircle size={20} aria-hidden="true" />
-                    <span>Open conversation</span>
+                    <span>Open group chat</span>
                     <ChevronRight size={16} aria-hidden="true" />
                   </button>
-                  <h3 className={styles.smallHeading}>Up next</h3>
+                  <h3 className={styles.smallHeading}>Pick a challenge</h3>
                   <button
                     className={styles.panelRow}
                     type="button"
@@ -1086,7 +1086,7 @@ export function DesktopHomePreview({
                       </strong>
                       <small>
                         {missionLibrary
-                          ? "Choose an adventure for your group"
+                          ? "Find something to do together."
                           : `${selectedGroup.nextMission.time} · ${selectedGroup.nextMission.location}`}
                       </small>
                     </span>

@@ -169,7 +169,7 @@ export function DesktopGroups({
               <p className={styles.category}>{group.category}</p>
               <div className={styles.nextMission}>
                 <span className={styles.nextLabel}>
-                  Next mission
+                  Pick a challenge
                   <ArrowUpRight
                     size={17}
                     strokeWidth={1.5}
