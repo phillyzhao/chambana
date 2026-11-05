@@ -23,6 +23,14 @@ export type MissionLibraryFeedData = {
   error?: string;
 };
 
+const sentenceSegmenter = new Intl.Segmenter("en", { granularity: "sentence" });
+
+function descriptionLines(text: string) {
+  return Array.from(sentenceSegmenter.segment(text), ({ segment }) =>
+    segment.trim(),
+  ).join("\n");
+}
+
 /** Both experiences render the same server-filtered, approved catalog. */
 export function MissionLibraryFeed({
   data,
@@ -165,7 +173,9 @@ export function MissionLibraryFeed({
                 <h2>{item.title}</h2>
                 <ArrowUpRight size={24} aria-hidden="true" />
               </button>
-              <p className={styles.description}>{item.instructions}</p>
+              <p className={styles.description}>
+                {descriptionLines(item.instructions)}
+              </p>
               <div className={styles.facts}>
                 <span>
                   <MapPin size={14} aria-hidden="true" />
@@ -255,7 +265,9 @@ export function MissionLibraryFeed({
                 {mission.max_people === 1 ? "person" : "people"}
               </span>
             </div>
-            <p className={styles.instructions}>{mission.instructions}</p>
+            <p className={styles.instructions}>
+              {descriptionLines(mission.instructions)}
+            </p>
             <h3>Get it on camera.</h3>
             <p>{mission.proof_prompt}</p>
             {mission.ends_at && (
