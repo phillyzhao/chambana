@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
+  checkMemberSignIn,
   requestMemberCode,
   saveMemberProfile,
-  verifyMemberCode,
 } from "@/app/account/actions";
 import styles from "./ios-signup.module.css";
 
@@ -118,7 +118,12 @@ export function SignupFlow({
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
-  const title = step === 6 ? `Welcome, ${firstName}.` : titles[step];
+  const title =
+    step === 6
+      ? `Welcome, ${firstName}.`
+      : realAccount && step === 3
+        ? "Check your email."
+        : titles[step];
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
@@ -197,10 +202,9 @@ export function SignupFlow({
             return;
           }
           setEmailSent(true);
-          setCode("");
           goTo(3);
         } else if (step === 3) {
-          const result = await verifyMemberCode(email, code);
+          const result = await checkMemberSignIn(email);
           if (!result.ok) {
             reject(result.error);
             return;
@@ -243,7 +247,7 @@ export function SignupFlow({
     goTo(realAccount && verified && step === 1 ? 4 : step + 1);
   }
 
-  async function resendCode() {
+  async function resendEmail() {
     if (pending) return;
     setPending(true);
     setError("");
@@ -253,7 +257,6 @@ export function SignupFlow({
       if (!result.ok) reject(result.error);
       else {
         setEmailSent(true);
-        setCode("");
       }
     } catch {
       reject("Your email could not be sent. Please try again.");
@@ -435,63 +438,67 @@ export function SignupFlow({
                 <span className={styles.email}>
                   {email.trim().toLowerCase()}
                 </span>
-                <label htmlFor={`${id}-code`}>Verification code</label>
-                <input
-                  ref={inputRef}
-                  className={styles.code}
-                  id={`${id}-code`}
-                  name={realAccount ? "verification-code" : "demo-code"}
-                  inputMode="numeric"
-                  autoComplete={realAccount ? "one-time-code" : "off"}
-                  placeholder="000000"
-                  maxLength={realAccount ? 8 : 6}
-                  value={code}
-                  onChange={(event) => {
-                    setCode(
-                      event.target.value
-                        .replace(/\D/g, "")
-                        .slice(0, realAccount ? 8 : 6),
-                    );
-                    setError("");
-                  }}
-                  aria-invalid={!!error}
-                  aria-describedby={`${id}-demo-code${error ? ` ${id}-error` : ""}`}
-                />
                 {realAccount ? (
                   <>
-                    <p className={styles.demoNotice} id={`${id}-demo-code`}>
-                      Check your email for a sign-in code or link.
+                    <p className={styles.demoNotice}>
+                      Open the sign-in link in your email.
                       <br />
-                      Open a link in this browser to continue here.
+                      Use the same browser you used to request it.
+                      <br />
+                      The link verifies your email and signs you in.
                     </p>
                     <button
                       type="button"
                       className={styles.demoCode}
-                      onClick={resendCode}
+                      onClick={resendEmail}
                       disabled={pending}
                     >
                       Send another email <ArrowRight size={15} />
                     </button>
                     {emailSent ? (
                       <span className={styles.demoNotice} role="status">
-                        Email sent. Check your inbox.
+                        Sign-in link sent.
+                        <br />
+                        Check your inbox.
                       </span>
                     ) : null}
                   </>
                 ) : (
-                  <button
-                    id={`${id}-demo-code`}
-                    type="button"
-                    className={styles.demoCode}
-                    onClick={() => {
-                      setCode("123456");
-                      setError("");
-                      inputRef.current?.focus();
-                    }}
-                  >
-                    Use demo code <span>123456</span>
-                    <ArrowRight size={15} />
-                  </button>
+                  <>
+                    <label htmlFor={`${id}-code`}>Verification code</label>
+                    <input
+                      ref={inputRef}
+                      className={styles.code}
+                      id={`${id}-code`}
+                      name="demo-code"
+                      inputMode="numeric"
+                      autoComplete="off"
+                      placeholder="000000"
+                      maxLength={6}
+                      value={code}
+                      onChange={(event) => {
+                        setCode(
+                          event.target.value.replace(/\D/g, "").slice(0, 6),
+                        );
+                        setError("");
+                      }}
+                      aria-invalid={!!error}
+                      aria-describedby={`${id}-demo-code${error ? ` ${id}-error` : ""}`}
+                    />
+                    <button
+                      id={`${id}-demo-code`}
+                      type="button"
+                      className={styles.demoCode}
+                      onClick={() => {
+                        setCode("123456");
+                        setError("");
+                        inputRef.current?.focus();
+                      }}
+                    >
+                      Use demo code <span>123456</span>
+                      <ArrowRight size={15} />
+                    </button>
+                  </>
                 )}
               </div>
             ) : null}
@@ -582,11 +589,13 @@ export function SignupFlow({
                 ? "Please wait…"
                 : step === 0
                   ? "Get started"
-                  : step === 6
-                    ? "Find something to do"
-                    : step === 5 && !selected.length
-                      ? "Skip for now"
-                      : "Continue"}
+                  : realAccount && step === 3
+                    ? "Check sign-in"
+                    : step === 6
+                      ? "Find something to do"
+                      : step === 5 && !selected.length
+                        ? "Skip for now"
+                        : "Continue"}
             </span>
             <ArrowRight size={18} strokeWidth={1.5} />
           </button>

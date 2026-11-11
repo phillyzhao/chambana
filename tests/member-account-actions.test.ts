@@ -28,6 +28,7 @@ vi.mock("../src/lib/member-auth", async (original) => ({
   requireMemberAccount: mocks.requireAccount,
 }));
 import {
+  checkMemberSignIn,
   requestMemberCode,
   verifyMemberCode,
   saveMemberProfile,
@@ -159,6 +160,54 @@ describe("member sign-in actions", () => {
       ok: false,
     });
     expect(mocks.verify).not.toHaveBeenCalled();
+  });
+});
+
+describe("member email-link sign-in check", () => {
+  it.each([null, profile])(
+    "returns only the matching server-verified account, with profile %j",
+    async (savedProfile) => {
+      const verifiedAccount = { ...account, profile: savedProfile };
+      mocks.getAccount.mockResolvedValue(verifiedAccount);
+      expect(await checkMemberSignIn(" Student@Illinois.edu ")).toEqual({
+        ok: true,
+        account: verifiedAccount,
+      });
+      expect(mocks.getAccount).toHaveBeenCalledWith();
+      expect(mocks.revalidate).toHaveBeenCalledWith("/app");
+      expect(mocks.send).not.toHaveBeenCalled();
+      expect(mocks.verify).not.toHaveBeenCalled();
+    },
+  );
+  it.each(["", "student@gmail.com", "student@illinois.edu.evil.test"])(
+    "rejects an invalid expected email without reading an account: %s",
+    async (email) => {
+      expect(await checkMemberSignIn(email)).toMatchObject({ ok: false });
+      expect(mocks.getAccount).not.toHaveBeenCalled();
+    },
+  );
+  it("does not treat a supplied email as proof of sign-in", async () => {
+    mocks.getAccount.mockResolvedValue(null);
+    expect(await checkMemberSignIn(account.email)).toMatchObject({
+      ok: false,
+      error: expect.stringContaining("Open the sign-in link"),
+    });
+    expect(mocks.revalidate).not.toHaveBeenCalled();
+  });
+  it("does not return a different signed-in account or alter its session", async () => {
+    const result = await checkMemberSignIn("another@illinois.edu");
+    expect(result).toMatchObject({ ok: false });
+    expect(result).not.toHaveProperty("account");
+    expect(JSON.stringify(result)).not.toContain(account.id);
+    expect(mocks.signOut).not.toHaveBeenCalled();
+    expect(mocks.revalidate).not.toHaveBeenCalled();
+  });
+  it("reports account-provider failures without exposing details", async () => {
+    mocks.getAccount.mockRejectedValue(new Error("private provider detail"));
+    const result = await checkMemberSignIn(account.email);
+    expect(result).toMatchObject({ ok: false });
+    expect(JSON.stringify(result)).not.toContain("private provider detail");
+    expect(mocks.revalidate).not.toHaveBeenCalled();
   });
 });
 

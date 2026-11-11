@@ -6,7 +6,7 @@ The old beta routes, tables, balances, and verification jobs remain retired.
 
 ## Member flow
 
-1. Open `/app` and verify an `@illinois.edu` email with Supabase email OTP or its sign-in link.
+1. Open `/app`, request an email, and open its sign-in link in the same browser. The current hosted email template sends a link, not a numeric code.
 2. Save a name, unique handle, and optional interests.
 3. Open a published mission and select photo or video proof.
 4. Submit the private upload for review. Pending submissions earn no nuts.
@@ -36,7 +36,7 @@ The submission captures the mission title, instructions, proof requirement, revi
 - Retain `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and the existing mission admin secrets.
 - Set `APP_URL` to the exact application origin. Local testing uses `http://127.0.0.1:3017`.
 - Add `${APP_URL}/account/callback` to Supabase Auth's redirect allowlist. The retired `/auth/callback` is not used.
-- Supabase email signups must be enabled with email confirmation required. The magic-link and confirmation templates should include `{{ .Token }}` for typed codes; code entry supports 6–8 digits. Standard PKCE links must open in the browser that requested them.
+- Supabase email signups must be enabled with email confirmation required. The app currently uses the hosted link-based templates. Standard PKCE links must open in the browser that requested them. After opening a link in another tab of that browser, **Check sign-in** resumes onboarding. The server still supports OTP verification for a future code-based template, but the current UI does not ask for a code the email does not contain.
 - `CHAMBANA_MISSION_LIBRARY_ENABLED=true` enables the catalog and new submissions. Turning it off still allows existing submitted work to be reviewed and an upload already started to finish.
 
 Do not commit private environment files or put the service key in browser code.
@@ -70,9 +70,10 @@ Production deployment is separate from applying the additive database migration.
 
 ### November 11, 2026 local verification
 
-- TypeScript, 508 application tests, 72 all-migration database tests, and the production build passed.
+- TypeScript, 516 application tests, 72 all-migration database tests, and the production build passed after the link-only email correction.
 - Migration 0011 was applied to the linked Chambana Supabase project and verified in migration history.
 - The three new tables are accessible to the server; anonymous submission reads are denied. Both private storage buckets were checked, including unchanged legacy limits.
 - Only the Auth redirect allowlist was updated remotely, adding the local `/account/callback` and `https://playchambana.com/account/callback` while preserving the old entry. Other Auth settings and email templates were left unchanged.
 - Local owner login and the empty review queue were verified in the browser. A sign-in email was requested through the real form; member verification, a real proof upload, and the owner's live approval remain pending the owner's interaction.
+- The received email was confirmed to contain only a sign-in link. The real signup screen now matches it and checks the authenticated session instead of requesting a nonexistent code. A read-only account check found an older verified identity but no completed new member session or profile; email-confirmed status alone is not evidence of this flow completing.
 - The new website code has not been pushed or deployed.

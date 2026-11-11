@@ -108,6 +108,30 @@ export async function verifyMemberCode(
   }
 }
 
+export async function checkMemberSignIn(
+  expectedEmail: string,
+): Promise<MemberAuthResult> {
+  const email = campusEmail.safeParse(expectedEmail);
+  if (!email.success || email.data.length > 254)
+    return { ok: false, error: "Enter your @illinois.edu email." };
+  try {
+    // The email only checks which account the member intended to use. The
+    // authenticated session is the sole source of identity and verification.
+    const account = await getMemberAccount();
+    if (!account || account.email.toLowerCase() !== email.data)
+      return {
+        ok: false,
+        error:
+          "Open the sign-in link for this email in the same browser, then check again.",
+      };
+    revalidatePath("/app");
+    return { ok: true, account };
+  } catch {
+    operationalEvent("member_signin_check_failed");
+    return unavailable;
+  }
+}
+
 export async function saveMemberProfile(
   input: unknown,
 ): Promise<MemberAuthResult> {
