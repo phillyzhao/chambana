@@ -232,10 +232,10 @@ export function MissionSubmission({
           {stage === "uploading"
             ? "Uploading proof…"
             : stage === "sending"
-              ? "Sending for review…"
+              ? "Submitting…"
               : uploadedId
-                ? "Finish sending"
-                : "Send for approval"}
+                ? "Finish submitting"
+                : "Submit"}
           <Upload size={17} aria-hidden="true" />
         </button>
         {!file && attemptId && !busy && (
