@@ -27,6 +27,15 @@ enable_signup = true
 enable_confirmations = true
 double_confirm_changes = true
 
+# Local Supabase templates. Hosted Auth must be configured separately.
+[auth.email.template.magic_link]
+subject = "Your Chambana sign-in code"
+content_path = "./supabase/templates/member-code.html"
+
+[auth.email.template.confirmation]
+subject = "Your Chambana sign-in code"
+content_path = "./supabase/templates/member-code.html"
+
 [storage]
 enabled = true
 file_size_limit = "8MiB"

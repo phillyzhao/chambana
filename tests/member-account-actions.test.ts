@@ -28,7 +28,6 @@ vi.mock("../src/lib/member-auth", async (original) => ({
   requireMemberAccount: mocks.requireAccount,
 }));
 import {
-  checkMemberSignIn,
   requestMemberCode,
   verifyMemberCode,
   saveMemberProfile,
@@ -54,6 +53,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv("APP_URL", "https://playchambana.com");
   vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "test-only-key");
+  vi.stubEnv("CHAMBANA_EMAIL_OTP_ENABLED", "true");
   mocks.configured.mockReturnValue(true);
   mocks.limit.mockResolvedValue(true);
   mocks.send.mockResolvedValue({ error: null });
@@ -131,12 +131,20 @@ describe("member sign-in actions", () => {
       type: "email",
     });
   });
-  it("returns the verified account after a successful code", async () => {
-    expect(await verifyMemberCode(account.email, "294193")).toEqual({
-      ok: true,
-      account,
-    });
-  });
+  it.each(["294193", "29419382"])(
+    "returns the verified account after a successful code: %s",
+    async (code) => {
+      expect(await verifyMemberCode(account.email, code)).toEqual({
+        ok: true,
+        account,
+      });
+      expect(mocks.verify).toHaveBeenCalledWith({
+        email: account.email,
+        token: code,
+        type: "email",
+      });
+    },
+  );
   it.each([
     { ...user, email_confirmed_at: null },
     { ...user, email: "other@illinois.edu" },
@@ -163,52 +171,28 @@ describe("member sign-in actions", () => {
   });
 });
 
-describe("member email-link sign-in check", () => {
-  it.each([null, profile])(
-    "returns only the matching server-verified account, with profile %j",
-    async (savedProfile) => {
-      const verifiedAccount = { ...account, profile: savedProfile };
-      mocks.getAccount.mockResolvedValue(verifiedAccount);
-      expect(await checkMemberSignIn(" Student@Illinois.edu ")).toEqual({
-        ok: true,
-        account: verifiedAccount,
-      });
-      expect(mocks.getAccount).toHaveBeenCalledWith();
-      expect(mocks.revalidate).toHaveBeenCalledWith("/app");
+describe("email-code readiness gate", () => {
+  it.each([undefined, "false", "1", "TRUE"])(
+    "prevents sending and verification unless explicitly enabled: %s",
+    async (setting) => {
+      vi.stubEnv("CHAMBANA_EMAIL_OTP_ENABLED", setting);
+      for (const result of [
+        await requestMemberCode(account.email),
+        await verifyMemberCode(account.email, "29419382"),
+      ]) {
+        expect(result).toEqual({
+          ok: false,
+          error:
+            "Sign-in is temporarily unavailable. Please try again shortly.",
+        });
+      }
       expect(mocks.send).not.toHaveBeenCalled();
       expect(mocks.verify).not.toHaveBeenCalled();
-    },
-  );
-  it.each(["", "student@gmail.com", "student@illinois.edu.evil.test"])(
-    "rejects an invalid expected email without reading an account: %s",
-    async (email) => {
-      expect(await checkMemberSignIn(email)).toMatchObject({ ok: false });
+      expect(mocks.database).not.toHaveBeenCalled();
+      expect(mocks.limit).not.toHaveBeenCalled();
       expect(mocks.getAccount).not.toHaveBeenCalled();
     },
   );
-  it("does not treat a supplied email as proof of sign-in", async () => {
-    mocks.getAccount.mockResolvedValue(null);
-    expect(await checkMemberSignIn(account.email)).toMatchObject({
-      ok: false,
-      error: expect.stringContaining("Open the sign-in link"),
-    });
-    expect(mocks.revalidate).not.toHaveBeenCalled();
-  });
-  it("does not return a different signed-in account or alter its session", async () => {
-    const result = await checkMemberSignIn("another@illinois.edu");
-    expect(result).toMatchObject({ ok: false });
-    expect(result).not.toHaveProperty("account");
-    expect(JSON.stringify(result)).not.toContain(account.id);
-    expect(mocks.signOut).not.toHaveBeenCalled();
-    expect(mocks.revalidate).not.toHaveBeenCalled();
-  });
-  it("reports account-provider failures without exposing details", async () => {
-    mocks.getAccount.mockRejectedValue(new Error("private provider detail"));
-    const result = await checkMemberSignIn(account.email);
-    expect(result).toMatchObject({ ok: false });
-    expect(JSON.stringify(result)).not.toContain("private provider detail");
-    expect(mocks.revalidate).not.toHaveBeenCalled();
-  });
 });
 
 describe("member profile persistence", () => {

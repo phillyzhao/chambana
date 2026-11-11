@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Your Chambana sign-in code</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      background: #f7f7f5;
+      color: #232521;
+      font-family: Arial, Helvetica, sans-serif;
+    "
+  >
+    <table role="presentation" style="width: 100%; border-collapse: collapse">
+      <tr>
+        <td style="padding: 40px 20px">
+          <table
+            role="presentation"
+            style="
+              width: 100%;
+              max-width: 480px;
+              margin: 0 auto;
+              border-collapse: collapse;
+            "
+          >
+            <tr>
+              <td
+                style="
+                  padding-bottom: 36px;
+                  font-family: Georgia, serif;
+                  font-size: 32px;
+                  font-weight: bold;
+                  letter-spacing: -1.5px;
+                "
+              >
+                chambana.
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <h1
+                  style="
+                    margin: 0 0 20px;
+                    font-family: Georgia, serif;
+                    font-size: 28px;
+                    font-weight: normal;
+                  "
+                >
+                  Your sign-in code.
+                </h1>
+                <p style="margin: 0 0 24px; font-size: 16px; line-height: 1.6">
+                  Enter this code in Chambana to sign in.
+                </p>
+                <p
+                  style="
+                    margin: 0 0 24px;
+                    padding: 24px 12px;
+                    border: 1px solid #d9dbd4;
+                    font-size: 30px;
+                    font-weight: bold;
+                    letter-spacing: 4px;
+                    text-align: center;
+                  "
+                >
+                  {{ .Token }}
+                </p>
+                <p style="margin: 0 0 12px; font-size: 14px; line-height: 1.6">
+                  This code can only be used once.
+                </p>
+                <p
+                  style="
+                    margin: 0;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    color: #65685f;
+                  "
+                >
+                  If you didn’t request it, you can ignore this email.
+                </p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

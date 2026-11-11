@@ -27,7 +27,11 @@ export async function requestMemberCode(
   const email = campusEmail.safeParse(rawEmail);
   if (!email.success || email.data.length > 254)
     return { ok: false, error: "Enter your @illinois.edu email." };
-  if (!isConfigured() || !process.env.SUPABASE_SERVICE_ROLE_KEY)
+  if (
+    process.env.CHAMBANA_EMAIL_OTP_ENABLED !== "true" ||
+    !isConfigured() ||
+    !process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
     return unavailable;
   try {
     if (
@@ -69,6 +73,7 @@ export async function verifyMemberCode(
     !/^\d{6,8}$/.test(token)
   )
     return { ok: false, error: "Enter the verification code from your email." };
+  if (process.env.CHAMBANA_EMAIL_OTP_ENABLED !== "true") return unavailable;
   try {
     if (
       !(await allowRequest("member-code-email", email.data, 8, 600)) ||
@@ -104,30 +109,6 @@ export async function verifyMemberCode(
     return { ok: true, account };
   } catch {
     operationalEvent("member_code_verification_failed");
-    return unavailable;
-  }
-}
-
-export async function checkMemberSignIn(
-  expectedEmail: string,
-): Promise<MemberAuthResult> {
-  const email = campusEmail.safeParse(expectedEmail);
-  if (!email.success || email.data.length > 254)
-    return { ok: false, error: "Enter your @illinois.edu email." };
-  try {
-    // The email only checks which account the member intended to use. The
-    // authenticated session is the sole source of identity and verification.
-    const account = await getMemberAccount();
-    if (!account || account.email.toLowerCase() !== email.data)
-      return {
-        ok: false,
-        error:
-          "Open the sign-in link for this email in the same browser, then check again.",
-      };
-    revalidatePath("/app");
-    return { ok: true, account };
-  } catch {
-    operationalEvent("member_signin_check_failed");
     return unavailable;
   }
 }

@@ -18,9 +18,9 @@ import {
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
 import {
-  checkMemberSignIn,
   requestMemberCode,
   saveMemberProfile,
+  verifyMemberCode,
 } from "@/app/account/actions";
 import styles from "./ios-signup.module.css";
 
@@ -118,12 +118,7 @@ export function SignupFlow({
     .slice(0, 2)
     .map((part) => part[0])
     .join("");
-  const title =
-    step === 6
-      ? `Welcome, ${firstName}.`
-      : realAccount && step === 3
-        ? "Check your email."
-        : titles[step];
+  const title = step === 6 ? `Welcome, ${firstName}.` : titles[step];
 
   useEffect(() => {
     contentRef.current?.scrollTo({ top: 0 });
@@ -202,9 +197,10 @@ export function SignupFlow({
             return;
           }
           setEmailSent(true);
+          setCode("");
           goTo(3);
         } else if (step === 3) {
-          const result = await checkMemberSignIn(email);
+          const result = await verifyMemberCode(email, code);
           if (!result.ok) {
             reject(result.error);
             return;
@@ -257,6 +253,7 @@ export function SignupFlow({
       if (!result.ok) reject(result.error);
       else {
         setEmailSent(true);
+        setCode("");
       }
     } catch {
       reject("Your email could not be sent. Please try again.");
@@ -416,6 +413,7 @@ export function SignupFlow({
                   id={`${id}-email`}
                   name="email"
                   type="email"
+                  disabled={realAccount && pending}
                   inputMode="email"
                   autoComplete="email"
                   autoCapitalize="none"
@@ -440,12 +438,28 @@ export function SignupFlow({
                 </span>
                 {realAccount ? (
                   <>
-                    <p className={styles.demoNotice}>
-                      Open the sign-in link in your email.
-                      <br />
-                      Use the same browser you used to request it.
-                      <br />
-                      The link verifies your email and signs you in.
+                    <label htmlFor={`${id}-code`}>Verification code</label>
+                    <input
+                      ref={inputRef}
+                      className={styles.code}
+                      id={`${id}-code`}
+                      name="verification-code"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      placeholder="Enter code"
+                      maxLength={8}
+                      value={code}
+                      onChange={(event) => {
+                        setCode(
+                          event.target.value.replace(/\D/g, "").slice(0, 8),
+                        );
+                        setError("");
+                      }}
+                      aria-invalid={!!error}
+                      aria-describedby={`${id}-code-help${error ? ` ${id}-error` : ""}`}
+                    />
+                    <p className={styles.demoNotice} id={`${id}-code-help`}>
+                      Enter the code from your email.
                     </p>
                     <button
                       type="button"
@@ -453,11 +467,11 @@ export function SignupFlow({
                       onClick={resendEmail}
                       disabled={pending}
                     >
-                      Send another email <ArrowRight size={15} />
+                      Send another code <ArrowRight size={15} />
                     </button>
                     {emailSent ? (
                       <span className={styles.demoNotice} role="status">
-                        Sign-in link sent.
+                        Code sent.
                         <br />
                         Check your inbox.
                       </span>
@@ -590,7 +604,7 @@ export function SignupFlow({
                 : step === 0
                   ? "Get started"
                   : realAccount && step === 3
-                    ? "Check sign-in"
+                    ? "Verify email"
                     : step === 6
                       ? "Find something to do"
                       : step === 5 && !selected.length
