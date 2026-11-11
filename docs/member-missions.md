@@ -79,8 +79,10 @@ Production deployment is separate from applying the additive database migration.
 - Local owner login and the empty review queue were verified in the browser.
 - Four additive DNS records were saved in Hostinger for Resend verification, preserving the original three website records and the nameservers. Resend reports `playchambana.com` as **Verified**.
 - A sending-only API key restricted to `playchambana.com` was created and stored only in Supabase SMTP. Custom SMTP is enabled with the Chambana sender, and both hosted code templates were saved successfully using the exact local HTML containing `{{ .Token }}` and no sign-in links.
-- With local `CHAMBANA_EMAIL_OTP_ENABLED=true`, the actual app OTP request returned **Code sent**. Resend reports the message **Delivered** to the approved owner test address. This confirms the request and provider delivery result; it does not establish successful code entry or profile creation.
-- The member entering the code, completing the profile, submitting real private proof, and receiving the owner's live approval remain pending. An older verified Auth identity is not evidence that the new member flow has completed.
+- With local `CHAMBANA_EMAIL_OTP_ENABLED=true`, the actual app OTP request returned **Code sent**. Resend reports the message **Delivered** to the approved owner test address.
+- The member successfully entered the numeric code and completed the profile. A read-only backend check verified a fresh sign-in at **5:50:57 PM CST** and profile creation at **5:51:13 PM CST** on November 11, 2026.
+- Browser checks confirmed the same saved profile with **0 nuts** and **0 submissions** in both iPhone and desktop layouts.
+- The proof form's **Send for approval** button was disabled with no file selected. A live private proof upload, owner review, and reward after approval remain pending.
 - The new website code has not been pushed or deployed.
 
 ### Branded sender setup and remaining validation
@@ -92,7 +94,7 @@ The setup sequence below records the completed configuration and the checks stil
 1. Domain verification is complete. For future setup, use Resend's exact DNS records and preserve existing website, inbound mail, unrelated records, and nameservers. The November 11 change added four records without replacing the original three website records.
 2. Supabase Auth custom SMTP is enabled with sender `login@playchambana.com`, name `Chambana`, host `smtp.resend.com`, port `465`, user `resend`, and the domain-restricted sending key as the password. Keep that key only in Supabase SMTP settings; never put it in browser code, chat, or Git.
 3. Both hosted templates now use the exact local code email HTML. Keep email confirmation enabled and use the existing eight-digit OTP setting, or deliberately configure another length supported by the UI. Set the intended expiry in Supabase; the template does not promise an unverified duration.
-4. The local readiness flag is enabled, the app requested the owner's approved test email, and Resend reports delivery. Still verify the received sender/body, actual code verification, profile save, and invalid/reused-code rejection. Disable the flag again if delivery or verification fails.
+4. The local readiness flag is enabled, the app requested the owner's approved test email, and Resend reports delivery. Numeric code verification and profile save succeeded, and both layouts display the same saved profile. Still verify the received sender/body and invalid/reused-code rejection. Disable the flag again if delivery or verification fails.
 5. Complete the private proof, owner-approval, balance refresh, and sign-out tests on both layouts before pushing or deploying the feature.
 
 References: [Supabase OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp), and [Resend's Supabase SMTP guide](https://resend.com/docs/send-with-supabase-smtp).
