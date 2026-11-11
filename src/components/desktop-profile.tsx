@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { useId, useRef } from "react";
 import styles from "./desktop-profile.module.css";
+import type { MemberExperience } from "@/lib/member-experience";
+import { MemberActivity, MemberSignOut } from "./member-activity";
 
 type Group = {
   id: number;
@@ -38,6 +40,7 @@ type Mission = {
 type MissionTab = "saved" | "joined";
 
 type Props = {
+  member?: MemberExperience;
   groups: Group[];
   missions: Mission[];
   saved: MissionId[];
@@ -54,6 +57,7 @@ type Props = {
 const tabs: MissionTab[] = ["saved", "joined"];
 
 export function DesktopProfile({
+  member,
   groups,
   missions,
   saved,
@@ -100,18 +104,26 @@ export function DesktopProfile({
       <div className={styles.layout}>
         <section className={styles.identity} aria-labelledby={`${uid}-name`}>
           <div className={styles.avatar} aria-hidden="true">
-            JP
+            {member
+              ? member.profile.name
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join("")
+              : "JP"}
           </div>
-          <h2 id={`${uid}-name`}>Julian Park</h2>
-          <p className={styles.handle}>@julianpark</p>
+          <h2 id={`${uid}-name`}>{member?.profile.name ?? "Julian Park"}</h2>
+          <p className={styles.handle}>
+            @{member?.profile.handle ?? "julianpark"}
+          </p>
           <dl className={styles.stats}>
             <div>
               <dt>Nuts</dt>
-              <dd>340</dd>
+              <dd>{member?.nuts ?? 340}</dd>
             </div>
             <div>
               <dt>Completed missions</dt>
-              <dd>6</dd>
+              <dd>{member?.completedCount ?? 6}</dd>
             </div>
             <div>
               <dt>{groups.length === 1 ? "Group" : "Groups"}</dt>
@@ -120,14 +132,21 @@ export function DesktopProfile({
           </dl>
           <h3 className={styles.smallHeading}>Interests</h3>
           <ul className={styles.interests} aria-label="Interests">
-            <li>Outdoors</li>
-            <li>Books</li>
-            <li>Coffee</li>
+            {(member?.profile.interests ?? ["Outdoors", "Books", "Coffee"]).map(
+              (interest) => (
+                <li key={interest}>{interest}</li>
+              ),
+            )}
           </ul>
-          <p className={styles.previewNote}>Sample profile</p>
+          {member ? (
+            <MemberSignOut />
+          ) : (
+            <p className={styles.previewNote}>Sample profile</p>
+          )}
         </section>
 
         <div className={styles.activity}>
+          {member && <MemberActivity member={member} />}
           <section aria-labelledby={`${uid}-groups`}>
             <div className={styles.sectionHeading}>
               <h2 id={`${uid}-groups`}>

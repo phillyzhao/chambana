@@ -1523,6 +1523,9 @@
 }
 
 @media (max-width: 600px) {
+  .preview[data-member="true"] .phone {
+    height: 100dvh;
+  }
   .preview {
     min-height: 100dvh;
     padding: 0;

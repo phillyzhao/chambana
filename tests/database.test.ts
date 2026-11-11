@@ -59,6 +59,7 @@ beforeAll(async () => {
     grant usage on schema auth, public to anon, authenticated, service_role;
     grant execute on function auth.uid() to anon, authenticated, service_role;
     create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
+    create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,metadata jsonb);
   `);
   const migrations = new URL("../supabase/migrations/", import.meta.url);
   for (const file of (await readdir(migrations))
@@ -109,6 +110,33 @@ afterAll(async () => {
 });
 
 describe("authentication and permissions", () => {
+  it("keeps real member proof isolated from the retired beta bucket", async () => {
+    await db.exec("reset role");
+    const buckets = await db.query(
+      "select id,public,file_size_limit,allowed_mime_types from storage.buckets where id in ('mission-proof','member-mission-proof') order by id",
+    );
+    expect(buckets.rows).toEqual([
+      {
+        id: "member-mission-proof",
+        public: false,
+        file_size_limit: 52428800,
+        allowed_mime_types: [
+          "image/jpeg",
+          "image/png",
+          "image/webp",
+          "video/mp4",
+          "video/quicktime",
+          "video/webm",
+        ],
+      },
+      {
+        id: "mission-proof",
+        public: false,
+        file_size_limit: 8388608,
+        allowed_mime_types: ["image/jpeg"],
+      },
+    ]);
+  });
   it("serves published catalog anonymously without exposing authorization helpers", async () => {
     await db.exec("set local role anon");
     expect(

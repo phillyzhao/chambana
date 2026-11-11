@@ -266,6 +266,9 @@ export function MissionAdmin({
       <header className={styles.header}>
         <Brand />
         <div className={styles.headerActions}>
+          <a className={styles.textButton} href="/mission-admin/submissions">
+            Review submissions
+          </a>
           <span className={styles.privateLabel}>
             <LockKeyhole size={12} aria-hidden="true" /> Owner library
           </span>

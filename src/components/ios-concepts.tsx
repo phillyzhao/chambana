@@ -30,6 +30,8 @@ import {
   type MissionLibraryFeedData,
 } from "./mission-library-feed";
 import styles from "./ios-concepts.module.css";
+import type { MemberExperience } from "@/lib/member-experience";
+import { MemberActivity, MemberSignOut } from "./member-activity";
 
 type PreviewMode = "app" | "signup";
 type PreviewProfile = { name: string; handle: string; interests: string[] };
@@ -172,8 +174,16 @@ function AvatarStack({
 
 export function IOSConcepts({
   missionLibrary,
+  realAccount = false,
+  member,
+  verifiedEmail,
+  initialError,
 }: {
   missionLibrary?: MissionLibraryFeedData;
+  realAccount?: boolean;
+  member?: MemberExperience;
+  verifiedEmail?: string;
+  initialError?: string;
 }) {
   const [mode, setMode] = useState<PreviewMode>("app");
   const [device, setDevice] = useState("16");
@@ -185,58 +195,78 @@ export function IOSConcepts({
   });
 
   return (
-    <section className={styles.preview} aria-label="Chambana iOS concept">
+    <section
+      className={styles.preview}
+      data-member={realAccount}
+      aria-label={realAccount ? "Chambana" : "Chambana iOS concept"}
+    >
       <header className={styles.previewHeader}>
         <a href="/" className={styles.previewBrand}>
           chambana.
         </a>
 
         <div className={styles.previewLinks}>
-          <a href="/design-preview?view=desktop">
-            Desktop preview <ArrowUpRight size={13} aria-hidden="true" />
+          <a
+            href={
+              realAccount ? "/app?view=desktop" : "/design-preview?view=desktop"
+            }
+          >
+            {realAccount ? "Desktop view" : "Desktop preview"}{" "}
+            <ArrowUpRight size={13} aria-hidden="true" />
           </a>
-          <span className={styles.privateLabel}>LOCAL DEMO</span>
+          {!realAccount && <a href="/app">Try real missions</a>}
+          <span className={styles.privateLabel}>
+            {realAccount ? "MEMBER ACCESS" : "LOCAL DEMO"}
+          </span>
         </div>
       </header>
-      <div className={styles.previewControls}>
-        <div className={styles.modeSwitch} aria-label="Preview screen">
-          <button
-            type="button"
-            aria-pressed={mode === "app"}
-            onClick={() => setMode("app")}
-          >
-            App
-          </button>
-          <button
-            type="button"
-            aria-pressed={mode === "signup"}
-            onClick={() => setMode("signup")}
-          >
-            Sign up
-          </button>
+      {!realAccount && (
+        <div className={styles.previewControls}>
+          <div className={styles.modeSwitch} aria-label="Preview screen">
+            <button
+              type="button"
+              aria-pressed={mode === "app"}
+              onClick={() => setMode("app")}
+            >
+              App
+            </button>
+            <button
+              type="button"
+              aria-pressed={mode === "signup"}
+              onClick={() => setMode("signup")}
+            >
+              Sign up
+            </button>
+          </div>
+          <label className={styles.deviceSelect}>
+            <span className={styles.srOnly}>iPhone model</span>
+            <select
+              aria-label="iPhone model"
+              value={device}
+              onChange={(event) => setDevice(event.target.value)}
+            >
+              <option value="15">iPhone 15 · 393 × 852</option>
+              <option value="16">iPhone 16 · 393 × 852</option>
+              <option value="17">iPhone 17 · 402 × 874</option>
+            </select>
+          </label>
+          <span className={styles.mobileDemo}>LOCAL DEMO</span>
         </div>
-        <label className={styles.deviceSelect}>
-          <span className={styles.srOnly}>iPhone model</span>
-          <select
-            aria-label="iPhone model"
-            value={device}
-            onChange={(event) => setDevice(event.target.value)}
-          >
-            <option value="15">iPhone 15 · 393 × 852</option>
-            <option value="16">iPhone 16 · 393 × 852</option>
-            <option value="17">iPhone 17 · 402 × 874</option>
-          </select>
-        </label>
-        <span className={styles.mobileDemo}>LOCAL DEMO</span>
-      </div>
+      )}
       <AppPhone
-        key={signupCount}
+        key={member?.id ?? signupCount}
         missionLibrary={missionLibrary}
-        mode={mode}
+        mode={realAccount ? (member ? "app" : "signup") : mode}
         device={device}
-        profile={profile}
-        isNewProfile={signupCount > 0}
-        onBack={() => setMode("app")}
+        profile={member?.profile ?? profile}
+        isNewProfile={realAccount || signupCount > 0}
+        member={member}
+        realAccount={realAccount}
+        verifiedEmail={verifiedEmail}
+        initialError={initialError}
+        onBack={() =>
+          realAccount ? window.location.assign("/") : setMode("app")
+        }
         onComplete={(next) => {
           setProfile(next);
           setSignupCount((count) => count + 1);
@@ -244,7 +274,9 @@ export function IOSConcepts({
         }}
       />
       <footer className={styles.previewFooter}>
-        Prototype only. No accounts, messages, or reservations are created.
+        {realAccount
+          ? "Photo or video required. Nuts are awarded after owner approval."
+          : "Prototype only. No accounts, messages, or reservations are created."}
       </footer>
     </section>
   );
@@ -258,6 +290,10 @@ function AppPhone({
   isNewProfile,
   onBack,
   onComplete,
+  member,
+  realAccount = false,
+  verifiedEmail,
+  initialError,
 }: {
   missionLibrary?: MissionLibraryFeedData;
   mode: PreviewMode;
@@ -266,6 +302,10 @@ function AppPhone({
   isNewProfile: boolean;
   onBack: () => void;
   onComplete: (profile: PreviewProfile) => void;
+  member?: MemberExperience;
+  realAccount?: boolean;
+  verifiedEmail?: string;
+  initialError?: string;
 }) {
   const groups = missionLibrary
     ? demoGroups.map((group) => ({
@@ -599,6 +639,9 @@ function AppPhone({
       </div>
       <div className={styles.signupPane} hidden={mode !== "signup"}>
         <SignupFlow
+          realAccount={realAccount}
+          verifiedEmail={verifiedEmail}
+          initialError={initialError}
           active={mode === "signup"}
           onBack={onBack}
           onComplete={onComplete}
@@ -640,6 +683,7 @@ function AppPhone({
         >
           {missionLibrary && (tab === "Home" || tab === "Missions") && (
             <MissionLibraryFeed
+              member={member}
               data={missionLibrary}
               compact
               home={tab === "Home"}
@@ -693,7 +737,13 @@ function AppPhone({
               )}
             </div>
           )}
-          {tab === "Groups" && (
+          {realAccount && tab === "Groups" && (
+            <div className={styles.emptyState}>
+              <h3>Groups are coming.</h3>
+              <p>For now, pick a mission and bring a friend.</p>
+            </div>
+          )}
+          {!realAccount && tab === "Groups" && (
             <div className={styles.secondaryScreen}>
               <label className={styles.groupSearch}>
                 <Search size={17} aria-hidden="true" />
@@ -771,7 +821,12 @@ function AppPhone({
               )}
             </div>
           )}
-          {tab === "Inbox" && (
+          {member && tab === "Inbox" && (
+            <div className={styles.secondaryScreen}>
+              <MemberActivity member={member} />
+            </div>
+          )}
+          {!realAccount && tab === "Inbox" && (
             <div className={styles.secondaryScreen}>
               {chats.map((chat, id) => (
                 <button
@@ -938,10 +993,14 @@ function AppPhone({
                 <p className={styles.profileMeta}>@{profile.handle}</p>
                 <div className={styles.profileStats}>
                   <span>
-                    <strong>{isNewProfile ? 0 : 340}</strong>NUTS
+                    <strong>{member?.nuts ?? (isNewProfile ? 0 : 340)}</strong>
+                    NUTS
                   </span>
                   <span>
-                    <strong>{isNewProfile ? 0 : 6}</strong>MISSIONS
+                    <strong>
+                      {member?.completedCount ?? (isNewProfile ? 0 : 6)}
+                    </strong>
+                    MISSIONS
                   </span>
                   <span>
                     <strong>{joinedGroups.length}</strong>
@@ -953,6 +1012,12 @@ function AppPhone({
                     <span key={interest}>{interest}</span>
                   ))}
                 </div>
+                {member && (
+                  <>
+                    <MemberActivity member={member} />
+                    <MemberSignOut />
+                  </>
+                )}
                 <button
                   type="button"
                   className={styles.sheetRow}
@@ -987,7 +1052,13 @@ function AppPhone({
                 </button>
               </div>
             )}
-            {sheet?.type === "notifications" && (
+            {member && sheet?.type === "notifications" && (
+              <div className={styles.sheetBody}>
+                <h2 id={`${uid}-sheet-title`}>Your activity</h2>
+                <MemberActivity member={member} />
+              </div>
+            )}
+            {!realAccount && sheet?.type === "notifications" && (
               <div className={styles.sheetBody}>
                 <h2 id={`${uid}-sheet-title`}>Notifications</h2>
                 <div className={styles.notificationSummary}>

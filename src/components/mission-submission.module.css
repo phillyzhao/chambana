@@ -1,0 +1,116 @@
+.submission {
+  border-top: 1px solid #dedfd9;
+  padding-top: 22px;
+  margin-top: 24px;
+}
+.label {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+.submission input {
+  max-width: 100%;
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  padding: 10px 0;
+}
+.submission input::file-selector-button {
+  border: 1px solid #b9bdb3;
+  border-radius: 4px;
+  padding: 10px 13px;
+  background: #f7f7f2;
+  color: #242522;
+  margin-right: 10px;
+  cursor: pointer;
+}
+.submission .help {
+  font-size: 11px;
+  line-height: 1.6;
+  color: #6b6d67;
+  margin: 10px 0;
+}
+.preview {
+  width: 100%;
+  max-height: 290px;
+  object-fit: contain;
+  display: block;
+  background: #ebede6;
+  border: 1px solid #dedfd9;
+  border-radius: 5px;
+  margin: 14px 0;
+}
+.submission .filename {
+  overflow-wrap: anywhere;
+  font-size: 11px;
+}
+.submit {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 15px 16px;
+  border: 0;
+  border-radius: 4px;
+  background: #272924;
+  color: white;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.submit:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.resume {
+  border: 0;
+  border-bottom: 1px solid currentColor;
+  background: none;
+  color: inherit;
+  padding: 8px 0 3px;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.status {
+  display: flex;
+  align-items: start;
+  gap: 12px;
+  padding: 18px;
+  background: #edf0e6;
+  border: 1px solid #d8dad2;
+  border-radius: 5px;
+  margin: 20px 0;
+  font-size: 13px;
+}
+.status svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.status p {
+  margin: 7px 0 0;
+  color: #5e6159;
+}
+.reviewNote {
+  padding: 14px;
+  border: 1px solid #c8c9c2;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+.reviewNote p {
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  margin-bottom: 0;
+}
+.error {
+  color: #993c32;
+  font-size: 12px;
+}
+.submission :focus-visible {
+  outline: 2px solid #545b4a;
+  outline-offset: 3px;
+}

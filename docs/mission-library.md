@@ -54,6 +54,8 @@ Archive removes approval and hides a mission. Restore saves an unapproved draft.
 
 The library is an editorial system. It does not create reservations, record real participation, verify completion, or award nuts. Preview saves remain local interaction state and reset on reload. Group and messaging features are still previews.
 
+Real participation now lives separately at `/app`, with private media and owner approval at `/mission-admin/submissions`. See [member missions](member-missions.md) for account, proof, reward, and release requirements.
+
 Anonymous and regular authenticated Supabase clients can read only approved, currently available catalog records. They cannot insert, edit, approve, or archive. Every admin page read and mutation requires the separate signed owner session. Its cookie is HttpOnly, SameSite Strict, expires after eight hours, and is Secure in production. Rotate the private owner key to revoke existing sessions.
 
 The seed file is loaded only by the protected importer; it is not imported into client code. The public route never falls back to draft content if Supabase fails or the approved catalog is empty.

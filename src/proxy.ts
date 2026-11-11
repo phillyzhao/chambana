@@ -1,7 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { retiredBetaDestination } from "@/lib/site-routes";
+import { refreshMemberSession } from "@/lib/member-session";
 
 export function proxy(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  if (
+    path === "/app" ||
+    path.startsWith("/app/") ||
+    path === "/account" ||
+    path.startsWith("/account/") ||
+    path.startsWith("/api/member/")
+  ) {
+    return refreshMemberSession(request);
+  }
   const destination = retiredBetaDestination(request.nextUrl.pathname);
   if (!destination) return NextResponse.next();
 
@@ -18,6 +29,9 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
+    "/app/:path*",
+    "/account/:path*",
+    "/api/member/:path*",
     "/login/:path*",
     "/join/:path*",
     "/missions/:path*",

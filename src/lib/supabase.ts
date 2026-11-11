@@ -20,7 +20,12 @@ export async function database() {
         setAll: (items) => {
           try {
             items.forEach(({ name, value, options }) =>
-              jar.set(name, value, options),
+              jar.set(name, value, {
+                ...options,
+                httpOnly: true,
+                sameSite: "lax",
+                secure: process.env.NODE_ENV === "production",
+              }),
             );
           } catch {
             /* Server component refresh is handled by proxy.ts. */

@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  allowedDevOrigins: ["127.0.0.1"],
   outputFileTracingIncludes: {
     "/mission-admin": ["./data/mission-library-seed.json"],
   },

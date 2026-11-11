@@ -17,6 +17,11 @@ import {
   Volleyball,
 } from "lucide-react";
 import { useEffect, useId, useRef, useState, type FormEvent } from "react";
+import {
+  requestMemberCode,
+  saveMemberProfile,
+  verifyMemberCode,
+} from "@/app/account/actions";
 import styles from "./ios-signup.module.css";
 
 export type SignupProfile = {
@@ -76,18 +81,30 @@ export function SignupFlow({
   onComplete,
   onBack,
   active = true,
+  realAccount = false,
+  verifiedEmail,
+  initialError = "",
 }: {
   onComplete: (profile: SignupProfile) => void;
   onBack: () => void;
   active?: boolean;
+  realAccount?: boolean;
+  verifiedEmail?: string;
+  initialError?: string;
 }) {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(realAccount && verifiedEmail ? 1 : 0);
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(verifiedEmail ?? "");
   const [code, setCode] = useState("");
   const [handle, setHandle] = useState("");
   const [selected, setSelected] = useState<string[]>([]);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(initialError);
+  const [pending, setPending] = useState(false);
+  const [verified, setVerified] = useState(
+    Boolean(realAccount && verifiedEmail),
+  );
+  const [login, setLogin] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
   const [welcomeScene, setWelcomeScene] = useState(0);
   const [rotationPaused, setRotationPaused] = useState(false);
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -148,8 +165,9 @@ export function SignupFlow({
     inputRef.current?.focus();
   }
 
-  function advance(event: FormEvent<HTMLFormElement>) {
+  async function advance(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (pending) return;
     if (step === 1 && (name.trim().length < 2 || name.trim().length > 40)) {
       reject("Use 2–40 characters.");
       return;
@@ -158,7 +176,7 @@ export function SignupFlow({
       reject("Use your @illinois.edu email.");
       return;
     }
-    if (step === 3 && code !== "123456") {
+    if (!realAccount && step === 3 && code !== "123456") {
       reject("Use the demo code: 123456.");
       return;
     }
@@ -166,6 +184,52 @@ export function SignupFlow({
       reject(
         "3–20 letters, numbers, dots or underscores. Start with a letter.",
       );
+      return;
+    }
+    if (realAccount && (step === 2 || step === 3 || step === 6)) {
+      setPending(true);
+      setError("");
+      try {
+        if (step === 2) {
+          const result = await requestMemberCode(email);
+          if (!result.ok) {
+            reject(result.error);
+            return;
+          }
+          setEmailSent(true);
+          setCode("");
+          goTo(3);
+        } else if (step === 3) {
+          const result = await verifyMemberCode(email, code);
+          if (!result.ok) {
+            reject(result.error);
+            return;
+          }
+          setVerified(true);
+          if (result.account?.profile) {
+            window.location.assign("/app");
+          } else {
+            // An existing account may still need its first profile.
+            goTo(name.trim().length >= 2 ? 4 : 1);
+          }
+        } else {
+          const result = await saveMemberProfile({
+            name,
+            handle,
+            interests: selected,
+          });
+          if (!result.ok) {
+            if (result.error.includes("username")) setStep(4);
+            reject(result.error);
+            return;
+          }
+          window.location.assign("/app");
+        }
+      } catch {
+        reject("Something went wrong. Please try again.");
+      } finally {
+        setPending(false);
+      }
       return;
     }
     if (step === 6) {
@@ -176,7 +240,26 @@ export function SignupFlow({
       });
       return;
     }
-    goTo(step + 1);
+    goTo(realAccount && verified && step === 1 ? 4 : step + 1);
+  }
+
+  async function resendCode() {
+    if (pending) return;
+    setPending(true);
+    setError("");
+    setEmailSent(false);
+    try {
+      const result = await requestMemberCode(email);
+      if (!result.ok) reject(result.error);
+      else {
+        setEmailSent(true);
+        setCode("");
+      }
+    } catch {
+      reject("Your email could not be sent. Please try again.");
+    } finally {
+      setPending(false);
+    }
   }
 
   function toggleInterest(interest: string) {
@@ -190,7 +273,7 @@ export function SignupFlow({
   return (
     <section
       className={styles.flow}
-      aria-label="Demo signup"
+      aria-label={realAccount ? "Chambana account" : "Demo signup"}
       data-signup-step={step}
     >
       <header className={styles.topbar}>
@@ -198,7 +281,16 @@ export function SignupFlow({
           type="button"
           className={styles.back}
           aria-label={step === 0 ? "Back to app" : "Previous signup step"}
-          onClick={() => (step === 0 ? onBack() : goTo(step - 1))}
+          disabled={pending}
+          onClick={() => {
+            if (step === 0) onBack();
+            else if (realAccount && verified && step === 4) goTo(1);
+            else if (realAccount && verified && step === 1) onBack();
+            else if (realAccount && login && step === 2) {
+              setLogin(false);
+              goTo(0);
+            } else goTo(step - 1);
+          }}
         >
           <ArrowLeft size={20} strokeWidth={1.5} />
         </button>
@@ -348,32 +440,59 @@ export function SignupFlow({
                   ref={inputRef}
                   className={styles.code}
                   id={`${id}-code`}
-                  name="demo-code"
+                  name={realAccount ? "verification-code" : "demo-code"}
                   inputMode="numeric"
-                  autoComplete="off"
+                  autoComplete={realAccount ? "one-time-code" : "off"}
                   placeholder="000000"
-                  maxLength={6}
+                  maxLength={realAccount ? 8 : 6}
                   value={code}
                   onChange={(event) => {
-                    setCode(event.target.value.replace(/\D/g, "").slice(0, 6));
+                    setCode(
+                      event.target.value
+                        .replace(/\D/g, "")
+                        .slice(0, realAccount ? 8 : 6),
+                    );
                     setError("");
                   }}
                   aria-invalid={!!error}
                   aria-describedby={`${id}-demo-code${error ? ` ${id}-error` : ""}`}
                 />
-                <button
-                  id={`${id}-demo-code`}
-                  type="button"
-                  className={styles.demoCode}
-                  onClick={() => {
-                    setCode("123456");
-                    setError("");
-                    inputRef.current?.focus();
-                  }}
-                >
-                  Use demo code <span>123456</span>
-                  <ArrowRight size={15} />
-                </button>
+                {realAccount ? (
+                  <>
+                    <p className={styles.demoNotice} id={`${id}-demo-code`}>
+                      Check your email for a sign-in code or link.
+                      <br />
+                      Open a link in this browser to continue here.
+                    </p>
+                    <button
+                      type="button"
+                      className={styles.demoCode}
+                      onClick={resendCode}
+                      disabled={pending}
+                    >
+                      Send another email <ArrowRight size={15} />
+                    </button>
+                    {emailSent ? (
+                      <span className={styles.demoNotice} role="status">
+                        Email sent. Check your inbox.
+                      </span>
+                    ) : null}
+                  </>
+                ) : (
+                  <button
+                    id={`${id}-demo-code`}
+                    type="button"
+                    className={styles.demoCode}
+                    onClick={() => {
+                      setCode("123456");
+                      setError("");
+                      inputRef.current?.focus();
+                    }}
+                  >
+                    Use demo code <span>123456</span>
+                    <ArrowRight size={15} />
+                  </button>
+                )}
               </div>
             ) : null}
 
@@ -452,21 +571,51 @@ export function SignupFlow({
           </div>
         </div>
         <footer className={styles.footer}>
-          <button className={styles.primary} type="submit">
+          <button
+            className={styles.primary}
+            type="submit"
+            disabled={pending}
+            aria-busy={pending}
+          >
             <span>
-              {step === 0
-                ? "Get started"
-                : step === 6
-                  ? "Find something to do"
-                  : step === 5 && !selected.length
-                    ? "Skip for now"
-                    : "Continue"}
+              {pending
+                ? "Please wait…"
+                : step === 0
+                  ? "Get started"
+                  : step === 6
+                    ? "Find something to do"
+                    : step === 5 && !selected.length
+                      ? "Skip for now"
+                      : "Continue"}
             </span>
             <ArrowRight size={18} strokeWidth={1.5} />
           </button>
-          <span className={styles.demoNotice}>
-            {step === 3 ? "Demo · No email sent" : "Demo · No account created"}
-          </span>
+          {realAccount ? (
+            step === 0 ? (
+              <button
+                type="button"
+                className={styles.demoCode}
+                onClick={() => {
+                  setLogin(true);
+                  goTo(2);
+                }}
+              >
+                Sign in with email <ArrowRight size={15} />
+              </button>
+            ) : (
+              <span className={styles.demoNotice}>
+                {verified
+                  ? "Email verified"
+                  : "Use your Illinois email to continue."}
+              </span>
+            )
+          ) : (
+            <span className={styles.demoNotice}>
+              {step === 3
+                ? "Demo · No email sent"
+                : "Demo · No account created"}
+            </span>
+          )}
         </footer>
       </form>
     </section>

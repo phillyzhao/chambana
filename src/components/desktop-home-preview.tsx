@@ -37,6 +37,8 @@ import {
   type MissionLibraryFeedData,
 } from "./mission-library-feed";
 import styles from "./desktop-home-preview.module.css";
+import type { MemberExperience } from "@/lib/member-experience";
+import { MemberActivity } from "./member-activity";
 
 const missions = [
   {
@@ -142,21 +144,25 @@ function Avatars({ people }: { people: string[] }) {
 export function DesktopHomePreview({
   dateLabel,
   missionLibrary,
+  member,
 }: {
   dateLabel: string;
   missionLibrary?: MissionLibraryFeedData;
+  member?: MemberExperience;
 }) {
-  const groups = missionLibrary
-    ? demoGroups.map((group) => ({
-        ...group,
-        nextMission: {
-          ...group.nextMission,
-          title: "Choose a local mission",
-          time: "Browse the mission library",
-          location: "Urbana–Champaign",
-        },
-      }))
-    : demoGroups;
+  const groups = member
+    ? []
+    : missionLibrary
+      ? demoGroups.map((group) => ({
+          ...group,
+          nextMission: {
+            ...group.nextMission,
+            title: "Choose a local mission",
+            time: "Browse the mission library",
+            location: "Urbana–Champaign",
+          },
+        }))
+      : demoGroups;
   const searchParams = useSearchParams();
   const screens = searchParams.getAll("screen");
   const screen =
@@ -179,7 +185,7 @@ export function DesktopHomePreview({
   const [missionQuery, setMissionQuery] = useState("");
   const [groupQuery, setGroupQuery] = useState("");
   const [groupFilters, setGroupFilters] = useState<DesktopGroupFilter[]>([]);
-  const [joinedGroups, setJoinedGroups] = useState<number[]>([0]);
+  const [joinedGroups, setJoinedGroups] = useState<number[]>(member ? [] : [0]);
   const [selectedConversation, setSelectedConversation] = useState<
     number | null
   >(null);
@@ -202,7 +208,7 @@ export function DesktopHomePreview({
   const [missionFilters, setMissionFilters] = useState<DesktopMissionFilter[]>(
     [],
   );
-  const [notificationsRead, setNotificationsRead] = useState(false);
+  const [notificationsRead, setNotificationsRead] = useState(Boolean(member));
   const [notice, setNotice] = useState("");
   const dialogRef = useRef<HTMLDialogElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
@@ -265,8 +271,8 @@ export function DesktopHomePreview({
         null,
         "",
         destination === "Home"
-          ? "/design-preview?view=desktop"
-          : `/design-preview?view=desktop&screen=${destination.toLowerCase()}`,
+          ? `${member ? "/app" : "/design-preview"}?view=desktop`
+          : `${member ? "/app" : "/design-preview"}?view=desktop&screen=${destination.toLowerCase()}`,
       );
     }
     window.scrollTo({ top: 0, behavior: "auto" });
@@ -299,9 +305,7 @@ export function DesktopHomePreview({
     setSaved((current) =>
       wasSaved ? current.filter((value) => value !== id) : [...current, id],
     );
-    setNotice(
-      wasSaved ? "Removed from saved missions" : "Saved for later.",
-    );
+    setNotice(wasSaved ? "Removed from saved missions" : "Saved for later.");
   }
 
   function toggleLibrarySave(id: string) {
@@ -311,9 +315,7 @@ export function DesktopHomePreview({
         ? current.filter((value) => value !== id)
         : [...current, id],
     );
-    setNotice(
-      wasSaved ? "Removed from saved missions" : "Saved for later.",
-    );
+    setNotice(wasSaved ? "Removed from saved missions" : "Saved for later.");
   }
 
   const libraryProfileMissions = missionLibrary?.error
@@ -369,7 +371,7 @@ export function DesktopHomePreview({
       <header className={styles.header}>
         <a
           className={styles.brand}
-          href="/design-preview?view=desktop"
+          href={`${member ? "/app" : "/design-preview"}?view=desktop`}
           aria-label="Chambana Home"
           onClick={(event) => {
             if (
@@ -420,7 +422,13 @@ export function DesktopHomePreview({
             aria-current={screen === "Profile" ? "page" : undefined}
             onClick={() => navigate("Profile")}
           >
-            JP
+            {member
+              ? member.profile.name
+                  .split(/\s+/)
+                  .slice(0, 2)
+                  .map((part) => part[0])
+                  .join("")
+              : "JP"}
           </button>
         </div>
       </header>
@@ -428,6 +436,7 @@ export function DesktopHomePreview({
       <main className={styles.main}>
         {missionLibrary && (screen === "Home" || screen === "Missions") ? (
           <MissionLibraryFeed
+            member={member}
             data={missionLibrary}
             home={screen === "Home"}
             saved={librarySaved}
@@ -439,6 +448,7 @@ export function DesktopHomePreview({
           />
         ) : screen === "Profile" ? (
           <DesktopProfile
+            member={member}
             groups={myGroups.map((group) => ({
               ...group,
               members: [...group.members, "Julian Park (you)"],
@@ -494,6 +504,20 @@ export function DesktopHomePreview({
             onOpenMission={(id) => setPanel({ type: "mission", id })}
             onSave={toggleSave}
           />
+        ) : member && screen === "Groups" ? (
+          <section>
+            <h1 id="desktop-preview-title" tabIndex={-1}>
+              Groups are coming.
+            </h1>
+            <p>For now, pick a mission and bring a friend.</p>
+          </section>
+        ) : member && screen === "Inbox" ? (
+          <section>
+            <h1 id="desktop-preview-title" tabIndex={-1}>
+              Your activity.
+            </h1>
+            <MemberActivity member={member} />
+          </section>
         ) : screen === "Groups" ? (
           <DesktopGroups
             groups={filteredGroups}
@@ -744,10 +768,17 @@ export function DesktopHomePreview({
 
       <footer className={styles.footer}>
         <span>
-          Desktop preview <span aria-hidden="true">/</span> Sample activity
+          {member ? (
+            "Nuts are awarded after owner approval."
+          ) : (
+            <>
+              Desktop preview <span aria-hidden="true">/</span> Sample activity
+            </>
+          )}
         </span>
-        <a href="/design-preview">
-          View iPhone design <ArrowUpRight size={14} aria-hidden="true" />
+        <a href={member ? "/app" : "/design-preview"}>
+          {member ? "iPhone view" : "View iPhone design"}{" "}
+          <ArrowUpRight size={14} aria-hidden="true" />
         </a>
       </footer>
       <div
@@ -973,7 +1004,10 @@ export function DesktopHomePreview({
                 </>
               )}
 
-              {panel.type === "notifications" && (
+              {member && panel.type === "notifications" && (
+                <MemberActivity member={member} />
+              )}
+              {!member && panel.type === "notifications" && (
                 <>
                   <div className={styles.notificationSummary}>
                     <span>

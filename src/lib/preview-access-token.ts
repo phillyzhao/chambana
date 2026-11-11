@@ -17,6 +17,7 @@ export function validPreviewCode(input: unknown) {
 }
 
 export function previewDestination(input: unknown) {
+  if (input === "/app") return "/app";
   const desktopHome = "/design-preview?view=desktop";
   if (
     typeof input !== "string" ||

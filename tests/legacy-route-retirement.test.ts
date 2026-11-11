@@ -113,8 +113,8 @@ describe("retired beta route map", () => {
 });
 
 describe("retirement proxy", () => {
-  it("drops member IDs and query data from an old profile bookmark", () => {
-    const response = proxy(
+  it("drops member IDs and query data from an old profile bookmark", async () => {
+    const response = await proxy(
       new NextRequest(
         "https://playchambana.com/profile/legacy-member/details?code=private-code&next=%2Fadmin&screen=inbox",
       ),
@@ -208,7 +208,7 @@ describe("legacy page fallback", () => {
     },
   );
 
-  it("ships the waitlist, preview, new mission editor, and retirement fallback without beta layouts", () => {
+  it("ships the waitlist, preview, member app, mission editor and review without beta layouts", () => {
     const files = readdirSync(new URL("../src/app", import.meta.url), {
       recursive: true,
       encoding: "utf8",
@@ -217,8 +217,10 @@ describe("legacy page fallback", () => {
       files.filter((path) => /(^|\/)page\.tsx$/.test(path)).sort(),
     ).toEqual([
       "[...legacy]/page.tsx",
+      "app/page.tsx",
       "design-preview/page.tsx",
       "mission-admin/page.tsx",
+      "mission-admin/submissions/page.tsx",
       "page.tsx",
     ]);
     expect(files.filter((path) => /(^|\/)layout\.tsx$/.test(path))).toEqual([

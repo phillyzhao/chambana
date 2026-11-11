@@ -17,6 +17,8 @@ import {
   type MissionLibraryRecord,
 } from "@/lib/mission-library";
 import styles from "./mission-library-feed.module.css";
+import { MissionSubmission } from "./mission-submission";
+import type { MemberExperience } from "@/lib/member-experience";
 
 export type MissionLibraryFeedData = {
   missions: MissionLibraryRecord[];
@@ -42,6 +44,7 @@ export function MissionLibraryFeed({
   onSelectMission,
   savedOnly,
   onSavedOnlyChange,
+  member,
 }: {
   data: MissionLibraryFeedData;
   compact?: boolean;
@@ -52,6 +55,7 @@ export function MissionLibraryFeed({
   onSelectMission: (id: string | null) => void;
   savedOnly: boolean;
   onSavedOnlyChange: (value: boolean) => void;
+  member?: MemberExperience;
 }) {
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
@@ -290,6 +294,15 @@ export function MissionLibraryFeed({
               Location details & hours{" "}
               <ArrowUpRight size={15} aria-hidden="true" />
             </a>
+            {member && (
+              <MissionSubmission
+                key={mission.id}
+                missionId={mission.id}
+                submission={member.submissions.find(
+                  (item) => item.mission_id === mission.id,
+                )}
+              />
+            )}
             <button
               className={styles.primary}
               type="button"
@@ -302,8 +315,9 @@ export function MissionLibraryFeed({
               <Bookmark size={18} aria-hidden="true" />
             </button>
             <small className={styles.note}>
-              Saving is local to this preview. No booking or completion is
-              submitted.
+              {member
+                ? "Bookmarks last for this visit. Submissions and approved nuts are saved to your account."
+                : "Saving is local to this preview. No booking or completion is submitted."}
             </small>
           </div>
         )}
