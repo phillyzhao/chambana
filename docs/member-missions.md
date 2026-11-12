@@ -83,8 +83,8 @@ Production deployment is separate from applying the additive database migration.
 - The member successfully entered the numeric code and completed the profile. A read-only backend check verified a fresh sign-in at **5:50:57 PM CST** and profile creation at **5:51:13 PM CST** on November 11, 2026.
 - Before the first upload, browser checks confirmed the same saved profile with **0 nuts** and **0 submissions** in both iPhone and desktop layouts.
 - The proof form's **Submit** button is disabled with no file selected. Its labels are **Submit** when idle, **Submitting…** while sending, and **Finish submitting** for a finalization retry. The scoped `.submission .submit` rule prevents inherited dark button text.
-- One **High-five a mammoth** proof submission is now pending owner review. The private JPEG was stored successfully, and its MIME type and size matched the submission. The reward snapshot is **30 nuts**; there are **0 ledger entries** and the member balance remains **0 nuts**.
-- No owner approval has occurred. Live owner review and the resulting reward remain pending.
+- The owner approved the **High-five a mammoth** proof submission at **6:02:04 PM CST** on November 11, 2026. The private JPEG was stored successfully, and its MIME type and size matched the submission. Before approval, the ledger and balance were both zero.
+- A read-only backend check confirmed exactly **1 reward entry** for that submission, totaling **30 nuts**, and **1 approved mission**. The refreshed iPhone profile displays **30 nuts**, **1 mission**, and **Approved · +30 nuts** for the submission.
 - The new website code has not been pushed or deployed.
 
 ### Branded sender setup and remaining validation
@@ -97,6 +97,6 @@ The setup sequence below records the completed configuration and the checks stil
 2. Supabase Auth custom SMTP is enabled with sender `login@playchambana.com`, name `Chambana`, host `smtp.resend.com`, port `465`, user `resend`, and the domain-restricted sending key as the password. Keep that key only in Supabase SMTP settings; never put it in browser code, chat, or Git.
 3. Both hosted templates now use the exact local code email HTML. Keep email confirmation enabled and use the existing eight-digit OTP setting, or deliberately configure another length supported by the UI. Set the intended expiry in Supabase; the template does not promise an unverified duration.
 4. The local readiness flag is enabled, the app requested the owner's approved test email, and Resend reports delivery. Numeric code verification and profile save succeeded, and both layouts display the same saved profile. Still verify the received sender/body and invalid/reused-code rejection. Disable the flag again if delivery or verification fails.
-5. The live private proof upload is verified and awaits owner review. Complete owner approval, verify the resulting reward and balance refresh, and test sign-out on both layouts before pushing or deploying the feature.
+5. The live private proof upload, owner approval, single reward entry, and refreshed iPhone balance are verified. Check the awarded balance on desktop and sign-out behavior before pushing or deploying the feature.
 
 References: [Supabase OTP](https://supabase.com/docs/guides/auth/auth-email-passwordless), [custom SMTP](https://supabase.com/docs/guides/auth/auth-smtp), and [Resend's Supabase SMTP guide](https://resend.com/docs/send-with-supabase-smtp).
