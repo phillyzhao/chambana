@@ -120,7 +120,7 @@ export function MissionAdminLogin({ configured }: { configured: boolean }) {
             </p>
           </div>
         )}
-        <a className={styles.backLink} href="/design-preview?view=desktop">
+        <a className={styles.backLink} href="/app">
           <ArrowLeft size={14} aria-hidden="true" /> Back to Chambana
         </a>
       </main>

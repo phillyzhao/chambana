@@ -5,7 +5,7 @@ import { ArrowUpRight } from "lucide-react";
 import { WaitlistForm } from "@/components/waitlist-form";
 import { WaitlistIntro } from "@/components/waitlist-intro";
 import styles from "@/components/waitlist.module.css";
-import { DESKTOP_HOME, IOS_PREVIEW } from "@/lib/site-routes";
+import { IOS_PREVIEW } from "@/lib/site-routes";
 
 export const metadata: Metadata = {
   title: "Chambana · Bringing Chambana together.",
@@ -46,7 +46,7 @@ export default function Home() {
       </main>
       <footer className={styles.footer}>
         <span>CHAMPAIGN–URBANA</span>
-        <Link href={DESKTOP_HOME}>
+        <Link href="/app">
           Member sign in <ArrowUpRight size={12} />
         </Link>
       </footer>
