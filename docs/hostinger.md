@@ -1,5 +1,31 @@
 # Hostinger deployment runbook
 
+## Current member app release — November 11, 2026
+
+Deploy GitHub `main` to the existing Next.js / Node 24 application at **https://playchambana.com**.
+The real account flow is `/app`; `/design-preview` is explicitly a demo.
+Owner proof review is `/mission-admin/submissions`.
+See [member accounts, proof, and nuts](member-missions.md) for the current architecture and verified end-to-end flow.
+
+Required production configuration for this flow:
+
+- `APP_URL=https://playchambana.com`
+- `CHAMBANA_EMAIL_OTP_ENABLED=true` after hosted code templates and SMTP are verified
+- `CHAMBANA_MISSION_LIBRARY_ENABLED=true`
+- Existing Supabase public URL/publishable key and private service-role key
+- Private `PREVIEW_ACCESS_SECRET` and `MISSION_ADMIN_SECRET`, each at least 32 characters
+
+Store the owner access secret in the private hosting environment, never in Git.
+Supabase already owns branded SMTP delivery; the app host does not need the Resend key.
+Retain unrelated existing environment entries.
+The legacy preflight and operational instructions below refer to the retired beta architecture; do not enable its automatic verification jobs for this owner-reviewed flow.
+
+Release validation uses `npm run check` and `npm audit --omit=dev`.
+Confirm the actual deployed commit, the homepage member link to `/app`, the live code screen, and the owner gate before reporting the release complete.
+Keep the established preview access boundary until the owner explicitly opens the app to the public.
+
+## Earlier deployment and recovery reference
+
 Production domain: **https://playchambana.com**. An owner-provided screenshot on October 3, 2026 confirms the Current deployment is Completed at commit `5d1aba00` on `main`, using Next.js and Node 24.x. It shows the app Running, auto-deployment and SSL enabled, and deployment time `2026-10-03 09:43` (timezone not displayed), duration 55 seconds. This release includes the group-controls changes and canonical www redirect. A subsequent owner-run browser check confirms the www groups link lands on the bare domain with `/groups?mode=all` preserved; HTTP status was not captured. Neither screenshot proves request limits, scheduler operation, credentials, or email delivery. Earlier October 3 health probing returned 200. The setup instructions below are a recovery reference, not a request to repeat existing setup.
 
 ## 1. Confirm hosting before buying
