@@ -1,3 +1,7 @@
+> **Historical October beta checklist — superseded.**
+> Use the [current iOS launch handoff](ios-launch-handoff.md) for the real member app.
+> The group/Microsoft/Gemini/cron acceptance work below belongs to the retired beta and must not be resumed as current launch work.
+
 # Launch acceptance and Gemini evaluation
 
 Updated October 3, 2026. This is a plan and evidence checklist, not a completed acceptance report. The owner resumed work after the SSD move and authorized meaningful, tested progress to be pushed to GitHub. Use `/Volumes/Crucial X10/Chambana`; stop if the SSD is unavailable.

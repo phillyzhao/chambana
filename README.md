@@ -1,22 +1,36 @@
 # Chambana
 
-The active website is a monochrome waitlist plus the desktop experience and iOS preview. The separate legacy mobile web beta was archived and retired on October 28, 2026.
+Chambana is a gated Urbana–Champaign challenge app with verified member accounts, private photo/video proof, owner review, and earned nuts.
+The separate legacy group-challenge beta was retired on October 28, 2026.
+A native iOS build and App Store release are still upcoming.
+
+Start with the [compact handoff](handoff.md) and [iOS launch plan](docs/ios-launch-handoff.md).
+These describe the November 12 baseline, launch gaps, and the next engineering task.
 
 ## Current website
 
-- `/` — waitlist. Member sign in opens the desktop Home experience.
-- `/design-preview?view=desktop` — desktop Home.
-- `/design-preview?view=desktop&screen=missions` — desktop Missions.
-- `/design-preview?view=desktop&screen=groups` — desktop Groups.
-- `/design-preview?view=desktop&screen=inbox` — desktop Inbox.
-- `/design-preview?view=desktop&screen=profile` — desktop Profile.
-- `/design-preview` — iOS preview.
+- `/` — public waitlist; Member sign in opens `/app`.
+- `/app` — real iPhone-layout account and participation flow.
+- `/app?view=desktop` — real desktop account and participation flow.
+- `/mission-admin` — protected owner catalog editor, scheduling, placement, and approval.
+- `/mission-admin/submissions` — protected owner proof-review queue.
+- `/design-preview` and `/design-preview?view=desktop` — interactive design demos with sample data.
 
-The desktop and iOS versions use the existing signed access-code gate and production preview flag. These are interactive design previews with sample activity; joining, saving, and conversations do not write member activity to the backend. The waitlist is the current data-collecting feature. Desktop Inbox supports search, unread conversations, member lists, and local drafts/messages that persist across desktop navigation and reset on reload.
+The real app retains the signed access-code gate.
+Members verify an `@illinois.edu` address with a numeric code, create a profile, submit required private media, and earn nuts only after owner approval.
+Accounts, submissions, review decisions, and balances are shared across layouts.
+Inbox and notifications display submission activity; member messaging is not implemented, and Groups is a placeholder.
+Bookmarks remain local UI state.
 
-The header avatar opens the full desktop Profile page while Home, Missions, Groups, and Inbox remain the four main navigation tabs. Profile shows the read-only sample identity, 340 nuts, six completed missions, and interests, alongside current joined groups and Saved/Joined missions. Those groups and missions share local activity across desktop navigation and reset on reload.
+The mobile bottom navigation contains Home, Missions, Play, Groups, and Inbox.
+Play has three challenges: Moonwalk past Alma, Everybody jump, and Backwards high-five.
+Missions has the other 22, with no overlap.
+Desktop retains four header tabs (Home, Missions, Groups, Inbox) and profile access; it has no dedicated Play navigation button yet.
 
-Old beta links redirect to the corresponding desktop screen and discard old query parameters. The old campus sign-in, member actions, avatar-serving endpoint, and verification/email worker no longer operate through the website. Database and storage contents have not been deleted. `/api/health` reports application liveness, not legacy database readiness.
+Old beta routes redirect to the previews; their auth/actions, avatar endpoint, automatic verification, and email worker remain retired.
+The new member flow uses `/account/callback`, not the retired `/auth/callback`.
+Legacy database/storage contents have not been deleted.
+`/api/health` reports application liveness, not authenticated-flow readiness.
 
 ## Local development and checks
 
@@ -27,7 +41,10 @@ npm run dev
 npm run check
 ```
 
-On the SSD, use `TURBOPACK_FILESYSTEM_CACHE=false` if ExFAT metadata interferes with caching. Current production requirements include the waitlist database configuration, `PREVIEW_ACCESS_SECRET`, and `CHAMBANA_DESIGN_PREVIEW=true`. Historical campus-auth, Gemini, SMTP, cron, and beta-acceptance instructions are retained in the archived snapshot, not requirements for these previews. Do not re-run old setup/migrations or verification/import scripts as part of this website release.
+On the SSD, use `TURBOPACK_FILESYSTEM_CACHE=false` if ExFAT metadata interferes with caching.
+Use the current sections of [hosting configuration](docs/hostinger.md) and [member configuration](docs/member-missions.md) for the real account flow, alongside the established preview gate.
+Remote migrations through `202611120012` were applied at the November 12 release.
+Do not rerun legacy setup, catalog replacement, or verification/import scripts to resume current work.
 
 GitHub `main` auto-deploys to [playchambana.com](https://playchambana.com). Verify actual content after deployment propagation; a successful build alone does not establish that the hosted revision is live.
 
@@ -41,6 +58,8 @@ The source archive contains no private environment files, user uploads, or datab
 
 ## Shared mission library
 
-The `/mission-admin` page adds, edits, schedules, and explicitly approves a shared Supabase catalog for both previews. It uses a separate private owner key, never the public preview code. Delivery requires `CHAMBANA_MISSION_LIBRARY_ENABLED=true`; only approved, unarchived missions in their saved availability window appear. The 25 Urbana–Champaign starter missions are stored in the separate `mission_library` table. They do not change legacy missions or assignments. The owner approved releasing the current 25 on November 4, 2026.
+The `/mission-admin` page adds, edits, schedules, and explicitly approves a shared Supabase catalog for the real app and both design previews. It uses a separate private owner key, never the public preview code. Delivery requires `CHAMBANA_MISSION_LIBRARY_ENABLED=true`; only approved, unarchived missions in their saved availability window appear. The 25 Urbana–Champaign starter missions are stored in the separate `mission_library` table. They do not change legacy missions or assignments. The owner approved releasing the current 25 on November 4, 2026.
 
-See [setup, approval, and scheduling](docs/mission-library.md) and [the 25 missions for review](docs/mission-library-seed-review.md). Apply only the new mission-library migration when setting up this feature; the retirement warning above still applies to historical setup and import scripts.
+See [setup, approval, scheduling, and placement](docs/mission-library.md) and [the original starter mission review](docs/mission-library-seed-review.md).
+The owner-edited database catalog is the live content source; a historical seed review does not override later edits.
+Migrations 0010–0012 provide the current library/member/placement flow and are already applied remotely.

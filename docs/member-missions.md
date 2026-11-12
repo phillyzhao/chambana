@@ -14,7 +14,8 @@ The old beta routes, tables, balances, and verification jobs remain retired.
 
 Desktop uses `/app?view=desktop` and the same account, submissions, and balance.
 `/design-preview` remains a demonstration, with a link to the real app.
-Groups and messaging are placeholders in the real app until those features have a real backend.
+Inbox and notifications show real submission activity.
+Member messaging is not implemented, and Groups remains a placeholder.
 
 ## Owner review
 
@@ -38,7 +39,7 @@ The submission captures the mission title, instructions, proof requirement, revi
 - Add `${APP_URL}/account/callback` to Supabase Auth's redirect allowlist. The retired `/auth/callback` is not used.
 - Supabase email signups must be enabled with email confirmation required. Configure hosted **Confirm signup** and **Magic Link or OTP** templates with `supabase/templates/member-code.html` and subject **Your Chambana sign-in code**. Both must include `{{ .Token }}` and omit sign-in links. Both hosted templates were saved successfully with the exact local HTML on November 11. The same HTML is referenced in `supabase/config.toml` for a local Supabase stack; those local file references do not configure hosted email content.
 - Custom SMTP is enabled with **Chambana <login@playchambana.com>**, host `smtp.resend.com`, port `465`, and username `resend`. Resend has verified `playchambana.com`. The SMTP password is a sending-only API key restricted to that domain and stored only in Supabase SMTP settings. This controls the visible sender and email body; it is not a claim that backend infrastructure is impossible to identify.
-- Keep `CHAMBANA_EMAIL_OTP_ENABLED=false` in any environment until the hosted templates and sender are configured and ready for a delivery test. The local flag is now `true` for the owner’s account-flow test. Enable it on the production host only as part of a validated release. While false or unset, the app does not request emails or attempt code verification. The field accepts the configured 6–8 digits.
+- Keep `CHAMBANA_EMAIL_OTP_ENABLED=false` in any environment until the hosted templates and sender are configured and ready for a delivery test. The local and production flags are now `true` following the validated member release. For a new environment, enable the flag only as part of a validated release. While false or unset, the app does not request emails or attempt code verification. The field accepts the configured 6–8 digits.
 - `CHAMBANA_MISSION_LIBRARY_ENABLED=true` enables the catalog and new submissions. Turning it off still allows existing submitted work to be reviewed and an upload already started to finish.
 
 Do not commit private environment files or put the service key in browser code.
@@ -60,6 +61,15 @@ Proof previews use short-lived private signed URLs for the submitter or owner.
 Unfinished uploads expire after two hours and are bounded to 20 attempts per member per hour.
 Cancellation closes the submission but retains its private object: an issued upload token can still be valid, so deleting immediately would permit a late write to recreate it.
 An orphan/retention cleanup job is a later operational step; nothing deletes review evidence automatically.
+
+## Current release status — November 12, 2026
+
+The member app is deployed at `https://playchambana.com/app`, retaining the access-code gate.
+The owner key is configured privately in Hostinger; branded code delivery is configured in Supabase.
+The current application baseline is `c7c7932e78979a9ab69e30f31d4d2ef20b53afc0`, including Play placement: three challenges in Play and the other 22 in Missions.
+Typecheck, 520 application tests, 72 database tests, the production build, CI, and live split checks passed for that release.
+The earlier local verification below is dated history; it is not an outstanding deployment task.
+See the [iOS launch handoff](ios-launch-handoff.md) for remaining work and release evidence.
 
 ## Verification
 
@@ -86,13 +96,14 @@ Production deployment is separate from applying the additive database migration.
 - The owner approved the **High-five a mammoth** proof submission at **6:02:04 PM CST** on November 11, 2026. The private JPEG was stored successfully, and its MIME type and size matched the submission. Before approval, the ledger and balance were both zero.
 - A read-only backend check confirmed exactly **1 reward entry** for that submission, totaling **30 nuts**, and **1 approved mission**. The refreshed iPhone profile displays **30 nuts**, **1 mission**, and **Approved · +30 nuts** for the submission.
 - The desktop profile also displays **30 nuts**, **1 completed mission**, and the approved submission. Signing out from desktop returns to email sign-in, and a fresh iPhone page confirms the shared member session is cleared.
-- The new website code has not been pushed or deployed.
+- At this local checkpoint, the new website code had not yet been pushed or deployed. That status was superseded by the release recorded above.
 
-### Branded sender setup and remaining validation
+### Branded sender setup — November 11 record
 
 Resend is the selected email delivery provider; Supabase remains the authentication provider.
 The domain, restricted sending key, custom SMTP, and hosted code templates were configured successfully on November 11.
-The setup sequence below records the completed configuration and the checks still needed before release.
+The sequence below preserves the local setup record and its then-outstanding checks.
+Deployment is complete as recorded above; sender/body inspection and invalid/reused-code cases remain explicit device-acceptance checks unless later evidence records them.
 
 1. Domain verification is complete. For future setup, use Resend's exact DNS records and preserve existing website, inbound mail, unrelated records, and nameservers. The November 11 change added four records without replacing the original three website records.
 2. Supabase Auth custom SMTP is enabled with sender `login@playchambana.com`, name `Chambana`, host `smtp.resend.com`, port `465`, user `resend`, and the domain-restricted sending key as the password. Keep that key only in Supabase SMTP settings; never put it in browser code, chat, or Git.
