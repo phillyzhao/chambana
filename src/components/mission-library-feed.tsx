@@ -38,6 +38,7 @@ export function MissionLibraryFeed({
   data,
   compact = false,
   home = false,
+  play = false,
   saved,
   onToggleSave,
   selectedId,
@@ -49,6 +50,7 @@ export function MissionLibraryFeed({
   data: MissionLibraryFeedData;
   compact?: boolean;
   home?: boolean;
+  play?: boolean;
   saved: string[];
   onToggleSave: (id: string) => void;
   selectedId: string | null;
@@ -65,10 +67,14 @@ export function MissionLibraryFeed({
   const uid = useId();
   const published = data.error
     ? []
-    : data.missions.filter((item) => isPublishedMission(item, now));
+    : data.missions.filter(
+        (item) =>
+          isPublishedMission(item, now) && (!play || item.category === "Dares"),
+      );
   const mission = published.find((item) => item.id === selectedId);
   const matches = published.filter(
     (item) =>
+      play ||
       home ||
       ((category === "All" || item.category === category) &&
         (!savedOnly || saved.includes(item.id)) &&
@@ -109,12 +115,12 @@ export function MissionLibraryFeed({
     <section
       className={styles.feed}
       data-compact={compact}
-      aria-label="Urbana–Champaign missions"
+      aria-label={play ? "Play in Urbana–Champaign" : "Urbana–Champaign missions"}
     >
       <header className={styles.intro}>
         <p>URBANA–CHAMPAIGN</p>
         <h1 id="desktop-preview-title" tabIndex={-1}>
-          {home ? "Got a little time?" : "Pick something fun."}
+          {play ? "Play." : home ? "Got a little time?" : "Pick something fun."}
         </h1>
         <span>
           Quick challenges around Urbana–Champaign.
@@ -122,7 +128,7 @@ export function MissionLibraryFeed({
           Try one solo or bring a friend.
         </span>
       </header>
-      {!home && (
+      {!home && !play && (
         <div className={styles.tools}>
           <label className={styles.search}>
             <Search size={17} aria-hidden="true" />
@@ -166,7 +172,7 @@ export function MissionLibraryFeed({
           {visible.map((item, index) => (
             <article key={item.id} className={styles.card}>
               <div className={styles.cardTop}>
-                <span>{item.category}</span>
+                <span>{play ? "Play" : item.category}</span>
                 <span>{String(index + 1).padStart(2, "0")}</span>
               </div>
               <button
@@ -213,7 +219,9 @@ export function MissionLibraryFeed({
           <h2>
             {published.length
               ? "Nothing matches that."
-              : "New missions are on the way."}
+              : play
+                ? "More fun is on the way."
+                : "New missions are on the way."}
           </h2>
           <p>
             {published.length
@@ -248,7 +256,7 @@ export function MissionLibraryFeed({
               <X size={22} aria-hidden="true" />
             </button>
             <p className={styles.eyebrow}>
-              {mission.category} · +{mission.nuts} nuts
+              {play ? "Play" : mission.category} · +{mission.nuts} nuts
             </p>
             <h2 id={`${uid}-title`}>{mission.title}</h2>
             <div className={styles.facts}>

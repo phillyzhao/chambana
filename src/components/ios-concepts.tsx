@@ -13,6 +13,7 @@ import {
   Home,
   MapPin,
   MessageCircle,
+  Play,
   Plus,
   SlidersHorizontal,
   Search,
@@ -35,7 +36,14 @@ import { MemberActivity, MemberSignOut } from "./member-activity";
 
 type PreviewMode = "app" | "signup";
 type PreviewProfile = { name: string; handle: string; interests: string[] };
-type Tab = "Home" | "Missions" | "Groups" | "Inbox";
+const navigation = [
+  { name: "Home", Icon: Home },
+  { name: "Missions", Icon: Compass },
+  { name: "Play", Icon: Play },
+  { name: "Groups", Icon: Users },
+  { name: "Inbox", Icon: MessageCircle },
+] as const;
+type Tab = (typeof navigation)[number]["name"];
 type Sheet =
   | { type: "profile" }
   | { type: "notifications" }
@@ -681,12 +689,14 @@ function AppPhone({
           id={`${uid}-panel`}
           aria-labelledby={`${uid}-${tab}-tab`}
         >
-          {missionLibrary && (tab === "Home" || tab === "Missions") && (
+          {((missionLibrary && (tab === "Home" || tab === "Missions")) ||
+            tab === "Play") && (
             <MissionLibraryFeed
               member={member}
-              data={missionLibrary}
+              data={missionLibrary ?? { missions: [] }}
               compact
               home={tab === "Home"}
+              play={tab === "Play"}
               saved={librarySaved}
               onToggleSave={toggleLibrarySave}
               selectedId={librarySelected}
@@ -864,14 +874,7 @@ function AppPhone({
           aria-label="Chambana main navigation"
           role="tablist"
         >
-          {(
-            [
-              { name: "Home", Icon: Home },
-              { name: "Missions", Icon: Compass },
-              { name: "Groups", Icon: Users },
-              { name: "Inbox", Icon: MessageCircle },
-            ] as const
-          ).map(({ name, Icon }) => (
+          {navigation.map(({ name, Icon }) => (
             <button
               type="button"
               role="tab"
@@ -882,7 +885,7 @@ function AppPhone({
               key={name}
               onClick={() => switchTab(name)}
               onKeyDown={(event) => {
-                const tabs: Tab[] = ["Home", "Missions", "Groups", "Inbox"];
+                const tabs = navigation.map(({ name }) => name);
                 const offset =
                   event.key === "ArrowRight"
                     ? 1
