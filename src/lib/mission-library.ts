@@ -8,6 +8,8 @@ export const MISSION_CATEGORIES = [
   "Food & Local",
 ] as const;
 export type MissionCategory = (typeof MISSION_CATEGORIES)[number];
+export const MISSION_PLACEMENTS = ["missions", "play"] as const;
+export type MissionPlacement = (typeof MISSION_PLACEMENTS)[number];
 
 const text = (min: number, max: number) => z.string().trim().min(min).max(max);
 const dateOnly = z
@@ -26,6 +28,7 @@ export const missionDraftSchema = z
   .object({
     title: text(4, 120),
     category: z.enum(MISSION_CATEGORIES),
+    placement: z.enum(MISSION_PLACEMENTS).default("missions"),
     instructions: text(12, 4000),
     location_name: text(3, 160),
     location_address: text(0, 240),
@@ -150,6 +153,7 @@ export function missionFormInput(form: FormData): MissionDraftInput {
   const result = missionDraftSchema.safeParse({
     title: value("title"),
     category: value("category"),
+    placement: form.has("placement") ? value("placement") : undefined,
     instructions: value("instructions"),
     location_name: value("location_name"),
     location_address: value("location_address"),

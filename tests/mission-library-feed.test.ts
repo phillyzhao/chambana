@@ -1,9 +1,13 @@
 import { createElement, type ComponentProps } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { readFile } from "node:fs/promises";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MissionLibraryFeed } from "../src/components/mission-library-feed";
 import { DesktopProfile } from "../src/components/desktop-profile";
-import type { MissionLibraryRecord } from "../src/lib/mission-library";
+import {
+  missionDraftSchema,
+  type MissionLibraryRecord,
+} from "../src/lib/mission-library";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
 
@@ -13,6 +17,7 @@ const mission: MissionLibraryRecord = {
   id,
   title: "A campus adventure",
   category: "Campus Exploration",
+  placement: "missions",
   instructions:
     "Find a detail you have never noticed and describe it to a friend.",
   location_name: "Main Quad",
@@ -59,6 +64,50 @@ beforeEach(() => {
 afterEach(() => vi.useRealTimers());
 
 describe("shared library saved mission contract", () => {
+  it("keeps the three curated Play challenges separate from the other 22 Missions", async () => {
+    const seeds = JSON.parse(
+      await readFile(
+        new URL("../data/mission-library-seed.json", import.meta.url),
+        "utf8",
+      ),
+    ) as unknown[];
+    const catalog: MissionLibraryRecord[] = seeds.map((seed, index) => ({
+      ...missionDraftSchema.parse(seed),
+      id: `30000000-0000-4000-8000-${String(index + 1).padStart(12, "0")}`,
+      approved_at: "2026-10-27T18:00:00.000Z",
+      archived_at: null,
+      created_at: "2026-10-27T18:00:00.000Z",
+      updated_at: "2026-10-27T18:00:00.000Z",
+      revision: 1,
+    }));
+    const play = feed({
+      data: { missions: catalog },
+      play: true,
+      savedOnly: true,
+      saved: [],
+    });
+    const missions = feed({ data: { missions: catalog }, saved: [] });
+    expect(play.match(/<article\b/g)).toHaveLength(3);
+    expect(missions.match(/<article\b/g)).toHaveLength(22);
+    expect(
+      catalog
+        .filter((item) => item.placement === "play")
+        .map((item) => item.title),
+    ).toEqual(["Moonwalk past Alma", "Everybody jump", "Backwards high-five"]);
+    for (const item of catalog) {
+      const title = renderToStaticMarkup(createElement("h2", null, item.title));
+      expect(item.placement === "play" ? play : missions).toContain(title);
+      expect(item.placement === "play" ? missions : play).not.toContain(title);
+    }
+  });
+
+  it("can open a published saved Play challenge without adding it to the Missions list", () => {
+    const playMission = { ...mission, placement: "play" as const };
+    const html = feed({ data: { missions: [playMission] }, selectedId: id });
+    expect(html).not.toContain("<article");
+    expect(html).toContain(mission.title);
+    expect(html).toContain(mission.proof_prompt);
+  });
   it("renders parent-owned saved UUIDs in Home and Missions after remounts", () => {
     for (const home of [true, false]) {
       const html = feed({ home });

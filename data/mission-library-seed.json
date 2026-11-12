@@ -1,6 +1,7 @@
 [
   {
     "id": "6b10ca00-2026-4028-8025-000000000001",
+    "placement": "missions",
     "title": "Quad pushups",
     "category": "Self Improvement",
     "instructions": "Do 12 pushups on the Main Quad. Knee pushups count.",
@@ -21,6 +22,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000002",
+    "placement": "missions",
     "title": "Five catches",
     "category": "Self Improvement",
     "instructions": "Grab a friend and make five frisbee catches at Hessel Park.",
@@ -41,6 +43,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000003",
+    "placement": "missions",
     "title": "Be a tree",
     "category": "Self Improvement",
     "instructions": "Hold a tree pose for 20 seconds beside a tree at the UI Arboretum. Stay on an open path or lawn.",
@@ -61,6 +64,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000004",
+    "placement": "missions",
     "title": "Tiny jog",
     "category": "Self Improvement",
     "instructions": "Jog for five minutes on Crystal Lake Park’s paths.",
@@ -81,6 +85,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000005",
+    "placement": "missions",
     "title": "Golden-hour stroll",
     "category": "Self Improvement",
     "instructions": "Take a golden-hour walk at Meadowbrook Park. Leave by sunset.",
@@ -101,6 +106,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000006",
+    "placement": "missions",
     "title": "Become the blob",
     "category": "Campus Exploration",
     "instructions": "Make your body match the red-orange blob outside the IGB. Pose beside it with your feet on the ground.",
@@ -121,6 +127,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000007",
+    "placement": "missions",
     "title": "Campus corn cameo",
     "category": "Campus Exploration",
     "instructions": "Find the Morrow Plots and take a selfie beside the sign. Stay outside the research plots.",
@@ -141,6 +148,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000008",
+    "placement": "missions",
     "title": "Basement bowling",
     "category": "Campus Exploration",
     "instructions": "Go bowling in the Illini Union Rec Room and knock down at least one pin.",
@@ -161,6 +169,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000009",
+    "placement": "missions",
     "title": "High-five a mammoth",
     "category": "Campus Exploration",
     "instructions": "Use a camera angle to make it look like you’re high-fiving the mammoth’s trunk outside the Natural History Building. Stay on the path.",
@@ -181,6 +190,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000010",
+    "placement": "missions",
     "title": "Alma’s twin",
     "category": "Campus Exploration",
     "instructions": "Stand in front of Alma Mater and copy her arms-wide-open pose.",
@@ -201,6 +211,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000011",
+    "placement": "missions",
     "title": "Four-second crawl",
     "category": "Dares",
     "instructions": "Crawl on all fours for four seconds on a clear patch of the Main Quad.",
@@ -221,6 +232,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000012",
+    "placement": "play",
     "title": "Moonwalk past Alma",
     "category": "Dares",
     "instructions": "Attempt a ten-step moonwalk with Alma Mater behind you. Bad moonwalking counts.",
@@ -241,6 +253,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000013",
+    "placement": "play",
     "title": "Everybody jump",
     "category": "Dares",
     "instructions": "Jump at the same time as a friend at Hessel Park.",
@@ -261,6 +274,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000014",
+    "placement": "missions",
     "title": "Dance break",
     "category": "Dares",
     "instructions": "Dance with a friend for ten seconds at Crystal Lake Park.",
@@ -281,6 +295,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000015",
+    "placement": "play",
     "title": "Backwards high-five",
     "category": "Dares",
     "instructions": "Stand back-to-back with a friend on the Main Quad and try to high-five without turning around.",
@@ -301,6 +316,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000016",
+    "placement": "missions",
     "title": "Snack delivery",
     "category": "Kindness",
     "instructions": "Bring a friend their favorite snack on the Main Quad.",
@@ -321,6 +337,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000017",
+    "placement": "missions",
     "title": "Hug by Alma",
     "category": "Kindness",
     "instructions": "Ask a friend if they want a hug, then hug them by Alma Mater.",
@@ -341,6 +358,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000018",
+    "placement": "missions",
     "title": "Five-piece cleanup",
     "category": "Kindness",
     "instructions": "Pick up five pieces of ordinary litter at Hessel Park and put them in a bin. Use gloves and leave sharp items alone.",
@@ -361,6 +379,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000019",
+    "placement": "missions",
     "title": "High-five five",
     "category": "Kindness",
     "instructions": "Give five willing people a high-five outside the Illini Union. Ask before filming.",
@@ -381,6 +400,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000020",
+    "placement": "missions",
     "title": "A toy for a shelter cat",
     "category": "Kindness",
     "instructions": "Drop off a dangling cat toy at the Champaign County Humane Society front desk during shelter hours.",
@@ -401,6 +421,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000021",
+    "placement": "missions",
     "title": "Switch up your Jarling’s",
     "category": "Food & Local",
     "instructions": "Try a Jarling’s custard order you’ve never had before at the Kirby Avenue shop.",
@@ -421,6 +442,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000022",
+    "placement": "missions",
     "title": "Your friend picks the taco",
     "category": "Food & Local",
     "instructions": "Let a friend choose your taco at Maize at the Station, then try it. Tell them any food restrictions first.",
@@ -441,6 +463,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000023",
+    "placement": "missions",
     "title": "BakeLab pastry run",
     "category": "Food & Local",
     "instructions": "Try a pastry you’ve never ordered at BakeLab’s Urbana location.",
@@ -461,6 +484,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000024",
+    "placement": "missions",
     "title": "Fondue with a friend",
     "category": "Food & Local",
     "instructions": "Share cheese fondue with a friend at The Bread Company during dinner service.",
@@ -481,6 +505,7 @@
   },
   {
     "id": "6b10ca00-2026-4028-8025-000000000025",
+    "placement": "missions",
     "title": "Snack swap",
     "category": "Food & Local",
     "instructions": "At Common Ground in Urbana, you and a friend each pick a snack for the other to try. Tell each other any food restrictions first.",

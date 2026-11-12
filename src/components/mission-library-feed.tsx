@@ -67,12 +67,13 @@ export function MissionLibraryFeed({
   const uid = useId();
   const published = data.error
     ? []
-    : data.missions.filter(
-        (item) =>
-          isPublishedMission(item, now) && (!play || item.category === "Dares"),
-      );
+    : data.missions.filter((item) => isPublishedMission(item, now));
+  // Profile bookmarks can open any published detail; the two lists stay separate.
   const mission = published.find((item) => item.id === selectedId);
-  const matches = published.filter(
+  const collection = published.filter(
+    (item) => item.placement === (play ? "play" : "missions"),
+  );
+  const matches = collection.filter(
     (item) =>
       play ||
       home ||
@@ -115,7 +116,9 @@ export function MissionLibraryFeed({
     <section
       className={styles.feed}
       data-compact={compact}
-      aria-label={play ? "Play in Urbana–Champaign" : "Urbana–Champaign missions"}
+      aria-label={
+        play ? "Play in Urbana–Champaign" : "Urbana–Champaign missions"
+      }
     >
       <header className={styles.intro}>
         <p>URBANA–CHAMPAIGN</p>
@@ -217,14 +220,14 @@ export function MissionLibraryFeed({
       ) : (
         <div className={styles.empty}>
           <h2>
-            {published.length
+            {collection.length
               ? "Nothing matches that."
               : play
                 ? "More fun is on the way."
                 : "New missions are on the way."}
           </h2>
           <p>
-            {published.length
+            {collection.length
               ? "Try another category or search."
               : "Check back for the next local adventure."}
           </p>
@@ -256,7 +259,8 @@ export function MissionLibraryFeed({
               <X size={22} aria-hidden="true" />
             </button>
             <p className={styles.eyebrow}>
-              {play ? "Play" : mission.category} · +{mission.nuts} nuts
+              {mission.placement === "play" ? "Play" : mission.category} · +
+              {mission.nuts} nuts
             </p>
             <h2 id={`${uid}-title`}>{mission.title}</h2>
             <div className={styles.facts}>

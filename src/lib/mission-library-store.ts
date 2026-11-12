@@ -15,7 +15,7 @@ import {
 } from "./mission-library";
 
 const columns =
-  "id,title,category,instructions,location_name,location_address,city,duration_minutes,cost_label,min_people,max_people,nuts,proof_prompt,source_url,source_checked_on,starts_at,ends_at,approved_at,archived_at,revision,created_at,updated_at";
+  "id,title,category,placement,instructions,location_name,location_address,city,duration_minutes,cost_label,min_people,max_people,nuts,proof_prompt,source_url,source_checked_on,starts_at,ends_at,approved_at,archived_at,revision,created_at,updated_at";
 const unavailable =
   "The mission library is unavailable. Check its Supabase connection and apply the mission-library migration.";
 const conflict =

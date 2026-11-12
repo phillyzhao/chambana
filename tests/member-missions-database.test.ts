@@ -35,6 +35,7 @@ beforeAll(async () => {
   for (const name of [
     "202610280010_mission_library.sql",
     "202611110011_member_missions.sql",
+    "202611120012_mission_placement.sql",
   ])
     await db.exec(
       await readFile(
@@ -114,7 +115,7 @@ describe("real member proof and owner-only nuts", () => {
       mission_title: "Quad high five",
     });
     await db.query(
-      "update mission_library set nuts=90,title='Changed mission' where id=$1",
+      "update mission_library set nuts=90,title='Changed mission',placement='play' where id=$1",
       [mission],
     );
     await upload(s);

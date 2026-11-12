@@ -522,6 +522,7 @@ function MissionEditor({
   // so a failed save never discards the owner's work.
   const [draft, setDraft] = useState(() => ({
     title: mission?.title ?? "",
+    placement: mission?.placement ?? "missions",
     category: mission?.category ?? MISSION_CATEGORIES[0],
     instructions: mission?.instructions ?? "",
     location_name: mission?.location_name ?? "",
@@ -599,6 +600,18 @@ function MissionEditor({
                 maxLength={120}
                 placeholder="Give it a name worth tapping"
               />
+            </label>
+            <label htmlFor="mission-placement">
+              Appears in
+              <select
+                id="mission-placement"
+                name="placement"
+                value={draft.placement}
+                onChange={updateDraft}
+              >
+                <option value="missions">Missions</option>
+                <option value="play">Play</option>
+              </select>
             </label>
             <label htmlFor="mission-category">
               Category

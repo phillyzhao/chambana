@@ -153,6 +153,12 @@ describe("mission library persistence", () => {
     expect(rows).toHaveLength(25);
     expect(new Set(rows.map((row: { id: string }) => row.id)).size).toBe(25);
     expect(options).toEqual({ onConflict: "id", ignoreDuplicates: true });
+    expect(
+      rows.filter((row: { placement: string }) => row.placement === "play"),
+    ).toHaveLength(3);
+    expect(
+      rows.filter((row: { placement: string }) => row.placement === "missions"),
+    ).toHaveLength(22);
     for (const row of rows) {
       expect(row).toMatchObject({
         approved_at: null,
@@ -174,7 +180,11 @@ describe("mission library persistence", () => {
       await saveMissionDraft(missionDraftSchema.parse(seed), seed.id, 9),
     ).toBe(seed.id);
     expect(query.update).toHaveBeenCalledWith(
-      expect.objectContaining({ approved_at: null, archived_at: null }),
+      expect.objectContaining({
+        approved_at: null,
+        archived_at: null,
+        placement: "missions",
+      }),
     );
     expect(query.eq).toHaveBeenCalledWith("revision", 9);
   });

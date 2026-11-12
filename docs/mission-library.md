@@ -4,6 +4,12 @@
 
 On November 4, 2026, the owner explicitly approved publishing all 25 current missions to the MVP. That authorization supersedes the private-review restriction below for this release. It does not approve future edits or additional missions; edits still revoke approval. Deployment status and verification are recorded under Validation.
 
+## Play and Missions
+
+The owner selected **Moonwalk past Alma**, **Everybody jump**, and **Backwards high-five** for Play on November 12, 2026. The other 22 belong to Missions; the lists do not overlap. Category and placement are separate fields, so Four-second crawl and Dance break remain Dares within Missions.
+
+Migration `202611120012_mission_placement.sql` adds the persisted `placement` field and assigns those three existing records while preserving their approvals, schedules, content, and rewards. New entries default to Missions. The owner's **Appears in** selector can move an entry between Missions and Play; later edits follow the existing save-draft and separate-approval process. Both lists use only published, currently available records. Profile bookmarks can still open any published saved detail.
+
 ## Initial private review
 
 - The admin runs locally at `/mission-admin` and persists its catalog in the configured Supabase project.

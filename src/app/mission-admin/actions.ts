@@ -52,6 +52,7 @@ function allowLoginAttempt() {
 function refreshLibrary() {
   revalidatePath("/mission-admin");
   revalidatePath("/design-preview");
+  revalidatePath("/app");
 }
 const unauthorized: MissionActionState = {
   error: "Sign in to mission administration to continue.",

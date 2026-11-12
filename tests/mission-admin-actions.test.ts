@@ -131,7 +131,7 @@ describe("mission admin mutation boundaries", () => {
 });
 
 describe("inline mission title edits", () => {
-  it("trims the title, returns the synchronized revision, and refreshes both routes", async () => {
+  it("trims the title, returns the synchronized revision, and refreshes admin, preview, and member routes", async () => {
     const form = reference();
     form.set("title", "  Quad victory lap  ");
     // Fields from the full editor must not be forwarded by this narrow action.
@@ -154,6 +154,7 @@ describe("inline mission title edits", () => {
     expect(mocks.revalidate.mock.calls).toEqual([
       ["/mission-admin"],
       ["/design-preview"],
+      ["/app"],
     ]);
     expect(mocks.save).not.toHaveBeenCalled();
     expect(mocks.approve).not.toHaveBeenCalled();
@@ -211,6 +212,7 @@ describe("inline mission title edits", () => {
     expect(mocks.revalidate.mock.calls).toEqual([
       ["/mission-admin"],
       ["/design-preview"],
+      ["/app"],
     ]);
     expect(mocks.rename).toHaveBeenCalledExactlyOnceWith(id, 3, "Valid title");
   });

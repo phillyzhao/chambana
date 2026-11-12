@@ -77,6 +77,15 @@ describe("mission publication boundaries", () => {
 });
 
 describe("mission input and Central scheduling", () => {
+  it("defaults new drafts to Missions and allows an explicit Play placement", () => {
+    expect(missionDraftSchema.parse(base).placement).toBe("missions");
+    expect(
+      missionDraftSchema.parse({ ...base, placement: "play" }).placement,
+    ).toBe("play");
+    expect(
+      missionDraftSchema.safeParse({ ...base, placement: "both" }).success,
+    ).toBe(false);
+  });
   it("validates local categories, city, group limits, links and schedule ordering", () => {
     expect(missionDraftSchema.safeParse(base).success).toBe(true);
     for (const change of [
@@ -124,7 +133,10 @@ describe("mission input and Central scheduling", () => {
     form.set("approved_at", "2026-10-28T00:00:00Z");
     expect(missionFormInput(form)).toMatchObject({
       starts_at: "2026-10-28T22:30:00.000Z",
+      placement: "missions",
     });
+    form.set("placement", "play");
+    expect(missionFormInput(form).placement).toBe("play");
     expect(missionFormInput(form)).not.toHaveProperty("approved_at");
     form.set("duration_minutes", "");
     expect(() => missionFormInput(form)).toThrow();

@@ -452,7 +452,9 @@ function AppPhone({
     ? 0
     : (missionLibrary?.missions ?? []).filter(
         (mission) =>
-          librarySaved.includes(mission.id) && isPublishedMission(mission),
+          mission.placement === "missions" &&
+          librarySaved.includes(mission.id) &&
+          isPublishedMission(mission),
       ).length;
   const toggleJoin = (id: number) => {
     setJoined((current) =>
